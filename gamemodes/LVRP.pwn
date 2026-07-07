@@ -1085,7 +1085,7 @@ new hopital_AnnCooldown[MAX_PLAYERS];   // Cooldown annonce hopital (en secondes
 // Admin cree des parkings avec /parking creer <nom>
 // Le parking est marque par un icone bleu sur la map (visible de tous)
 // Les joueurs s'y rendent et tapent /parking pour spawn leurs vehicules
-#define MAX_PARKING 50
+#define MAX_PARKING 150
 #define PARKING_RADIUS 15.0   // Rayon du parking (zone de detection + spawn)
 #define PARKING_FILE "parkings.cfg"
 
