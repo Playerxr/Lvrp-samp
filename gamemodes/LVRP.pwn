@@ -36943,6 +36943,21 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 	        house_GetCreateInfos(type, inte, x1, y1, z1, a1, desc);
 		    new Float:X,Float:Y,Float:Z;
 		    GetPlayerPos(playerid, X, Y, Z);
+		    // [FIX] Empeche de creer une maison trop pres d'une entree existante :
+		    // deux entrees trop proches font que PlayerToPoint() matche la
+		    // mauvaise maison a l'entree, et le joueur ressort ensuite chez
+		    // l'autre maison (mauvais emplacement de sortie).
+		    for(new mc = 0; mc < totalHouses; mc++)
+		    {
+		        if(house[mc][used] != 1) continue;
+		        if(floatabs(house[mc][pos][0]-X) < 3.0 && floatabs(house[mc][pos][1]-Y) < 3.0 && floatabs(house[mc][pos][2]-Z) < 3.0)
+		        {
+		            format(string, sizeof(string), "{FF2727} Admin {FFABAD} Trop proche de la maison id %d (%s) - deplacez-vous avant de creer.", mc, house[mc][description]);
+		            msg_Client(playerid, COLOR_WHITE, string);
+		            player_Dialog[playerid] = 0;
+		            return 1;
+		        }
+		    }
 		    for(new ma = 0; ma < totalHouses; ma++)
 			{
 				if(house[ma][used] == 0)
