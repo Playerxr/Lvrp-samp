@@ -1,0 +1,60 @@
+//Player TextDraws: 
+
+
+new PlayerText:TEXTDRAW_CALLING[MAX_PLAYERS][5];
+
+
+TEXTDRAW_CALLING[playerid][0] = CreatePlayerTextDraw(playerid, 544.666748, 333.370422, "ld_beat:chit");
+PlayerTextDrawTextSize(playerid, TEXTDRAW_CALLING[playerid][0], 26.000000, 29.000000);
+PlayerTextDrawAlignment(playerid, TEXTDRAW_CALLING[playerid][0], 1);
+PlayerTextDrawColor(playerid, TEXTDRAW_CALLING[playerid][0], -16776961);
+PlayerTextDrawSetShadow(playerid, TEXTDRAW_CALLING[playerid][0], 0);
+PlayerTextDrawBackgroundColor(playerid, TEXTDRAW_CALLING[playerid][0], 255);
+PlayerTextDrawFont(playerid, TEXTDRAW_CALLING[playerid][0], 4);
+PlayerTextDrawSetProportional(playerid, TEXTDRAW_CALLING[playerid][0], 0);
+PlayerTextDrawSetSelectable(playerid, TEXTDRAW_CALLING[playerid][0], true);
+
+TEXTDRAW_CALLING[playerid][1] = CreatePlayerTextDraw(playerid, 559.099792, 253.466613, "060606060");
+PlayerTextDrawLetterSize(playerid, TEXTDRAW_CALLING[playerid][1], 0.400000, 1.600000);
+PlayerTextDrawAlignment(playerid, TEXTDRAW_CALLING[playerid][1], 2);
+PlayerTextDrawColor(playerid, TEXTDRAW_CALLING[playerid][1], -1);
+PlayerTextDrawSetShadow(playerid, TEXTDRAW_CALLING[playerid][1], 0);
+PlayerTextDrawSetOutline(playerid, TEXTDRAW_CALLING[playerid][1], 1);
+PlayerTextDrawBackgroundColor(playerid, TEXTDRAW_CALLING[playerid][1], 255);
+PlayerTextDrawFont(playerid, TEXTDRAW_CALLING[playerid][1], 3);
+PlayerTextDrawSetProportional(playerid, TEXTDRAW_CALLING[playerid][1], 1);
+
+TEXTDRAW_CALLING[playerid][2] = CreatePlayerTextDraw(playerid, 559.666931, 270.473968, "ime_prezime");
+PlayerTextDrawLetterSize(playerid, TEXTDRAW_CALLING[playerid][2], 0.214331, 0.791109);
+PlayerTextDrawAlignment(playerid, TEXTDRAW_CALLING[playerid][2], 2);
+PlayerTextDrawColor(playerid, TEXTDRAW_CALLING[playerid][2], -1);
+PlayerTextDrawSetShadow(playerid, TEXTDRAW_CALLING[playerid][2], 0);
+PlayerTextDrawSetOutline(playerid, TEXTDRAW_CALLING[playerid][2], 1);
+PlayerTextDrawBackgroundColor(playerid, TEXTDRAW_CALLING[playerid][2], 255);
+PlayerTextDrawFont(playerid, TEXTDRAW_CALLING[playerid][2], 2);
+PlayerTextDrawSetProportional(playerid, TEXTDRAW_CALLING[playerid][2], 1);
+
+TEXTDRAW_CALLING[playerid][3] = CreatePlayerTextDraw(playerid, 558.766479, 307.392517, "da_vrsite_razgovor pisite_vase_poruke u_chat");
+PlayerTextDrawLetterSize(playerid, TEXTDRAW_CALLING[playerid][3], 0.126000, 0.757924);
+PlayerTextDrawAlignment(playerid, TEXTDRAW_CALLING[playerid][3], 2);
+PlayerTextDrawColor(playerid, TEXTDRAW_CALLING[playerid][3], -1);
+PlayerTextDrawSetShadow(playerid, TEXTDRAW_CALLING[playerid][3], 0);
+PlayerTextDrawSetOutline(playerid, TEXTDRAW_CALLING[playerid][3], 1);
+PlayerTextDrawBackgroundColor(playerid, TEXTDRAW_CALLING[playerid][3], 255);
+PlayerTextDrawFont(playerid, TEXTDRAW_CALLING[playerid][3], 2);
+PlayerTextDrawSetProportional(playerid, TEXTDRAW_CALLING[playerid][3], 1);
+
+TEXTDRAW_CALLING[playerid][4] = CreatePlayerTextDraw(playerid, 555.866699, 327.448089, "c");
+PlayerTextDrawLetterSize(playerid, TEXTDRAW_CALLING[playerid][4], 0.242331, 3.653331);
+PlayerTextDrawAlignment(playerid, TEXTDRAW_CALLING[playerid][4], 1);
+PlayerTextDrawColor(playerid, TEXTDRAW_CALLING[playerid][4], -1);
+PlayerTextDrawSetShadow(playerid, TEXTDRAW_CALLING[playerid][4], 0);
+PlayerTextDrawBackgroundColor(playerid, TEXTDRAW_CALLING[playerid][4], 255);
+PlayerTextDrawFont(playerid, TEXTDRAW_CALLING[playerid][4], 1);
+PlayerTextDrawSetProportional(playerid, TEXTDRAW_CALLING[playerid][4], 1);
+
+
+
+
+//Total textdraws exported: 25 (0 global textdraws / 25 player textdraws) ~ 13/7/2024 ~ 22:29:55
+TDEditor V1.18 BY ADRI1

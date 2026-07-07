@@ -1,0 +1,113 @@
+//Player TextDraws: 
+
+
+new PlayerText:TEXTDRAW_NOTES[MAX_PLAYERS][11];
+
+TEXTDRAW_NOTES[playerid][0] = CreatePlayerTextDraw(playerid, 519.000000, 226.088912, "biljesk_ime");
+PlayerTextDrawLetterSize(playerid, TEXTDRAW_NOTES[playerid][0], 0.192665, 0.998517);
+PlayerTextDrawAlignment(playerid, TEXTDRAW_NOTES[playerid][0], 1);
+PlayerTextDrawColor(playerid, TEXTDRAW_NOTES[playerid][0], -1);
+PlayerTextDrawSetShadow(playerid, TEXTDRAW_NOTES[playerid][0], 0);
+PlayerTextDrawBackgroundColor(playerid, TEXTDRAW_NOTES[playerid][0], 255);
+PlayerTextDrawFont(playerid, TEXTDRAW_NOTES[playerid][0], 2);
+PlayerTextDrawSetProportional(playerid, TEXTDRAW_NOTES[playerid][0], 1);
+
+TEXTDRAW_NOTES[playerid][1] = CreatePlayerTextDraw(playerid, 519.333557, 239.362991, "linija_1_proba_text_jedan_dva");
+PlayerTextDrawLetterSize(playerid, TEXTDRAW_NOTES[playerid][1], 0.112999, 0.625185);
+PlayerTextDrawAlignment(playerid, TEXTDRAW_NOTES[playerid][1], 1);
+PlayerTextDrawColor(playerid, TEXTDRAW_NOTES[playerid][1], -1);
+PlayerTextDrawSetShadow(playerid, TEXTDRAW_NOTES[playerid][1], 0);
+PlayerTextDrawBackgroundColor(playerid, TEXTDRAW_NOTES[playerid][1], 255);
+PlayerTextDrawFont(playerid, TEXTDRAW_NOTES[playerid][1], 2);
+PlayerTextDrawSetProportional(playerid, TEXTDRAW_NOTES[playerid][1], 1);
+
+TEXTDRAW_NOTES[playerid][2] = CreatePlayerTextDraw(playerid, 519.333557, 243.263229, "linija_2_proba_text_jedan_dva");
+PlayerTextDrawLetterSize(playerid, TEXTDRAW_NOTES[playerid][2], 0.112999, 0.625185);
+PlayerTextDrawAlignment(playerid, TEXTDRAW_NOTES[playerid][2], 1);
+PlayerTextDrawColor(playerid, TEXTDRAW_NOTES[playerid][2], -1);
+PlayerTextDrawSetShadow(playerid, TEXTDRAW_NOTES[playerid][2], 0);
+PlayerTextDrawBackgroundColor(playerid, TEXTDRAW_NOTES[playerid][2], 255);
+PlayerTextDrawFont(playerid, TEXTDRAW_NOTES[playerid][2], 2);
+PlayerTextDrawSetProportional(playerid, TEXTDRAW_NOTES[playerid][2], 1);
+
+TEXTDRAW_NOTES[playerid][3] = CreatePlayerTextDraw(playerid, 519.266967, 247.448699, "linija_3_proba_text_jedan_dva");
+PlayerTextDrawLetterSize(playerid, TEXTDRAW_NOTES[playerid][3], 0.112999, 0.625185);
+PlayerTextDrawAlignment(playerid, TEXTDRAW_NOTES[playerid][3], 1);
+PlayerTextDrawColor(playerid, TEXTDRAW_NOTES[playerid][3], -1);
+PlayerTextDrawSetShadow(playerid, TEXTDRAW_NOTES[playerid][3], 0);
+PlayerTextDrawBackgroundColor(playerid, TEXTDRAW_NOTES[playerid][3], 255);
+PlayerTextDrawFont(playerid, TEXTDRAW_NOTES[playerid][3], 2);
+PlayerTextDrawSetProportional(playerid, TEXTDRAW_NOTES[playerid][3], 1);
+
+TEXTDRAW_NOTES[playerid][4] = CreatePlayerTextDraw(playerid, 519.366943, 251.763748, "linija_4_proba_text_jedan_dva");
+PlayerTextDrawLetterSize(playerid, TEXTDRAW_NOTES[playerid][4], 0.112999, 0.625185);
+PlayerTextDrawAlignment(playerid, TEXTDRAW_NOTES[playerid][4], 1);
+PlayerTextDrawColor(playerid, TEXTDRAW_NOTES[playerid][4], -1);
+PlayerTextDrawSetShadow(playerid, TEXTDRAW_NOTES[playerid][4], 0);
+PlayerTextDrawBackgroundColor(playerid, TEXTDRAW_NOTES[playerid][4], 255);
+PlayerTextDrawFont(playerid, TEXTDRAW_NOTES[playerid][4], 2);
+PlayerTextDrawSetProportional(playerid, TEXTDRAW_NOTES[playerid][4], 1);
+
+TEXTDRAW_NOTES[playerid][5] = CreatePlayerTextDraw(playerid, 519.366943, 255.964004, "linija_5_proba_text_jedan_dva");
+PlayerTextDrawLetterSize(playerid, TEXTDRAW_NOTES[playerid][5], 0.112999, 0.625185);
+PlayerTextDrawAlignment(playerid, TEXTDRAW_NOTES[playerid][5], 1);
+PlayerTextDrawColor(playerid, TEXTDRAW_NOTES[playerid][5], -1);
+PlayerTextDrawSetShadow(playerid, TEXTDRAW_NOTES[playerid][5], 0);
+PlayerTextDrawBackgroundColor(playerid, TEXTDRAW_NOTES[playerid][5], 255);
+PlayerTextDrawFont(playerid, TEXTDRAW_NOTES[playerid][5], 2);
+PlayerTextDrawSetProportional(playerid, TEXTDRAW_NOTES[playerid][5], 1);
+
+TEXTDRAW_NOTES[playerid][6] = CreatePlayerTextDraw(playerid, 519.366943, 260.064239, "linija_6_proba_text_jedan_dva");
+PlayerTextDrawLetterSize(playerid, TEXTDRAW_NOTES[playerid][6], 0.112999, 0.625185);
+PlayerTextDrawAlignment(playerid, TEXTDRAW_NOTES[playerid][6], 1);
+PlayerTextDrawColor(playerid, TEXTDRAW_NOTES[playerid][6], -1);
+PlayerTextDrawSetShadow(playerid, TEXTDRAW_NOTES[playerid][6], 0);
+PlayerTextDrawBackgroundColor(playerid, TEXTDRAW_NOTES[playerid][6], 255);
+PlayerTextDrawFont(playerid, TEXTDRAW_NOTES[playerid][6], 2);
+PlayerTextDrawSetProportional(playerid, TEXTDRAW_NOTES[playerid][6], 1);
+
+TEXTDRAW_NOTES[playerid][7] = CreatePlayerTextDraw(playerid, 558.800476, 271.678894, "poslije_stiskanja_na_'dodaj', napisite_sljedecu_liniju vase_biljeske");
+PlayerTextDrawLetterSize(playerid, TEXTDRAW_NOTES[playerid][7], 0.112999, 0.625185);
+PlayerTextDrawAlignment(playerid, TEXTDRAW_NOTES[playerid][7], 2);
+PlayerTextDrawColor(playerid, TEXTDRAW_NOTES[playerid][7], -1);
+PlayerTextDrawSetShadow(playerid, TEXTDRAW_NOTES[playerid][7], 0);
+PlayerTextDrawBackgroundColor(playerid, TEXTDRAW_NOTES[playerid][7], 255);
+PlayerTextDrawFont(playerid, TEXTDRAW_NOTES[playerid][7], 2);
+PlayerTextDrawSetProportional(playerid, TEXTDRAW_NOTES[playerid][7], 1);
+
+TEXTDRAW_NOTES[playerid][8] = CreatePlayerTextDraw(playerid, 537.000000, 344.311126, "box");
+PlayerTextDrawLetterSize(playerid, TEXTDRAW_NOTES[playerid][8], 0.000000, 1.299998);
+PlayerTextDrawTextSize(playerid, TEXTDRAW_NOTES[playerid][8], 577.000000, 0.000000);
+PlayerTextDrawAlignment(playerid, TEXTDRAW_NOTES[playerid][8], 1);
+PlayerTextDrawColor(playerid, TEXTDRAW_NOTES[playerid][8], -1);
+PlayerTextDrawUseBox(playerid, TEXTDRAW_NOTES[playerid][8], 1);
+PlayerTextDrawBoxColor(playerid, TEXTDRAW_NOTES[playerid][8], 200);
+PlayerTextDrawSetShadow(playerid, TEXTDRAW_NOTES[playerid][8], 0);
+PlayerTextDrawBackgroundColor(playerid, TEXTDRAW_NOTES[playerid][8], 255);
+PlayerTextDrawFont(playerid, TEXTDRAW_NOTES[playerid][8], 1);
+PlayerTextDrawSetProportional(playerid, TEXTDRAW_NOTES[playerid][8], 1);
+PlayerTextDrawSetSelectable(playerid, TEXTDRAW_NOTES[playerid][8], true);
+
+TEXTDRAW_NOTES[playerid][9] = CreatePlayerTextDraw(playerid, 540.966613, 344.496246, "dodaj");
+PlayerTextDrawLetterSize(playerid, TEXTDRAW_NOTES[playerid][9], 0.241666, 0.898962);
+PlayerTextDrawAlignment(playerid, TEXTDRAW_NOTES[playerid][9], 1);
+PlayerTextDrawColor(playerid, TEXTDRAW_NOTES[playerid][9], -1);
+PlayerTextDrawSetShadow(playerid, TEXTDRAW_NOTES[playerid][9], 0);
+PlayerTextDrawBackgroundColor(playerid, TEXTDRAW_NOTES[playerid][9], 255);
+PlayerTextDrawFont(playerid, TEXTDRAW_NOTES[playerid][9], 2);
+PlayerTextDrawSetProportional(playerid, TEXTDRAW_NOTES[playerid][9], 1);
+
+TEXTDRAW_NOTES[playerid][10] = CreatePlayerTextDraw(playerid, 557.366882, 320.627258, "kada_zavrsite_sa_biljeskom u_chat_upisite 'biljeska_end'");
+PlayerTextDrawLetterSize(playerid, TEXTDRAW_NOTES[playerid][10], 0.112999, 0.625185);
+PlayerTextDrawAlignment(playerid, TEXTDRAW_NOTES[playerid][10], 2);
+PlayerTextDrawColor(playerid, TEXTDRAW_NOTES[playerid][10], -1);
+PlayerTextDrawSetShadow(playerid, TEXTDRAW_NOTES[playerid][10], 0);
+PlayerTextDrawBackgroundColor(playerid, TEXTDRAW_NOTES[playerid][10], 255);
+PlayerTextDrawFont(playerid, TEXTDRAW_NOTES[playerid][10], 2);
+PlayerTextDrawSetProportional(playerid, TEXTDRAW_NOTES[playerid][10], 1);
+
+
+
+
+//Total textdraws exported: 31 (0 global textdraws / 31 player textdraws) ~ 13/7/2024 ~ 22:30:7
+TDEditor V1.18 BY ADRI1

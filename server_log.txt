@@ -1,0 +1,50 @@
+
+----------
+Loaded log file: "server_log.txt".
+----------
+
+SA-MP Dedicated Server
+----------------------
+v0.3.7-R2, (C)2005-2015 SA-MP Team
+
+[23:17:01] filterscripts = ""  (string)
+[23:17:01] 
+[23:17:01] Server Plugins
+[23:17:01] --------------
+[23:17:01]  Loading plugin: crashdetect.dll
+[23:17:01]   CrashDetect v4.15.1 is OK.
+[23:17:01]   Loaded.
+[23:17:01]  Loading plugin: streamer.dll
+[23:17:02] 
+
+*** Streamer Plugin v2.9.1 by Incognito loaded ***
+
+[23:17:02]   Loaded.
+[23:17:02]  Loading plugin: mysql.dll
+[23:17:02]  >> plugin.mysql: R41-2 successfully loaded.
+[23:17:02]   Loaded.
+[23:17:02]  Loading plugin: Encrypt.dll
+[23:17:02] 
+
+[23:17:02] ______________________________________
+
+[23:17:02]  Encrypt Plugin v0.1 loaded
+[23:17:02] ______________________________________
+
+[23:17:02]  By: Fro (c) Copyright <TBG> 2009-2010
+[23:17:02] ______________________________________
+
+[23:17:02]   Loaded.
+[23:17:02]  Loaded 4 plugins.
+
+[23:17:02] 
+[23:17:02] Ban list
+[23:17:02] --------
+[23:17:02]  Loaded: samp.ban
+[23:17:02] 
+[23:17:03] 
+[23:17:03] Filterscripts
+[23:17:03] ---------------
+[23:17:03]   Loaded 0 filterscripts.
+
+[23:17:03] Number of vehicle models: 0

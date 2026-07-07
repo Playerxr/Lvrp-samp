@@ -1,0 +1,31 @@
+Mobile phone system - modularno
+
+- grafik da relativno radi - ako je plus, da prikazuje pri kraju rast, ako je minus da pokazje pad
+- mogucnost poziva
+- mogucnost primanja poruka
+- mysql cuvanje za twitter, biljeske, lista notifikacija, pozive, poruke
+
+- BILJESKE - CUVANJE
+			- LOADANJE
+			- BRISANJE
+			- KREIRANJE
+			- EDITOVANJE
+			- CITANJE
+
+- SMS - CUVANJE BROJEVA
+		- LOADANJE BROJEVA
+		- BRISANJE BROJEVA
+		- SLANJE SMS 
+		
+- CALL - CUVANJE BROJEVA
+		- LOADANJE BROJEVA
+		- BRISANJE BROJEVA
+		- DIAL
+		- CALLING
+		- POZIVANJE
+
+- BANKA - CUVANJE
+		- LOADANJE
+		- GRAFIK
+		- UPLATA, ISPLATA, STANJE RACUNA 
+

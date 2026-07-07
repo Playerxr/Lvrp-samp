@@ -1,0 +1,221 @@
+//Player TextDraws: 
+
+
+new PlayerText:TEXTDRAW_CALLDIAL[MAX_PLAYERS][22];
+
+TEXTDRAW_CALLDIAL[playerid][0] = CreatePlayerTextDraw(playerid, 516.766845, 254.555511, "ld_beat:Chit");
+PlayerTextDrawTextSize(playerid, TEXTDRAW_CALLDIAL[playerid][0], 25.000000, 29.000000);
+PlayerTextDrawAlignment(playerid, TEXTDRAW_CALLDIAL[playerid][0], 1);
+PlayerTextDrawColor(playerid, TEXTDRAW_CALLDIAL[playerid][0], -1);
+PlayerTextDrawSetShadow(playerid, TEXTDRAW_CALLDIAL[playerid][0], 0);
+PlayerTextDrawBackgroundColor(playerid, TEXTDRAW_CALLDIAL[playerid][0], 255);
+PlayerTextDrawFont(playerid, TEXTDRAW_CALLDIAL[playerid][0], 4);
+PlayerTextDrawSetProportional(playerid, TEXTDRAW_CALLDIAL[playerid][0], 0);
+PlayerTextDrawSetSelectable(playerid, TEXTDRAW_CALLDIAL[playerid][0], true);
+
+TEXTDRAW_CALLDIAL[playerid][1] = CreatePlayerTextDraw(playerid, 516.433288, 286.140625, "ld_beat:Chit");
+PlayerTextDrawTextSize(playerid, TEXTDRAW_CALLDIAL[playerid][1], 25.000000, 29.000000);
+PlayerTextDrawAlignment(playerid, TEXTDRAW_CALLDIAL[playerid][1], 1);
+PlayerTextDrawColor(playerid, TEXTDRAW_CALLDIAL[playerid][1], -1);
+PlayerTextDrawSetShadow(playerid, TEXTDRAW_CALLDIAL[playerid][1], 0);
+PlayerTextDrawBackgroundColor(playerid, TEXTDRAW_CALLDIAL[playerid][1], 255);
+PlayerTextDrawFont(playerid, TEXTDRAW_CALLDIAL[playerid][1], 4);
+PlayerTextDrawSetProportional(playerid, TEXTDRAW_CALLDIAL[playerid][1], 0);
+PlayerTextDrawSetSelectable(playerid, TEXTDRAW_CALLDIAL[playerid][1], true);
+
+TEXTDRAW_CALLDIAL[playerid][2] = CreatePlayerTextDraw(playerid, 516.666625, 318.281402, "ld_beat:Chit");
+PlayerTextDrawTextSize(playerid, TEXTDRAW_CALLDIAL[playerid][2], 25.000000, 29.000000);
+PlayerTextDrawAlignment(playerid, TEXTDRAW_CALLDIAL[playerid][2], 1);
+PlayerTextDrawColor(playerid, TEXTDRAW_CALLDIAL[playerid][2], -1);
+PlayerTextDrawSetShadow(playerid, TEXTDRAW_CALLDIAL[playerid][2], 0);
+PlayerTextDrawBackgroundColor(playerid, TEXTDRAW_CALLDIAL[playerid][2], 255);
+PlayerTextDrawFont(playerid, TEXTDRAW_CALLDIAL[playerid][2], 4);
+PlayerTextDrawSetProportional(playerid, TEXTDRAW_CALLDIAL[playerid][2], 0);
+PlayerTextDrawSetSelectable(playerid, TEXTDRAW_CALLDIAL[playerid][2], true);
+
+TEXTDRAW_CALLDIAL[playerid][3] = CreatePlayerTextDraw(playerid, 520.132385, 353.078002, "ld_beat:Chit");
+PlayerTextDrawTextSize(playerid, TEXTDRAW_CALLDIAL[playerid][3], 18.000000, 22.000000);
+PlayerTextDrawAlignment(playerid, TEXTDRAW_CALLDIAL[playerid][3], 1);
+PlayerTextDrawColor(playerid, TEXTDRAW_CALLDIAL[playerid][3], -1);
+PlayerTextDrawSetShadow(playerid, TEXTDRAW_CALLDIAL[playerid][3], 0);
+PlayerTextDrawBackgroundColor(playerid, TEXTDRAW_CALLDIAL[playerid][3], 255);
+PlayerTextDrawFont(playerid, TEXTDRAW_CALLDIAL[playerid][3], 4);
+PlayerTextDrawSetProportional(playerid, TEXTDRAW_CALLDIAL[playerid][3], 0);
+PlayerTextDrawSetSelectable(playerid, TEXTDRAW_CALLDIAL[playerid][3], true);
+
+TEXTDRAW_CALLDIAL[playerid][4] = CreatePlayerTextDraw(playerid, 544.699951, 254.296325, "ld_beat:Chit");
+PlayerTextDrawTextSize(playerid, TEXTDRAW_CALLDIAL[playerid][4], 25.000000, 29.000000);
+PlayerTextDrawAlignment(playerid, TEXTDRAW_CALLDIAL[playerid][4], 1);
+PlayerTextDrawColor(playerid, TEXTDRAW_CALLDIAL[playerid][4], -1);
+PlayerTextDrawSetShadow(playerid, TEXTDRAW_CALLDIAL[playerid][4], 0);
+PlayerTextDrawBackgroundColor(playerid, TEXTDRAW_CALLDIAL[playerid][4], 255);
+PlayerTextDrawFont(playerid, TEXTDRAW_CALLDIAL[playerid][4], 4);
+PlayerTextDrawSetProportional(playerid, TEXTDRAW_CALLDIAL[playerid][4], 0);
+PlayerTextDrawSetSelectable(playerid, TEXTDRAW_CALLDIAL[playerid][4], true);
+
+TEXTDRAW_CALLDIAL[playerid][5] = CreatePlayerTextDraw(playerid, 544.699951, 285.798248, "ld_beat:Chit");
+PlayerTextDrawTextSize(playerid, TEXTDRAW_CALLDIAL[playerid][5], 25.000000, 29.000000);
+PlayerTextDrawAlignment(playerid, TEXTDRAW_CALLDIAL[playerid][5], 1);
+PlayerTextDrawColor(playerid, TEXTDRAW_CALLDIAL[playerid][5], -1);
+PlayerTextDrawSetShadow(playerid, TEXTDRAW_CALLDIAL[playerid][5], 0);
+PlayerTextDrawBackgroundColor(playerid, TEXTDRAW_CALLDIAL[playerid][5], 255);
+PlayerTextDrawFont(playerid, TEXTDRAW_CALLDIAL[playerid][5], 4);
+PlayerTextDrawSetProportional(playerid, TEXTDRAW_CALLDIAL[playerid][5], 0);
+PlayerTextDrawSetSelectable(playerid, TEXTDRAW_CALLDIAL[playerid][5], true);
+
+TEXTDRAW_CALLDIAL[playerid][6] = CreatePlayerTextDraw(playerid, 544.699951, 318.500244, "ld_beat:Chit");
+PlayerTextDrawTextSize(playerid, TEXTDRAW_CALLDIAL[playerid][6], 25.000000, 29.000000);
+PlayerTextDrawAlignment(playerid, TEXTDRAW_CALLDIAL[playerid][6], 1);
+PlayerTextDrawColor(playerid, TEXTDRAW_CALLDIAL[playerid][6], -1);
+PlayerTextDrawSetShadow(playerid, TEXTDRAW_CALLDIAL[playerid][6], 0);
+PlayerTextDrawBackgroundColor(playerid, TEXTDRAW_CALLDIAL[playerid][6], 255);
+PlayerTextDrawFont(playerid, TEXTDRAW_CALLDIAL[playerid][6], 4);
+PlayerTextDrawSetProportional(playerid, TEXTDRAW_CALLDIAL[playerid][6], 0);
+PlayerTextDrawSetSelectable(playerid, TEXTDRAW_CALLDIAL[playerid][6], true);
+
+TEXTDRAW_CALLDIAL[playerid][7] = CreatePlayerTextDraw(playerid, 575.192504, 318.500244, "ld_beat:Chit");
+PlayerTextDrawTextSize(playerid, TEXTDRAW_CALLDIAL[playerid][7], 25.000000, 29.000000);
+PlayerTextDrawAlignment(playerid, TEXTDRAW_CALLDIAL[playerid][7], 1);
+PlayerTextDrawColor(playerid, TEXTDRAW_CALLDIAL[playerid][7], -1);
+PlayerTextDrawSetShadow(playerid, TEXTDRAW_CALLDIAL[playerid][7], 0);
+PlayerTextDrawBackgroundColor(playerid, TEXTDRAW_CALLDIAL[playerid][7], 255);
+PlayerTextDrawFont(playerid, TEXTDRAW_CALLDIAL[playerid][7], 4);
+PlayerTextDrawSetProportional(playerid, TEXTDRAW_CALLDIAL[playerid][7], 0);
+PlayerTextDrawSetSelectable(playerid, TEXTDRAW_CALLDIAL[playerid][7], true);
+
+TEXTDRAW_CALLDIAL[playerid][8] = CreatePlayerTextDraw(playerid, 575.192504, 286.298278, "ld_beat:Chit");
+PlayerTextDrawTextSize(playerid, TEXTDRAW_CALLDIAL[playerid][8], 25.000000, 29.000000);
+PlayerTextDrawAlignment(playerid, TEXTDRAW_CALLDIAL[playerid][8], 1);
+PlayerTextDrawColor(playerid, TEXTDRAW_CALLDIAL[playerid][8], -1);
+PlayerTextDrawSetShadow(playerid, TEXTDRAW_CALLDIAL[playerid][8], 0);
+PlayerTextDrawBackgroundColor(playerid, TEXTDRAW_CALLDIAL[playerid][8], 255);
+PlayerTextDrawFont(playerid, TEXTDRAW_CALLDIAL[playerid][8], 4);
+PlayerTextDrawSetProportional(playerid, TEXTDRAW_CALLDIAL[playerid][8], 0);
+PlayerTextDrawSetSelectable(playerid, TEXTDRAW_CALLDIAL[playerid][8], true);
+
+TEXTDRAW_CALLDIAL[playerid][9] = CreatePlayerTextDraw(playerid, 575.192504, 254.096313, "ld_beat:Chit");
+PlayerTextDrawTextSize(playerid, TEXTDRAW_CALLDIAL[playerid][9], 25.000000, 29.000000);
+PlayerTextDrawAlignment(playerid, TEXTDRAW_CALLDIAL[playerid][9], 1);
+PlayerTextDrawColor(playerid, TEXTDRAW_CALLDIAL[playerid][9], -1);
+PlayerTextDrawSetShadow(playerid, TEXTDRAW_CALLDIAL[playerid][9], 0);
+PlayerTextDrawBackgroundColor(playerid, TEXTDRAW_CALLDIAL[playerid][9], 255);
+PlayerTextDrawFont(playerid, TEXTDRAW_CALLDIAL[playerid][9], 4);
+PlayerTextDrawSetProportional(playerid, TEXTDRAW_CALLDIAL[playerid][9], 0);
+PlayerTextDrawSetSelectable(playerid, TEXTDRAW_CALLDIAL[playerid][9], true);
+
+TEXTDRAW_CALLDIAL[playerid][10] = CreatePlayerTextDraw(playerid, 544.699951, 347.201995, "ld_beat:Chit");
+PlayerTextDrawTextSize(playerid, TEXTDRAW_CALLDIAL[playerid][10], 25.000000, 29.000000);
+PlayerTextDrawAlignment(playerid, TEXTDRAW_CALLDIAL[playerid][10], 1);
+PlayerTextDrawColor(playerid, TEXTDRAW_CALLDIAL[playerid][10], 8388863);
+PlayerTextDrawSetShadow(playerid, TEXTDRAW_CALLDIAL[playerid][10], 0);
+PlayerTextDrawBackgroundColor(playerid, TEXTDRAW_CALLDIAL[playerid][10], 255);
+PlayerTextDrawFont(playerid, TEXTDRAW_CALLDIAL[playerid][10], 4);
+PlayerTextDrawSetProportional(playerid, TEXTDRAW_CALLDIAL[playerid][10], 0);
+PlayerTextDrawSetSelectable(playerid, TEXTDRAW_CALLDIAL[playerid][10], true);
+
+TEXTDRAW_CALLDIAL[playerid][11] = CreatePlayerTextDraw(playerid, 525.599914, 260.288909, "1");
+PlayerTextDrawLetterSize(playerid, TEXTDRAW_CALLDIAL[playerid][11], 0.400000, 1.600000);
+PlayerTextDrawAlignment(playerid, TEXTDRAW_CALLDIAL[playerid][11], 1);
+PlayerTextDrawColor(playerid, TEXTDRAW_CALLDIAL[playerid][11], 255);
+PlayerTextDrawSetShadow(playerid, TEXTDRAW_CALLDIAL[playerid][11], 0);
+PlayerTextDrawBackgroundColor(playerid, TEXTDRAW_CALLDIAL[playerid][11], 255);
+PlayerTextDrawFont(playerid, TEXTDRAW_CALLDIAL[playerid][11], 3);
+PlayerTextDrawSetProportional(playerid, TEXTDRAW_CALLDIAL[playerid][11], 1);
+
+TEXTDRAW_CALLDIAL[playerid][12] = CreatePlayerTextDraw(playerid, 553.333374, 260.159301, "2");
+PlayerTextDrawLetterSize(playerid, TEXTDRAW_CALLDIAL[playerid][12], 0.400000, 1.600000);
+PlayerTextDrawAlignment(playerid, TEXTDRAW_CALLDIAL[playerid][12], 1);
+PlayerTextDrawColor(playerid, TEXTDRAW_CALLDIAL[playerid][12], 255);
+PlayerTextDrawSetShadow(playerid, TEXTDRAW_CALLDIAL[playerid][12], 0);
+PlayerTextDrawBackgroundColor(playerid, TEXTDRAW_CALLDIAL[playerid][12], 255);
+PlayerTextDrawFont(playerid, TEXTDRAW_CALLDIAL[playerid][12], 3);
+PlayerTextDrawSetProportional(playerid, TEXTDRAW_CALLDIAL[playerid][12], 1);
+
+TEXTDRAW_CALLDIAL[playerid][13] = CreatePlayerTextDraw(playerid, 583.799926, 260.159301, "3");
+PlayerTextDrawLetterSize(playerid, TEXTDRAW_CALLDIAL[playerid][13], 0.400000, 1.600000);
+PlayerTextDrawAlignment(playerid, TEXTDRAW_CALLDIAL[playerid][13], 1);
+PlayerTextDrawColor(playerid, TEXTDRAW_CALLDIAL[playerid][13], 255);
+PlayerTextDrawSetShadow(playerid, TEXTDRAW_CALLDIAL[playerid][13], 0);
+PlayerTextDrawBackgroundColor(playerid, TEXTDRAW_CALLDIAL[playerid][13], 255);
+PlayerTextDrawFont(playerid, TEXTDRAW_CALLDIAL[playerid][13], 3);
+PlayerTextDrawSetProportional(playerid, TEXTDRAW_CALLDIAL[playerid][13], 1);
+
+TEXTDRAW_CALLDIAL[playerid][14] = CreatePlayerTextDraw(playerid, 524.799804, 292.644439, "4");
+PlayerTextDrawLetterSize(playerid, TEXTDRAW_CALLDIAL[playerid][14], 0.400000, 1.600000);
+PlayerTextDrawAlignment(playerid, TEXTDRAW_CALLDIAL[playerid][14], 1);
+PlayerTextDrawColor(playerid, TEXTDRAW_CALLDIAL[playerid][14], 255);
+PlayerTextDrawSetShadow(playerid, TEXTDRAW_CALLDIAL[playerid][14], 0);
+PlayerTextDrawBackgroundColor(playerid, TEXTDRAW_CALLDIAL[playerid][14], 255);
+PlayerTextDrawFont(playerid, TEXTDRAW_CALLDIAL[playerid][14], 3);
+PlayerTextDrawSetProportional(playerid, TEXTDRAW_CALLDIAL[playerid][14], 1);
+
+TEXTDRAW_CALLDIAL[playerid][15] = CreatePlayerTextDraw(playerid, 553.766418, 292.229614, "5");
+PlayerTextDrawLetterSize(playerid, TEXTDRAW_CALLDIAL[playerid][15], 0.400000, 1.600000);
+PlayerTextDrawAlignment(playerid, TEXTDRAW_CALLDIAL[playerid][15], 1);
+PlayerTextDrawColor(playerid, TEXTDRAW_CALLDIAL[playerid][15], 255);
+PlayerTextDrawSetShadow(playerid, TEXTDRAW_CALLDIAL[playerid][15], 0);
+PlayerTextDrawBackgroundColor(playerid, TEXTDRAW_CALLDIAL[playerid][15], 255);
+PlayerTextDrawFont(playerid, TEXTDRAW_CALLDIAL[playerid][15], 3);
+PlayerTextDrawSetProportional(playerid, TEXTDRAW_CALLDIAL[playerid][15], 1);
+
+TEXTDRAW_CALLDIAL[playerid][16] = CreatePlayerTextDraw(playerid, 583.832824, 292.659210, "6");
+PlayerTextDrawLetterSize(playerid, TEXTDRAW_CALLDIAL[playerid][16], 0.400000, 1.600000);
+PlayerTextDrawAlignment(playerid, TEXTDRAW_CALLDIAL[playerid][16], 1);
+PlayerTextDrawColor(playerid, TEXTDRAW_CALLDIAL[playerid][16], 255);
+PlayerTextDrawSetShadow(playerid, TEXTDRAW_CALLDIAL[playerid][16], 0);
+PlayerTextDrawBackgroundColor(playerid, TEXTDRAW_CALLDIAL[playerid][16], 255);
+PlayerTextDrawFont(playerid, TEXTDRAW_CALLDIAL[playerid][16], 3);
+PlayerTextDrawSetProportional(playerid, TEXTDRAW_CALLDIAL[playerid][16], 1);
+
+TEXTDRAW_CALLDIAL[playerid][17] = CreatePlayerTextDraw(playerid, 525.599426, 324.685089, "7");
+PlayerTextDrawLetterSize(playerid, TEXTDRAW_CALLDIAL[playerid][17], 0.400000, 1.600000);
+PlayerTextDrawAlignment(playerid, TEXTDRAW_CALLDIAL[playerid][17], 1);
+PlayerTextDrawColor(playerid, TEXTDRAW_CALLDIAL[playerid][17], 255);
+PlayerTextDrawSetShadow(playerid, TEXTDRAW_CALLDIAL[playerid][17], 0);
+PlayerTextDrawBackgroundColor(playerid, TEXTDRAW_CALLDIAL[playerid][17], 255);
+PlayerTextDrawFont(playerid, TEXTDRAW_CALLDIAL[playerid][17], 3);
+PlayerTextDrawSetProportional(playerid, TEXTDRAW_CALLDIAL[playerid][17], 1);
+
+TEXTDRAW_CALLDIAL[playerid][18] = CreatePlayerTextDraw(playerid, 553.432495, 325.099914, "8");
+PlayerTextDrawLetterSize(playerid, TEXTDRAW_CALLDIAL[playerid][18], 0.400000, 1.600000);
+PlayerTextDrawAlignment(playerid, TEXTDRAW_CALLDIAL[playerid][18], 1);
+PlayerTextDrawColor(playerid, TEXTDRAW_CALLDIAL[playerid][18], 255);
+PlayerTextDrawSetShadow(playerid, TEXTDRAW_CALLDIAL[playerid][18], 0);
+PlayerTextDrawBackgroundColor(playerid, TEXTDRAW_CALLDIAL[playerid][18], 255);
+PlayerTextDrawFont(playerid, TEXTDRAW_CALLDIAL[playerid][18], 3);
+PlayerTextDrawSetProportional(playerid, TEXTDRAW_CALLDIAL[playerid][18], 1);
+
+TEXTDRAW_CALLDIAL[playerid][19] = CreatePlayerTextDraw(playerid, 583.765808, 325.559143, "9");
+PlayerTextDrawLetterSize(playerid, TEXTDRAW_CALLDIAL[playerid][19], 0.400000, 1.600000);
+PlayerTextDrawAlignment(playerid, TEXTDRAW_CALLDIAL[playerid][19], 1);
+PlayerTextDrawColor(playerid, TEXTDRAW_CALLDIAL[playerid][19], 255);
+PlayerTextDrawSetShadow(playerid, TEXTDRAW_CALLDIAL[playerid][19], 0);
+PlayerTextDrawBackgroundColor(playerid, TEXTDRAW_CALLDIAL[playerid][19], 255);
+PlayerTextDrawFont(playerid, TEXTDRAW_CALLDIAL[playerid][19], 3);
+PlayerTextDrawSetProportional(playerid, TEXTDRAW_CALLDIAL[playerid][19], 1);
+
+TEXTDRAW_CALLDIAL[playerid][20] = CreatePlayerTextDraw(playerid, 526.065734, 357.985168, "0");
+PlayerTextDrawLetterSize(playerid, TEXTDRAW_CALLDIAL[playerid][20], 0.323666, 1.313776);
+PlayerTextDrawTextSize(playerid, TEXTDRAW_CALLDIAL[playerid][20], -33.000000, 0.000000);
+PlayerTextDrawAlignment(playerid, TEXTDRAW_CALLDIAL[playerid][20], 1);
+PlayerTextDrawColor(playerid, TEXTDRAW_CALLDIAL[playerid][20], 255);
+PlayerTextDrawSetShadow(playerid, TEXTDRAW_CALLDIAL[playerid][20], 0);
+PlayerTextDrawBackgroundColor(playerid, TEXTDRAW_CALLDIAL[playerid][20], 255);
+PlayerTextDrawFont(playerid, TEXTDRAW_CALLDIAL[playerid][20], 3);
+PlayerTextDrawSetProportional(playerid, TEXTDRAW_CALLDIAL[playerid][20], 1);
+
+TEXTDRAW_CALLDIAL[playerid][21] = CreatePlayerTextDraw(playerid, 558.000061, 231.611068, "060060060");
+PlayerTextDrawLetterSize(playerid, TEXTDRAW_CALLDIAL[playerid][21], 0.350998, 1.446517);
+PlayerTextDrawAlignment(playerid, TEXTDRAW_CALLDIAL[playerid][21], 2);
+PlayerTextDrawColor(playerid, TEXTDRAW_CALLDIAL[playerid][21], -1);
+PlayerTextDrawSetShadow(playerid, TEXTDRAW_CALLDIAL[playerid][21], 0);
+PlayerTextDrawSetOutline(playerid, TEXTDRAW_CALLDIAL[playerid][21], 1);
+PlayerTextDrawBackgroundColor(playerid, TEXTDRAW_CALLDIAL[playerid][21], 255);
+PlayerTextDrawFont(playerid, TEXTDRAW_CALLDIAL[playerid][21], 3);
+PlayerTextDrawSetProportional(playerid, TEXTDRAW_CALLDIAL[playerid][21], 1);
+
+
+
+
+//Total textdraws exported: 42 (0 global textdraws / 42 player textdraws) ~ 13/7/2024 ~ 22:30:2
+TDEditor V1.18 BY ADRI1
