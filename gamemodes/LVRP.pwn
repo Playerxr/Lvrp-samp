@@ -5165,6 +5165,9 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 // [FIX MAISONS] Anti-doublon d'entrees de maisons trop proches
 #include <afrp_housefix>
 
+// [AUTOBACKUP] Sauvegarde auto parkings.cfg / casinos.cfg
+#include <afrp_autobackup>
+
 // [NGG COMPAT] DESACTIVE - suspect du hang pawncc (test bisect)
 //#include <ngg_compat>
 
@@ -12875,35 +12878,35 @@ stock fire_Load()
 	    cache_get_value_name(0,"Rank4",FireInfo[rank4],32);
 	    cache_get_value_name(0,"Rank5",FireInfo[rank5],32);
 	    cache_get_value_name(0,"Rank6",FireInfo[rank6],32);
-	    FireInfo[skin][0] = cache_get_value_name_int(0,"Skin1");
-	    FireInfo[skin][1] = cache_get_value_name_int(0,"Skin2");
-	    FireInfo[skin][2] = cache_get_value_name_int(0,"Skin3");
-	    FireInfo[skin][3] = cache_get_value_name_int(0,"Skin4");
-	    FireInfo[skin][4] = cache_get_value_name_int(0,"Skin5");
-	    FireInfo[skin][5] = cache_get_value_name_int(0,"Skin6");
-	    FireInfo[Spawn][0] = cache_get_value_name_float(0,"Spawn_x");
-	    FireInfo[Spawn][1] = cache_get_value_name_float(0,"Spawn_y");
-	    FireInfo[Spawn][2] = cache_get_value_name_float(0,"Spawn_z");
-	    FireInfo[Spawn][3] = cache_get_value_name_float(0,"Spawn_a");
-	    FireInfo[Interior] = cache_get_value_name_int(0,"Interior");
-	    FireInfo[VW] = cache_get_value_name_int(0,"id");
-	    FireInfo[Entrance][0] = cache_get_value_name_float(0,"Entrance_x");
-	    FireInfo[Entrance][1] = cache_get_value_name_float(0,"Entrance_y");
-	    FireInfo[Entrance][2] = cache_get_value_name_float(0,"Entrance_z");
-	    FireInfo[Entrance][3] = cache_get_value_name_float(0,"Entrance_a");
-	    FireInfo[Exit][0] = cache_get_value_name_float(0,"Exit_x");
-	    FireInfo[Exit][1] = cache_get_value_name_float(0,"Exit_y");
-	    FireInfo[Exit][2] = cache_get_value_name_float(0,"Exit_z");
-	    FireInfo[Exit][3] = cache_get_value_name_float(0,"Exit_a");
-	    FireInfo[Duty][0] = cache_get_value_name_float(0,"Duty_x");
-	    FireInfo[Duty][1] = cache_get_value_name_float(0,"Duty_y");
-	    FireInfo[Duty][2] = cache_get_value_name_float(0,"Duty_z");
-	    FireInfo[Equip][0] = cache_get_value_name_float(0,"Equip_x");
-	    FireInfo[Equip][1] = cache_get_value_name_float(0,"Equip_y");
-	    FireInfo[Equip][2] = cache_get_value_name_float(0,"Equip_z");
-	    FireInfo[Bell][0] = cache_get_value_name_float(0,"Bell_x");
-	    FireInfo[Bell][1] = cache_get_value_name_float(0,"Bell_y");
-	    FireInfo[Bell][2] = cache_get_value_name_float(0,"Bell_z");
+	    cache_get_value_name_int(0, "Skin1", FireInfo[skin][0]);
+	    cache_get_value_name_int(0, "Skin2", FireInfo[skin][1]);
+	    cache_get_value_name_int(0, "Skin3", FireInfo[skin][2]);
+	    cache_get_value_name_int(0, "Skin4", FireInfo[skin][3]);
+	    cache_get_value_name_int(0, "Skin5", FireInfo[skin][4]);
+	    cache_get_value_name_int(0, "Skin6", FireInfo[skin][5]);
+	    cache_get_value_name_float(0, "Spawn_x", FireInfo[Spawn][0]);
+	    cache_get_value_name_float(0, "Spawn_y", FireInfo[Spawn][1]);
+	    cache_get_value_name_float(0, "Spawn_z", FireInfo[Spawn][2]);
+	    cache_get_value_name_float(0, "Spawn_a", FireInfo[Spawn][3]);
+	    cache_get_value_name_int(0, "Interior", FireInfo[Interior]);
+	    cache_get_value_name_int(0, "id", FireInfo[VW]);
+	    cache_get_value_name_float(0, "Entrance_x", FireInfo[Entrance][0]);
+	    cache_get_value_name_float(0, "Entrance_y", FireInfo[Entrance][1]);
+	    cache_get_value_name_float(0, "Entrance_z", FireInfo[Entrance][2]);
+	    cache_get_value_name_float(0, "Entrance_a", FireInfo[Entrance][3]);
+	    cache_get_value_name_float(0, "Exit_x", FireInfo[Exit][0]);
+	    cache_get_value_name_float(0, "Exit_y", FireInfo[Exit][1]);
+	    cache_get_value_name_float(0, "Exit_z", FireInfo[Exit][2]);
+	    cache_get_value_name_float(0, "Exit_a", FireInfo[Exit][3]);
+	    cache_get_value_name_float(0, "Duty_x", FireInfo[Duty][0]);
+	    cache_get_value_name_float(0, "Duty_y", FireInfo[Duty][1]);
+	    cache_get_value_name_float(0, "Duty_z", FireInfo[Duty][2]);
+	    cache_get_value_name_float(0, "Equip_x", FireInfo[Equip][0]);
+	    cache_get_value_name_float(0, "Equip_y", FireInfo[Equip][1]);
+	    cache_get_value_name_float(0, "Equip_z", FireInfo[Equip][2]);
+	    cache_get_value_name_float(0, "Bell_x", FireInfo[Bell][0]);
+	    cache_get_value_name_float(0, "Bell_y", FireInfo[Bell][1]);
+	    cache_get_value_name_float(0, "Bell_z", FireInfo[Bell][2]);
 	}
 	fire_Update();
 	print("    .. Pompier charg.");
@@ -12923,32 +12926,32 @@ stock mecano_Load()
 	    cache_get_value_name(0,"Rank4",MecanoInfo[rank4],32);
 	    cache_get_value_name(0,"Rank5",MecanoInfo[rank5],32);
 	    cache_get_value_name(0,"Rank6",MecanoInfo[rank6],32);
-	    MecanoInfo[skin][0] = cache_get_value_name_int(0,"Skin1");
-	    MecanoInfo[skin][1] = cache_get_value_name_int(0,"Skin2");
-	    MecanoInfo[skin][2] = cache_get_value_name_int(0,"Skin3");
-	    MecanoInfo[skin][3] = cache_get_value_name_int(0,"Skin4");
-	    MecanoInfo[skin][4] = cache_get_value_name_int(0,"Skin5");
-	    MecanoInfo[skin][5] = cache_get_value_name_int(0,"Skin6");
-	    MecanoInfo[Spawn][0] = cache_get_value_name_float(0,"Spawn_x");
-	    MecanoInfo[Spawn][1] = cache_get_value_name_float(0,"Spawn_y");
-	    MecanoInfo[Spawn][2] = cache_get_value_name_float(0,"Spawn_z");
-	    MecanoInfo[Spawn][3] = cache_get_value_name_float(0,"Spawn_a");
-	    MecanoInfo[Interior] = cache_get_value_name_int(0,"Interior");
-	    MecanoInfo[VW] = cache_get_value_name_int(0,"id");
-	    MecanoInfo[Entrance][0] = cache_get_value_name_float(0,"Entrance_x");
-	    MecanoInfo[Entrance][1] = cache_get_value_name_float(0,"Entrance_y");
-	    MecanoInfo[Entrance][2] = cache_get_value_name_float(0,"Entrance_z");
-	    MecanoInfo[Entrance][3] = cache_get_value_name_float(0,"Entrance_a");
-	    MecanoInfo[Exit][0] = cache_get_value_name_float(0,"Exit_x");
-	    MecanoInfo[Exit][1] = cache_get_value_name_float(0,"Exit_y");
-	    MecanoInfo[Exit][2] = cache_get_value_name_float(0,"Exit_z");
-	    MecanoInfo[Exit][3] = cache_get_value_name_float(0,"Exit_a");
-	    MecanoInfo[Duty][0] = cache_get_value_name_float(0,"Duty_x");
-	    MecanoInfo[Duty][1] = cache_get_value_name_float(0,"Duty_y");
-	    MecanoInfo[Duty][2] = cache_get_value_name_float(0,"Duty_z");
-	    MecanoInfo[Bell][0] = cache_get_value_name_float(0,"Bell_x");
-	    MecanoInfo[Bell][1] = cache_get_value_name_float(0,"Bell_y");
-	    MecanoInfo[Bell][2] = cache_get_value_name_float(0,"Bell_z");
+	    cache_get_value_name_int(0, "Skin1", MecanoInfo[skin][0]);
+	    cache_get_value_name_int(0, "Skin2", MecanoInfo[skin][1]);
+	    cache_get_value_name_int(0, "Skin3", MecanoInfo[skin][2]);
+	    cache_get_value_name_int(0, "Skin4", MecanoInfo[skin][3]);
+	    cache_get_value_name_int(0, "Skin5", MecanoInfo[skin][4]);
+	    cache_get_value_name_int(0, "Skin6", MecanoInfo[skin][5]);
+	    cache_get_value_name_float(0, "Spawn_x", MecanoInfo[Spawn][0]);
+	    cache_get_value_name_float(0, "Spawn_y", MecanoInfo[Spawn][1]);
+	    cache_get_value_name_float(0, "Spawn_z", MecanoInfo[Spawn][2]);
+	    cache_get_value_name_float(0, "Spawn_a", MecanoInfo[Spawn][3]);
+	    cache_get_value_name_int(0, "Interior", MecanoInfo[Interior]);
+	    cache_get_value_name_int(0, "id", MecanoInfo[VW]);
+	    cache_get_value_name_float(0, "Entrance_x", MecanoInfo[Entrance][0]);
+	    cache_get_value_name_float(0, "Entrance_y", MecanoInfo[Entrance][1]);
+	    cache_get_value_name_float(0, "Entrance_z", MecanoInfo[Entrance][2]);
+	    cache_get_value_name_float(0, "Entrance_a", MecanoInfo[Entrance][3]);
+	    cache_get_value_name_float(0, "Exit_x", MecanoInfo[Exit][0]);
+	    cache_get_value_name_float(0, "Exit_y", MecanoInfo[Exit][1]);
+	    cache_get_value_name_float(0, "Exit_z", MecanoInfo[Exit][2]);
+	    cache_get_value_name_float(0, "Exit_a", MecanoInfo[Exit][3]);
+	    cache_get_value_name_float(0, "Duty_x", MecanoInfo[Duty][0]);
+	    cache_get_value_name_float(0, "Duty_y", MecanoInfo[Duty][1]);
+	    cache_get_value_name_float(0, "Duty_z", MecanoInfo[Duty][2]);
+	    cache_get_value_name_float(0, "Bell_x", MecanoInfo[Bell][0]);
+	    cache_get_value_name_float(0, "Bell_y", MecanoInfo[Bell][1]);
+	    cache_get_value_name_float(0, "Bell_z", MecanoInfo[Bell][2]);
 	}
 	mecano_Update();
 	print("    .. Mcanicien charg.");
@@ -12994,25 +12997,25 @@ stock biker_Load()
 	    cache_get_value_name(0,"Rank4",BikerInfo[rank4],32);
 	    cache_get_value_name(0,"Rank5",BikerInfo[rank5],32);
 	    cache_get_value_name(0,"Rank6",BikerInfo[rank6],32);
-	    BikerInfo[skin][0] = cache_get_value_name_int(0,"Skin1");
-	    BikerInfo[skin][1] = cache_get_value_name_int(0,"Skin2");
-	    BikerInfo[skin][2] = cache_get_value_name_int(0,"Skin3");
-	    BikerInfo[skin][3] = cache_get_value_name_int(0,"Skin4");
-	    BikerInfo[skin][4] = cache_get_value_name_int(0,"Skin5");
-	    BikerInfo[skin][5] = cache_get_value_name_int(0,"Skin6");
-	    BikerInfo[Spawn][0] = cache_get_value_name_float(0,"Spawn_x");
-	    BikerInfo[Spawn][1] = cache_get_value_name_float(0,"Spawn_y");
-	    BikerInfo[Spawn][2] = cache_get_value_name_float(0,"Spawn_z");
-	    BikerInfo[Spawn][3] = cache_get_value_name_float(0,"Spawn_a");
-	    BikerInfo[Interior] = cache_get_value_name_int(0,"Interior");
-	    BikerInfo[Entrance][0] = cache_get_value_name_float(0,"Entrance_x");
-	    BikerInfo[Entrance][1] = cache_get_value_name_float(0,"Entrance_y");
-	    BikerInfo[Entrance][2] = cache_get_value_name_float(0,"Entrance_z");
-	    BikerInfo[Entrance][3] = cache_get_value_name_float(0,"Entrance_a");
-	    BikerInfo[Exit][0] = cache_get_value_name_float(0,"Exit_x");
-	    BikerInfo[Exit][1] = cache_get_value_name_float(0,"Exit_y");
-	    BikerInfo[Exit][2] = cache_get_value_name_float(0,"Exit_z");
-	    BikerInfo[Exit][3] = cache_get_value_name_float(0,"Exit_a");
+	    cache_get_value_name_int(0, "Skin1", BikerInfo[skin][0]);
+	    cache_get_value_name_int(0, "Skin2", BikerInfo[skin][1]);
+	    cache_get_value_name_int(0, "Skin3", BikerInfo[skin][2]);
+	    cache_get_value_name_int(0, "Skin4", BikerInfo[skin][3]);
+	    cache_get_value_name_int(0, "Skin5", BikerInfo[skin][4]);
+	    cache_get_value_name_int(0, "Skin6", BikerInfo[skin][5]);
+	    cache_get_value_name_float(0, "Spawn_x", BikerInfo[Spawn][0]);
+	    cache_get_value_name_float(0, "Spawn_y", BikerInfo[Spawn][1]);
+	    cache_get_value_name_float(0, "Spawn_z", BikerInfo[Spawn][2]);
+	    cache_get_value_name_float(0, "Spawn_a", BikerInfo[Spawn][3]);
+	    cache_get_value_name_int(0, "Interior", BikerInfo[Interior]);
+	    cache_get_value_name_float(0, "Entrance_x", BikerInfo[Entrance][0]);
+	    cache_get_value_name_float(0, "Entrance_y", BikerInfo[Entrance][1]);
+	    cache_get_value_name_float(0, "Entrance_z", BikerInfo[Entrance][2]);
+	    cache_get_value_name_float(0, "Entrance_a", BikerInfo[Entrance][3]);
+	    cache_get_value_name_float(0, "Exit_x", BikerInfo[Exit][0]);
+	    cache_get_value_name_float(0, "Exit_y", BikerInfo[Exit][1]);
+	    cache_get_value_name_float(0, "Exit_z", BikerInfo[Exit][2]);
+	    cache_get_value_name_float(0, "Exit_a", BikerInfo[Exit][3]);
 	}
 	biker_Update();
 	print("    .. Biker charge.");
@@ -29660,6 +29663,8 @@ public OnGameModeInit()
     Parking_Init();
     // Init systeme casino (charge scriptfiles/casinos.cfg)
     Casino_Init();
+    // Sauvegarde auto de parkings.cfg/casinos.cfg (voir afrp_autobackup.inc)
+    AutoBackup_Init();
 
     gServerReload = 0;
 	return 1;
