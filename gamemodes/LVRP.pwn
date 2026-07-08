@@ -5171,6 +5171,9 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 // [ENCHERE] Systeme d'enchere sur les maisons
 #include <afrp_houseauction>
 
+// [ECONOMIE] Formatage des montants avec separateurs de milliers
+#include <afrp_moneyformat>
+
 // [NGG COMPAT] DESACTIVE - suspect du hang pawncc (test bisect)
 //#include <ngg_compat>
 
@@ -19758,8 +19761,22 @@ stock player_CheckInteraction(playerid)
 		}
 		else if(actor[tmpId][variable] == 10)//Ammunation
 		{
-			format(BizString, sizeof(BizString), "{FFFFFF}Arme\t{FFFFFF}Balle(s)\t{FFFFFF}Prix\nColt 45\t100\t$%d\nSilencieux\t100\t$%d\nRifle\t40\t$%d\nPoing am�ricain\t/\t$%d\nGilet par balles\t/\t$%d\nLaser rouge\t/\t$%d\nLaser bleu\t/\t$%d\nLaser rose\t/\t$%d\nLaser orange\t/\t$%d\nLaser vert\t/\t$%d\nLaser jaune\t/\t$%d\nDesert Eagle\t50\t$%d\nFusil a pompe sci�\t30\t$%d\nShotgun\t30\t$%d\nCombat Shotgun\t30\t$%d\nMicro Uzi\t80\t$%d\nTec9\t80\t$%d\nMP5\t80\t$%d\nAK-47\t60\t$%d\nSniper Rifle\t1\t$%d",
-			Ammu_GetPrice(bizid,0),Ammu_GetPrice(bizid,1),Ammu_GetPrice(bizid,2),bizz[bizid][itemCost][3],bizz[bizid][itemCost][4],bizz[bizid][itemCost][5],bizz[bizid][itemCost][6],bizz[bizid][itemCost][7],bizz[bizid][itemCost][8],bizz[bizid][itemCost][9],bizz[bizid][itemCost][10],Ammu_GetPrice(bizid,11),Ammu_GetPrice(bizid,12),Ammu_GetPrice(bizid,13),Ammu_GetPrice(bizid,14),Ammu_GetPrice(bizid,15),Ammu_GetPrice(bizid,16),Ammu_GetPrice(bizid,17),Ammu_GetPrice(bizid,18),Ammu_GetPrice(bizid,19));
+			// [ECONOMIE ARMES] Prix formates avec separateurs de milliers (voir afrp_moneyformat.inc)
+			new ammuP0[16],ammuP1[16],ammuP2[16],ammuP11[16],ammuP12[16],ammuP13[16],ammuP14[16],ammuP15[16],ammuP16[16],ammuP17[16],ammuP18[16],ammuP19[16];
+			FormatMoney(Ammu_GetPrice(bizid,0), ammuP0, 16);
+			FormatMoney(Ammu_GetPrice(bizid,1), ammuP1, 16);
+			FormatMoney(Ammu_GetPrice(bizid,2), ammuP2, 16);
+			FormatMoney(Ammu_GetPrice(bizid,11), ammuP11, 16);
+			FormatMoney(Ammu_GetPrice(bizid,12), ammuP12, 16);
+			FormatMoney(Ammu_GetPrice(bizid,13), ammuP13, 16);
+			FormatMoney(Ammu_GetPrice(bizid,14), ammuP14, 16);
+			FormatMoney(Ammu_GetPrice(bizid,15), ammuP15, 16);
+			FormatMoney(Ammu_GetPrice(bizid,16), ammuP16, 16);
+			FormatMoney(Ammu_GetPrice(bizid,17), ammuP17, 16);
+			FormatMoney(Ammu_GetPrice(bizid,18), ammuP18, 16);
+			FormatMoney(Ammu_GetPrice(bizid,19), ammuP19, 16);
+			format(BizString, sizeof(BizString), "{FFFFFF}Arme\t{FFFFFF}Balle(s)\t{FFFFFF}Prix\nColt 45\t100\t$%s\nSilencieux\t100\t$%s\nRifle\t40\t$%s\nPoing am�ricain\t/\t$%d\nGilet par balles\t/\t$%d\nLaser rouge\t/\t$%d\nLaser bleu\t/\t$%d\nLaser rose\t/\t$%d\nLaser orange\t/\t$%d\nLaser vert\t/\t$%d\nLaser jaune\t/\t$%d\nDesert Eagle\t50\t$%s\nFusil a pompe sci�\t30\t$%s\nShotgun\t30\t$%s\nCombat Shotgun\t30\t$%s\nMicro Uzi\t80\t$%s\nTec9\t80\t$%s\nMP5\t80\t$%s\nAK-47\t60\t$%s\nSniper Rifle\t1\t$%s",
+			ammuP0,ammuP1,ammuP2,bizz[bizid][itemCost][3],bizz[bizid][itemCost][4],bizz[bizid][itemCost][5],bizz[bizid][itemCost][6],bizz[bizid][itemCost][7],bizz[bizid][itemCost][8],bizz[bizid][itemCost][9],bizz[bizid][itemCost][10],ammuP11,ammuP12,ammuP13,ammuP14,ammuP15,ammuP16,ammuP17,ammuP18,ammuP19);
 			ShowPlayerDialog(playerid, 97, DIALOG_STYLE_TABLIST_HEADERS,"{2B6AFF} Ammunation {FFFFFF} Achats",BizString,"Valider","Annuler");
 		}
 		else if(actor[tmpId][variable] == 11)//Sexe shop
@@ -33805,7 +33822,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 		else if(listitem>=0 && listitem <= 8 || listitem>=10 && listitem <= 19)
 			{bizz_Set(player_Variable[playerid],listitem+1); player_Variable[playerid]=-1; msg_Client(playerid,COLOR_BIZ,"{2B6AFF} Biz {FFFFFF} Votre entreprise a t cr."); return 1;}
 		else if(listitem==9)
-		    {pay_tempPrice[playerid] = 30000;}
+		    {pay_tempPrice[playerid] = 800000000;}
         pay_tempType[playerid] = 20;
 		pay_tempArticle[playerid] = listitem+1;
 		pay_tempProducts[playerid] = player_Variable[playerid]; // Je m'en serre pour l'id du biz ^^
@@ -50851,7 +50868,7 @@ public OnPlayerCommandText(playerid, cmdtext[])
 				if(bizz[var][variable] == 0)
 				{
 				    new string2[512];
-					format(string,sizeof(string),"{FFFFFF}- 27/7 ({00FF00}Gratuit{FFFFFF})\n- Binco ({00FF00}Gratuit{FFFFFF})\n- Tabac ({00FF00}Gratuit{FFFFFF})\n- Epicerie ({00FF00}Gratuit{FFFFFF})\n- Donuts ({00FF00}Gratuit{FFFFFF})\n- Pizza ({00FF00}Gratuit{FFFFFF})\n- Burger ({00FF00}Gratuit{FFFFFF})\n- Clukin Bell ({00FF00}Gratuit{FFFFFF})\n- Disquaire ({00FF00}Gratuit{FFFFFF})\n- Amunation ({FF0000}$30.000{FFFFFF})");
+					format(string,sizeof(string),"{FFFFFF}- 27/7 ({00FF00}Gratuit{FFFFFF})\n- Binco ({00FF00}Gratuit{FFFFFF})\n- Tabac ({00FF00}Gratuit{FFFFFF})\n- Epicerie ({00FF00}Gratuit{FFFFFF})\n- Donuts ({00FF00}Gratuit{FFFFFF})\n- Pizza ({00FF00}Gratuit{FFFFFF})\n- Burger ({00FF00}Gratuit{FFFFFF})\n- Clukin Bell ({00FF00}Gratuit{FFFFFF})\n- Disquaire ({00FF00}Gratuit{FFFFFF})\n- Amunation ({FF0000}$800.000.000{FFFFFF})");
 					format(string2,sizeof(string2),"\n- Sexe Shop ({00FF00}Gratuit{FFFFFF})\n- Bar ({00FF00}Gratuit{FFFFFF})\n- Discotheque ({00FF00}Gratuit{FFFFFF})\n- Gym ({00FF00}Gratuit{FFFFFF})\n- Didier Sachs ({00FF00}Gratuit{FFFFFF})\n- Prolaps ({00FF00}Gratuit{FFFFFF})\n- Suburban ({00FF00}Gratuit{FFFFFF})\n- Victim ({00FF00}Gratuit{FFFFFF})\n- Zip ({00FF00}Gratuit{FFFFFF})\n- Restaurant ({00FF00}Gratuit{FFFFFF})");
 					format(string,sizeof(string),"%s%s%s",string,string2);
 				    ShowPlayerDialog(playerid,62,DIALOG_STYLE_LIST,"{2B6AFF} Biz {FFFFFF} Choix du biz",string,"Valider","Quitter");
