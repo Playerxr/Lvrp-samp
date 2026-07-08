@@ -5175,6 +5175,9 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 // [ENCHERE] Systeme d'enchere sur les maisons
 #include <afrp_houseauction>
 
+// [ENCHERE] Systeme d'enchere sur les biz (commerces)
+#include <afrp_bizauction>
+
 // [NGG COMPAT] DESACTIVE - suspect du hang pawncc (test bisect)
 //#include <ngg_compat>
 
@@ -27622,10 +27625,13 @@ stock fbi_Save()
 
 public governement_Load()
 {
-	// [FIX] Meme bug que armee_Load : boucle sur 3 lignes sans v�rifier qu'elles existent.
+	// [FIX] Boucle plafonnee a 3 alors que governement[4] a 4 emplacements
+	// (0=Presidence, 1=Mairie1, 2=Mairie2, 3=SA) : le 4e (SA), utilise pour
+	// les salaires des jobs (governement[3][salaryJob]), n'etait jamais
+	// charge depuis la DB -> salaires toujours a 0 dans /jobs.
 	new count = 0;
 	cache_get_row_count(count);
-	for (new i=0; i<3 && i<count; i++)
+	for (new i=0; i<4 && i<count; i++)
 	{
 		cache_get_value_name(i,"rank1",governement[i][rank1], 32);
 		cache_get_value_name(i,"rank2",governement[i][rank2], 32);
@@ -29789,6 +29795,8 @@ public OnGameModeInit()
     AutoBackup_Init();
     // Systeme d'enchere sur les maisons (voir afrp_houseauction.inc)
     HouseAuction_Init();
+    // Systeme d'enchere sur les biz (voir afrp_bizauction.inc)
+    BizAuction_Init();
 
     gServerReload = 0;
 	return 1;
@@ -50848,6 +50856,9 @@ public OnPlayerCommandText(playerid, cmdtext[])
 			}
 			if(bizz[var][owned] == 0)
         	{
+        		// [ENCHERE] Achat instantane bloque si une enchere est en cours
+        		if(bizAuction_Active[var])
+        			{return msg_Client(playerid,COLOR_INFO,"{CF9756} Info {FFFFFF} Ce biz est en cours d'enchere, utilisez /enchere <montant>.");}
       		 	pay_tempPrice[playerid] = bizz[var][price];
 				pay_tempType[playerid] = 12;
 				pay_tempArticle[playerid] = 1;
@@ -69548,14 +69559,17 @@ public OnPlayerCommandText(playerid, cmdtext[])
         return Emotes_ShowCategories(playerid);
     }
 
-    // [ENCHERE] /enchere <montant> : encherir sur la maison a proximite
-    // (voir afrp_houseauction.inc)
+    // [ENCHERE] /enchere <montant> : encherir sur la maison ou le biz a
+    // proximite (voir afrp_houseauction.inc / afrp_bizauction.inc)
     if(strcmp(cmd, "/enchere", true) == 0)
     {
         tmp = strtok(cmdtext, idx);
         if(!strlen(tmp))
             return msg_Client(playerid, COLOR_WHITE, "{A98500} Usage {FFFFB2} /enchere <montant>");
-        return HouseAuction_Cmd(playerid, strval(tmp));
+        new enchereMontant = strval(tmp);
+        if(HouseAuction_Cmd(playerid, enchereMontant)) return 1;
+        if(BizAuction_Cmd(playerid, enchereMontant)) return 1;
+        return msg_Client(playerid, COLOR_INFO, "{CF9756} Info {FFFFFF} Vous n'etes pas a cote d'une maison ou d'un biz a vendre.");
     }
     // [ENCHERE ADMIN] /adminenchere <id maison> <prix depart> [duree_min] :
     // lance une enchere a distance sur une maison (voir /maison(s) pour les id)

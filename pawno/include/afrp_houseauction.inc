@@ -199,16 +199,18 @@ public HouseAuction_Tick()
 	return 1;
 }
 
+// Renvoie 0 si aucune maison a proximite (laisse la main a BizAuction_Cmd
+// via la commande /enchere partagee), sinon traite l'enchere et renvoie 1.
 stock HouseAuction_Cmd(playerid, montant)
 {
+	new hid = HouseAuction_FindNearby(playerid);
+	if(hid == -1)
+		return 0;
+
 	if(PlayerInfo[playerid][pIdentie] == 0)
 		return msg_Client(playerid, COLOR_INFO, "{CF9756} Info {FFFFFF} Vous devez avoir une carte d'identite pour encherir.");
 	if(PlayerInfo[playerid][pHousekey1] != -1 && PlayerInfo[playerid][pHousekey2] != -1 && PlayerInfo[playerid][pHousekey3] != -1)
 		return msg_Client(playerid, COLOR_INFO, "{CF9756} Info {FFFFFF} Vous avez deja 3 maisons.");
-
-	new hid = HouseAuction_FindNearby(playerid);
-	if(hid == -1)
-		return msg_Client(playerid, COLOR_HOUSE, "{00C600} Maison {FFFFFF} Vous n'etes pas a cote d'une maison a vendre.");
 
 	if(montant <= 0)
 		return msg_Client(playerid, COLOR_WHITE, "{A98500} Usage {FFFFB2} /enchere <montant>");
