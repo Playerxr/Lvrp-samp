@@ -115,7 +115,7 @@ stock HouseAuction_Reset(hid)
 	houseAuction_Active[hid] = 0;
 	houseAuction_TimeLeft[hid] = 0;
 	houseAuction_CurrentBid[hid] = 0;
-	houseAuction_BidderSQLID[hid] = 0;
+	houseAuction_BidderSQLID[hid] = -1;
 	houseAuction_BidderName[hid][0] = EOS;
 	if(_:houseAuction_Label[hid] != _:INVALID_3DTEXT_ID)
 	{
@@ -127,6 +127,14 @@ stock HouseAuction_Reset(hid)
 
 stock HouseAuction_Resolve(hid)
 {
+	// [ENCHERE ADMIN] Aucune offre reelle n'a ete faite -> annule simplement
+	if(houseAuction_BidderSQLID[hid] == -1)
+	{
+		printf("[ENCHERE] Maison id %d : enchere terminee sans aucune offre.", hid);
+		HouseAuction_Reset(hid);
+		return 1;
+	}
+
 	new winnerSQLID = houseAuction_BidderSQLID[hid];
 	new winAmount = houseAuction_CurrentBid[hid];
 	new winnerName[MAX_PLAYER_NAME];
@@ -203,7 +211,11 @@ stock HouseAuction_Cmd(playerid, montant)
 	if(montant <= 0)
 		return msg_Client(playerid, COLOR_WHITE, "{A98500} Usage {FFFFB2} /enchere <montant>");
 
-	new minBid = houseAuction_Active[hid] ? (houseAuction_CurrentBid[hid] + HOUSEAUCTION_MIN_INCREMENT) : house[hid][price];
+	// Si l'enchere a ete lancee par un admin sans encore aucune offre reelle
+	// (houseAuction_CurrentBid == 0), le prix de depart reste house[hid][price]
+	new minBid = (houseAuction_Active[hid] && houseAuction_CurrentBid[hid] > 0)
+		? (houseAuction_CurrentBid[hid] + HOUSEAUCTION_MIN_INCREMENT)
+		: house[hid][price];
 	if(montant < minBid)
 	{
 		new msg[128];
@@ -233,5 +245,37 @@ stock HouseAuction_Cmd(playerid, montant)
 		if(PlayerToPoint(30.0, i, house[hid][pos][0], house[hid][pos][1], house[hid][pos][2]))
 			msg_Client(i, COLOR_HOUSE, announceMsg);
 	}
+	return 1;
+}
+
+// [ENCHERE ADMIN] /adminenchere <id> <prix depart> [duree_min] : lance une
+// enchere a distance sans etre physiquement devant la maison. Aucune offre
+// n'est prelevee tant qu'aucun joueur n'a reellement enchri (voir sentinelle
+// houseAuction_BidderSQLID == -1) : si personne n'enchrit avant la fin du
+// delai, l'enchere est simplement annulee.
+stock HouseAuction_AdminStart(playerid, hid, startPrice, durationSec)
+{
+	if(hid < 0 || hid >= totalHouses)
+		return msg_Client(playerid, COLOR_INFO, "{CF9756} Info {FFFFFF} Maison invalide.");
+	if(house[hid][owned] == 1)
+		return msg_Client(playerid, COLOR_INFO, "{CF9756} Info {FFFFFF} Cette maison appartient deja a quelqu'un.");
+	if(houseAuction_Active[hid])
+		return msg_Client(playerid, COLOR_INFO, "{CF9756} Info {FFFFFF} Une enchere est deja en cours sur cette maison.");
+	if(startPrice <= 0)
+		return msg_Client(playerid, COLOR_WHITE, "{A98500} Usage {FFFFB2} /adminenchere <id maison> <prix depart> [duree_min]");
+
+	house[hid][price] = startPrice;
+	houseAuction_Active[hid] = 1;
+	houseAuction_TimeLeft[hid] = (durationSec > 0) ? durationSec : HOUSEAUCTION_DURATION;
+	houseAuction_CurrentBid[hid] = 0;
+	houseAuction_BidderSQLID[hid] = -1;
+	format(houseAuction_BidderName[hid], MAX_PLAYER_NAME, "Aucune offre");
+
+	HouseAuction_UpdateLabel(hid);
+
+	new adminMsg[160];
+	format(adminMsg, sizeof(adminMsg), "{FFD700}[Enchere]{FFFFFF} Un admin a lance une enchere sur la maison #%d ! Prix de depart : $%d.", hid, startPrice);
+	SendClientMessageToAll(0xFFD700FF, adminMsg);
+	msg_Client(playerid, COLOR_HOUSE, "{00C600} Maison {FFFFFF} Enchere lancee avec succes.");
 	return 1;
 }

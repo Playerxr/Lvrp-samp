@@ -36685,7 +36685,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 				}
 				else if(bizz[bizid][typeZ] == 10) // Ammunation
         	    {
-        	        format(string, sizeof(string), "1. Colt 45 ($%d)\n2. Silencieux ($%d)\n3. Rifle ($%d)\n4. Poing amricain ($%d)\n5. Gilet par balles ($%d)\n6. Laser rouge ($%d)\n7. Laser bleu ($%d)\n8. Laser rose ($%d)\n9. Laser orange ($%d)\n10. Laser vert ($%d)\n11. Laser jaune ($%d)\n12. Desert Eagle ($%d)\n13. Fusil a pompe scié ($%d)\n14. Shotgun ($%d)\n15. Combat Shotgun ($%d)\n16. Micro Uzi ($%d)\n17. Tec9 ($%d)\n18. MP5 ($%d)\n19. AK-47 ($%d)\n20. Sniper Rifle ($%d)",
+        	        format(string, sizeof(string), "1. Colt 45 ($%d)\n2. Silencieux ($%d)\n3. Rifle ($%d)\n4. Poing amricain ($%d)\n5. Gilet par balles ($%d)\n6. Laser rouge ($%d)\n7. Laser bleu ($%d)\n8. Laser rose ($%d)\n9. Laser orange ($%d)\n10. Laser vert ($%d)\n11. Laser jaune ($%d)\n12. Desert Eagle ($%d)\n13. Fusil a pompe sciï¿½ ($%d)\n14. Shotgun ($%d)\n15. Combat Shotgun ($%d)\n16. Micro Uzi ($%d)\n17. Tec9 ($%d)\n18. MP5 ($%d)\n19. AK-47 ($%d)\n20. Sniper Rifle ($%d)",
 					bizz[bizid][itemCost][0],bizz[bizid][itemCost][1],bizz[bizid][itemCost][2],bizz[bizid][itemCost][3],bizz[bizid][itemCost][4],bizz[bizid][itemCost][5],bizz[bizid][itemCost][6],bizz[bizid][itemCost][7],bizz[bizid][itemCost][8],bizz[bizid][itemCost][9],bizz[bizid][itemCost][10],
 					bizz[bizid][itemCost][11],bizz[bizid][itemCost][12],bizz[bizid][itemCost][13],bizz[bizid][itemCost][14],bizz[bizid][itemCost][15],bizz[bizid][itemCost][16],bizz[bizid][itemCost][17],bizz[bizid][itemCost][18],bizz[bizid][itemCost][19]);
 			    	ShowPlayerDialog(playerid, 108, DIALOG_STYLE_LIST,"{2B6AFF} Biz {FFFFFF} Edit - Changer le prix des articles",string,"Selectionner","Annuler");
@@ -37761,7 +37761,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 				}
 				else if(bizz[bizid][typeZ] == 10) // Ammunation
         	    {
-        	        format(BizString, sizeof(BizString), "1. Colt 45 ($%d)\n2. Silencieux ($%d)\n3. Rifle ($%d)\n4. Poing amricain ($%d)\n5. Gilet par balles ($%d)\n6. Laser rouge ($%d)\n7. Laser bleu ($%d)\n8. Laser rose ($%d)\n9. Laser orange ($%d)\n10. Laser vert ($%d)\n11. Laser jaune ($%d)\n12. Desert Eagle ($%d)\n13. Fusil a pompe scié ($%d)\n14. Shotgun ($%d)\n15. Combat Shotgun ($%d)\n16. Micro Uzi ($%d)\n17. Tec9 ($%d)\n18. MP5 ($%d)\n19. AK-47 ($%d)\n20. Sniper Rifle ($%d)",
+        	        format(BizString, sizeof(BizString), "1. Colt 45 ($%d)\n2. Silencieux ($%d)\n3. Rifle ($%d)\n4. Poing amricain ($%d)\n5. Gilet par balles ($%d)\n6. Laser rouge ($%d)\n7. Laser bleu ($%d)\n8. Laser rose ($%d)\n9. Laser orange ($%d)\n10. Laser vert ($%d)\n11. Laser jaune ($%d)\n12. Desert Eagle ($%d)\n13. Fusil a pompe sciï¿½ ($%d)\n14. Shotgun ($%d)\n15. Combat Shotgun ($%d)\n16. Micro Uzi ($%d)\n17. Tec9 ($%d)\n18. MP5 ($%d)\n19. AK-47 ($%d)\n20. Sniper Rifle ($%d)",
 					bizz[bizid][itemCost][0],bizz[bizid][itemCost][1],bizz[bizid][itemCost][2],bizz[bizid][itemCost][3],bizz[bizid][itemCost][4],bizz[bizid][itemCost][5],bizz[bizid][itemCost][6],bizz[bizid][itemCost][7],bizz[bizid][itemCost][8],bizz[bizid][itemCost][9],bizz[bizid][itemCost][10],
 					bizz[bizid][itemCost][11],bizz[bizid][itemCost][12],bizz[bizid][itemCost][13],bizz[bizid][itemCost][14],bizz[bizid][itemCost][15],bizz[bizid][itemCost][16],bizz[bizid][itemCost][17],bizz[bizid][itemCost][18],bizz[bizid][itemCost][19]);
 			    	ShowPlayerDialog(playerid, 98, DIALOG_STYLE_LIST,"{2B6AFF} Biz {FFFFFF} Gestion - Prix des articles",BizString,"Valider","Annuler");
@@ -49772,6 +49772,76 @@ public OnPlayerCommandText(playerid, cmdtext[])
 		if(tcount == 0)
 			strcat(tlist, "{CF9756}Aucun territoire defini.\n", sizeof(tlist));
 		ShowPlayerDialog(playerid, 7100, DIALOG_STYLE_MSGBOX, "{FFAA00}Territoires", tlist, "OK", "");
+		return 1;
+	}
+	// [TURF DEBUG] /turfdebug <id> : diagnostic en direct pour comprendre
+	// pourquoi une capture ne progresse pas (defenseurs presents, cooldown...)
+	if(strcmp(cmd, "/turfdebug", true) == 0)
+	{
+		if(PlayerInfo[playerid][pAdmin] < 1)
+			return msg_Client(playerid, COLOR_NOACCES, "{FF0069}Reserve aux admins.");
+		tmp = strtok(cmdtext, idx);
+		if(!strlen(tmp))
+			return msg_Client(playerid, COLOR_WHITE, "{A98500} Usage {FFFFB2} /turfdebug <id> (voir /turfs pour les id)");
+		new dbgId = strval(tmp);
+		if(dbgId < 0 || dbgId >= MAX_TURFS || Turfs[dbgId][tUsed] != 1)
+			return msg_Client(playerid, COLOR_INFO, "{CF9756} Info {FFFFFF} Territoire invalide.");
+
+		new Float:dpx, Float:dpy, Float:dpz;
+		new dbgDefenders = 0, dbgAttackers = 0, dbgAttackerFacID = -1;
+		for(new p = 0; p < MAX_PLAYERS; p++)
+		{
+			if(!IsPlayerConnected(p) || IsPlayerNPC(p)) continue;
+			if(gPlayerLogged[p] != 1) continue;
+			new pMem = PlayerInfo[p][pMember];
+			if(pMem <= 0 || pMem >= MAX_FACTION) continue;
+			if(FactionInfo[pMem][fCreate] != 1) continue;
+			GetPlayerPos(p, dpx, dpy, dpz);
+			if(!(dpx >= Turfs[dbgId][tMinX] && dpx <= Turfs[dbgId][tMaxX] &&
+				 dpy >= Turfs[dbgId][tMinY] && dpy <= Turfs[dbgId][tMaxY])) continue;
+			if(medic_PlayerNeedMedic[p] == 2) continue;
+			if(strcmp(FactionInfo[pMem][fName], Turfs[dbgId][tOwner], true) == 0)
+				dbgDefenders++;
+			else
+			{
+				dbgAttackers++;
+				dbgAttackerFacID = pMem;
+			}
+		}
+
+		new now2 = gettime();
+		new currentCooldown2 = (gangWar_Active == 1) ? GANGWAR_COOLDOWN : TURF_CAPTURE_COOLDOWN;
+		new cdLeft = currentCooldown2 - (now2 - Turfs[dbgId][tLastCapture]);
+		new currentTicks2 = (gangWar_Active == 1) ? GANGWAR_CAPTURE_TICKS : TURF_CAPTURE_TICKS;
+
+		// [FIX] Pawn ne supporte pas bien le ternaire melangeant array/string
+		// litteral -> resolution via if/else dans des buffers dedies
+		new dbgAttackerFacName[64], dbgCapturingFacName[64], dbgCdStatus[32], dbgConclusion[128];
+		if(dbgAttackerFacID != -1) format(dbgAttackerFacName, 64, "%s", FactionInfo[dbgAttackerFacID][fName]);
+		else format(dbgAttackerFacName, 64, "aucune");
+		if(turf_CaptureFacID[dbgId] != -1) format(dbgCapturingFacName, 64, "%s", FactionInfo[turf_CaptureFacID[dbgId]][fName]);
+		else format(dbgCapturingFacName, 64, "aucune");
+		if(cdLeft > 0) format(dbgCdStatus, 32, "ACTIF - bloque la capture");
+		else format(dbgCdStatus, 32, "libre");
+		if(dbgDefenders > 0) format(dbgConclusion, 128, "-> Bloque : un defenseur est present dans la zone.");
+		else if(cdLeft > 0) format(dbgConclusion, 128, "-> Bloque : cooldown actif, attendre.");
+		else if(Turfs[dbgId][tType] != 0) format(dbgConclusion, 128, "-> Bloque : ce n'est pas une zone de gang capturable (Type != 0).");
+		else if(dbgAttackers == 0) format(dbgConclusion, 128, "-> Rien ne se passe : aucun attaquant dans la zone actuellement.");
+		else format(dbgConclusion, 128, "-> OK : la capture devrait progresser normalement.");
+
+		new dbgMsg[500];
+		format(dbgMsg, sizeof(dbgMsg),
+			"{FFAA00}=== DEBUG TERRITOIRE %d : %s ==={FFFFFF}\nProprietaire : %s\nCooldown restant : %d sec (%s)\nType zone : %d (0=capturable)\nGangWar actif : %d\n\nJoueurs presents la MAINTENANT :\nDefenseurs (meme faction) : %d\nAttaquants (autre faction) : %d\nFaction attaquante : %s\n\nProgression capture : %d/%d ticks (%d%%)\nFaction en cours de capture : %s\n\n%s",
+			dbgId, Turfs[dbgId][tName], Turfs[dbgId][tOwner],
+			(cdLeft > 0 ? cdLeft : 0), dbgCdStatus,
+			Turfs[dbgId][tType], gangWar_Active,
+			dbgDefenders, dbgAttackers,
+			dbgAttackerFacName,
+			turf_CapturePoints[dbgId], currentTicks2,
+			(currentTicks2 > 0) ? (turf_CapturePoints[dbgId] * 100 / currentTicks2) : 0,
+			dbgCapturingFacName,
+			dbgConclusion);
+		ShowPlayerDialog(playerid, 7101, DIALOG_STYLE_MSGBOX, "{FFAA00}Turf Debug", dbgMsg, "OK", "");
 		return 1;
 	}
 	if(strcmp(cmd, "/turfcreate", true) == 0)
@@ -69460,6 +69530,24 @@ public OnPlayerCommandText(playerid, cmdtext[])
         if(!strlen(tmp))
             return msg_Client(playerid, COLOR_WHITE, "{A98500} Usage {FFFFB2} /enchere <montant>");
         return HouseAuction_Cmd(playerid, strval(tmp));
+    }
+    // [ENCHERE ADMIN] /adminenchere <id maison> <prix depart> [duree_min] :
+    // lance une enchere a distance sur une maison (voir /maison(s) pour les id)
+    if(strcmp(cmd, "/adminenchere", true) == 0)
+    {
+        if(PlayerInfo[playerid][pAdmin] < 3)
+            return msg_Client(playerid, COLOR_NOACCES, "{FF0069}Reserve aux admins niveau 3+.");
+        tmp = strtok(cmdtext, idx);
+        if(!strlen(tmp))
+            return msg_Client(playerid, COLOR_WHITE, "{A98500} Usage {FFFFB2} /adminenchere <id maison> <prix depart> [duree_min]");
+        new adHid = strval(tmp);
+        tmp = strtok(cmdtext, idx);
+        if(!strlen(tmp))
+            return msg_Client(playerid, COLOR_WHITE, "{A98500} Usage {FFFFB2} /adminenchere <id maison> <prix depart> [duree_min]");
+        new adStartPrice = strval(tmp);
+        tmp = strtok(cmdtext, idx);
+        new adDuration = strlen(tmp) ? (strval(tmp) * 60) : 0;
+        return HouseAuction_AdminStart(playerid, adHid, adStartPrice, adDuration);
     }
 
     // [HUD] /hud : toggle barres vie/armure + ping custom
