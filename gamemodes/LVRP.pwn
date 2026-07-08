@@ -69339,8 +69339,11 @@ public OnPlayerCommandText(playerid, cmdtext[])
         return 1;
     }
 
-    // [EMOTES] /emotes /anim /e -> dialog emotes
-    if(strcmp(cmd, "/emotes", true) == 0 || strcmp(cmd, "/anim", true) == 0 || strcmp(cmd, "/e", true) == 0)
+    // [EMOTES] /emotes /e -> dialog emotes
+    // [FIX] "/anim" retire : deja pris par /anim(ateur) (staff) plus haut dans
+    // cette fonction, donc /anim n'atteignait JAMAIS ce bloc et affichait
+    // toujours "Vous n'etes pas animateur" au lieu du menu d'emotes.
+    if(strcmp(cmd, "/emotes", true) == 0 || strcmp(cmd, "/e", true) == 0)
     {
         return Emotes_ShowCategories(playerid);
     }

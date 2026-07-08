@@ -1,7 +1,8 @@
 /*
 	afrp_emotes.inc - Systeme d'emotes/animations RP avance
 
-	Commande : /emotes (alias /anim /e)
+	Commande : /emotes (alias /e)
+	NB: "/anim" n'est PAS un alias valide, deja pris par /anim(ateur) (staff).
 	Dialog : 9500 (menu categories) + 9501 (sous-liste)
 
 	~40 anims reparties en 6 categories :
