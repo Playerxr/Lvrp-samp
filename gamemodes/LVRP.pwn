@@ -17060,20 +17060,32 @@ stock IsCheatPosition (playerid)
 	return false;
 }
 
-// [ECONOMIE ARMES] Plancher de prix pour les armes a feu de l'Ammunation (typeZ==10).
-// Objectif : rendre l'ecosysteme plus cher. Les armes a feu coutent au MINIMUM
-// ces montants, quel que soit le prix fixe par le propriï¿½taire du business.
-// Les articles NON armes a feu (poing amï¿½ricain idx3, gilet idx4, lasers idx5+)
+// [ECONOMIE ARMES] Plancher de prix pour les 12 armes a feu de l'Ammunation
+// (typeZ==10). Objectif : rendre l'ecosysteme plus cher, du pistolet a
+// 10M$/100 balles jusqu'au sniper a 500M$/1 balle. Les armes a feu coutent
+// au MINIMUM ces montants, quel que soit le prix fixe par le proprietaire
+// du business. Indices 3/4 (poing americain/gilet) et 5-10 (lasers)
 // gardent le prix normal du business -> restent accessibles.
+// Indices 11-19 : nouvelles armes ajoutees sans reutiliser 3-10, pour ne
+// pas ecraser les prix deja configures par les proprietaires de biz.
 stock Ammu_GetPrice(bizid, index)
 {
     new prix = bizz[bizid][itemCost][index];
     new plancher = 0;
     switch(index)
     {
-        case 0: plancher = 10000000; // Colt 45
-        case 1: plancher = 12000000; // Colt 45 silencieux
-        case 2: plancher = 15000000; // Rifle
+        case 0:  plancher = 10000000;  // Colt 45           - 100 balles
+        case 1:  plancher = 18000000;  // Colt 45 silencieux- 100 balles
+        case 2:  plancher = 35000000;  // Country Rifle     - 40 balles
+        case 11: plancher = 55000000;  // Desert Eagle      - 50 balles
+        case 12: plancher = 80000000;  // Sawed-off Shotgun - 30 balles
+        case 13: plancher = 110000000; // Shotgun           - 30 balles
+        case 14: plancher = 150000000; // Combat Shotgun    - 30 balles
+        case 15: plancher = 190000000; // Micro Uzi         - 80 balles
+        case 16: plancher = 230000000; // Tec9              - 80 balles
+        case 17: plancher = 280000000; // MP5               - 80 balles
+        case 18: plancher = 350000000; // AK-47             - 60 balles
+        case 19: plancher = 500000000; // Sniper Rifle      - 1 balle
     }
     if(prix < plancher) prix = plancher;
     return prix;
@@ -17603,18 +17615,18 @@ stock pay_validPay(playerid,moyen)
 		    {
 			    if(article==1)
 			    {
-			        SafeGivePlayerWeapon(playerid, 22, 136);
+			        SafeGivePlayerWeapon(playerid, 22, 100);
 			        msg_Client(playerid,COLOR_BIZ,"{2B6AFF} Ammunation {FFFFFF} Colt 45 achet.");
 			    }
 			    else if(article==2)
 			    {
 			        msg_Client(playerid,COLOR_BIZ,"{2B6AFF} Ammunation {FFFFFF} Silencieux achet.");
-			    	SafeGivePlayerWeapon(playerid, 23, 136);
+			    	SafeGivePlayerWeapon(playerid, 23, 100);
 			    }
 			    else if(article==3)
 			    {
 			        msg_Client(playerid,COLOR_BIZ,"{2B6AFF} Ammunation {FFFFFF} Rifle achet.");
-			    	SafeGivePlayerWeapon(playerid, 33, 45);
+			    	SafeGivePlayerWeapon(playerid, 33, 40);
 			    }
 			    else if(article==4)
 			    {
@@ -17632,11 +17644,57 @@ stock pay_validPay(playerid,moyen)
 		        	if(inventory_UpdateItem(playerid,18643,1)){msg_Client(playerid,COLOR_BIZ,"{2B6AFF} Ammunation {FFFFFF} Laser rouge achet");}
 					else{msg_Client(playerid,COLOR_INFO,"{CF9756} Info {FFFFFF} Impossible, votre sac est plein !"); pay_Reset(playerid);return 1;}
 			    }
-			    else if(article>=7)
+			    else if(article>=7 && article<=10)
 			    {
 			        if(inventory_GetItemQuantity(playerid,19073+article) > 0){msg_Client(playerid,COLOR_INFO,"{CF9756} Info {FFFFFF} Vous avez dj ce laser."); pay_Reset(playerid); return 1;}
 		        	if(inventory_UpdateItem(playerid,19073+article,1)){msg_Client(playerid,COLOR_BIZ,"{2B6AFF} Ammunation {FFFFFF} Laser achet");}
 					else{msg_Client(playerid,COLOR_INFO,"{CF9756} Info {FFFFFF} Impossible, votre sac est plein !"); pay_Reset(playerid);return 1;}
+			    }
+			    // [ECONOMIE ARMES] Nouvelles armes (voir Ammu_GetPrice pour les prix planchers)
+			    else if(article==12)
+			    {
+			        SafeGivePlayerWeapon(playerid, 24, 50);
+			        msg_Client(playerid,COLOR_BIZ,"{2B6AFF} Ammunation {FFFFFF} Desert Eagle achet.");
+			    }
+			    else if(article==13)
+			    {
+			        SafeGivePlayerWeapon(playerid, 26, 30);
+			        msg_Client(playerid,COLOR_BIZ,"{2B6AFF} Ammunation {FFFFFF} Fusil a pompe scie achet.");
+			    }
+			    else if(article==14)
+			    {
+			        SafeGivePlayerWeapon(playerid, 25, 30);
+			        msg_Client(playerid,COLOR_BIZ,"{2B6AFF} Ammunation {FFFFFF} Shotgun achet.");
+			    }
+			    else if(article==15)
+			    {
+			        SafeGivePlayerWeapon(playerid, 27, 30);
+			        msg_Client(playerid,COLOR_BIZ,"{2B6AFF} Ammunation {FFFFFF} Combat Shotgun achet.");
+			    }
+			    else if(article==16)
+			    {
+			        SafeGivePlayerWeapon(playerid, 28, 80);
+			        msg_Client(playerid,COLOR_BIZ,"{2B6AFF} Ammunation {FFFFFF} Micro Uzi achet.");
+			    }
+			    else if(article==17)
+			    {
+			        SafeGivePlayerWeapon(playerid, 32, 80);
+			        msg_Client(playerid,COLOR_BIZ,"{2B6AFF} Ammunation {FFFFFF} Tec9 achet.");
+			    }
+			    else if(article==18)
+			    {
+			        SafeGivePlayerWeapon(playerid, 29, 80);
+			        msg_Client(playerid,COLOR_BIZ,"{2B6AFF} Ammunation {FFFFFF} MP5 achet.");
+			    }
+			    else if(article==19)
+			    {
+			        SafeGivePlayerWeapon(playerid, 30, 60);
+			        msg_Client(playerid,COLOR_BIZ,"{2B6AFF} Ammunation {FFFFFF} AK-47 achet.");
+			    }
+			    else if(article==20)
+			    {
+			        SafeGivePlayerWeapon(playerid, 34, 1);
+			        msg_Client(playerid,COLOR_BIZ,"{2B6AFF} Ammunation {FFFFFF} Sniper Rifle achet.");
 			    }
 		    }
 		    else
@@ -19638,7 +19696,8 @@ stock player_CheckInteraction(playerid)
 	else if(player_IsAtActorPoint(playerid,1,2.0) != -1 && gPlayerInBizz[playerid] != -1)
 	{
 	    tmpId=player_IsAtActorPoint(playerid,1,2.0);
-		new BizString[512],
+		// [ECONOMIE ARMES] 1024 (etait 512) : le catalogue Ammunation a 20 lignes
+		new BizString[1024],
 			bizid = gPlayerInBizz[playerid];
         player_Dialog[playerid]=0;
 		if(actor[tmpId][variable] == 1) // 24/7
@@ -19699,8 +19758,8 @@ stock player_CheckInteraction(playerid)
 		}
 		else if(actor[tmpId][variable] == 10)//Ammunation
 		{
-			format(BizString, sizeof(BizString), "{FFFFFF}Arme\t{FFFFFF}Balle(s)\t{FFFFFF}Prix\nColt 45\t130\t$%d\nSilencieux\t130\t$%d\nRifle\t45\t$%d\nPoing amricain\t/\t$%d\nGilet par balles\t/\t$%d\nLaser rouge\t/\t$%d\nLaser bleu\t/\t$%d\nLaser rose\t/\t$%d\nLaser orange\t/\t$%d\nLaser vert\t/\t$%d\nLaser jaune\t/\t$%d",
-			Ammu_GetPrice(bizid,0),Ammu_GetPrice(bizid,1),Ammu_GetPrice(bizid,2),bizz[bizid][itemCost][3],bizz[bizid][itemCost][4],bizz[bizid][itemCost][5],bizz[bizid][itemCost][6],bizz[bizid][itemCost][7],bizz[bizid][itemCost][8],bizz[bizid][itemCost][9],bizz[bizid][itemCost][10]);
+			format(BizString, sizeof(BizString), "{FFFFFF}Arme\t{FFFFFF}Balle(s)\t{FFFFFF}Prix\nColt 45\t100\t$%d\nSilencieux\t100\t$%d\nRifle\t40\t$%d\nPoing amï¿½ricain\t/\t$%d\nGilet par balles\t/\t$%d\nLaser rouge\t/\t$%d\nLaser bleu\t/\t$%d\nLaser rose\t/\t$%d\nLaser orange\t/\t$%d\nLaser vert\t/\t$%d\nLaser jaune\t/\t$%d\nDesert Eagle\t50\t$%d\nFusil a pompe sciï¿½\t30\t$%d\nShotgun\t30\t$%d\nCombat Shotgun\t30\t$%d\nMicro Uzi\t80\t$%d\nTec9\t80\t$%d\nMP5\t80\t$%d\nAK-47\t60\t$%d\nSniper Rifle\t1\t$%d",
+			Ammu_GetPrice(bizid,0),Ammu_GetPrice(bizid,1),Ammu_GetPrice(bizid,2),bizz[bizid][itemCost][3],bizz[bizid][itemCost][4],bizz[bizid][itemCost][5],bizz[bizid][itemCost][6],bizz[bizid][itemCost][7],bizz[bizid][itemCost][8],bizz[bizid][itemCost][9],bizz[bizid][itemCost][10],Ammu_GetPrice(bizid,11),Ammu_GetPrice(bizid,12),Ammu_GetPrice(bizid,13),Ammu_GetPrice(bizid,14),Ammu_GetPrice(bizid,15),Ammu_GetPrice(bizid,16),Ammu_GetPrice(bizid,17),Ammu_GetPrice(bizid,18),Ammu_GetPrice(bizid,19));
 			ShowPlayerDialog(playerid, 97, DIALOG_STYLE_TABLIST_HEADERS,"{2B6AFF} Ammunation {FFFFFF} Achats",BizString,"Valider","Annuler");
 		}
 		else if(actor[tmpId][variable] == 11)//Sexe shop
@@ -31040,7 +31099,8 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     new sendername[MAX_PLAYER_NAME];
     new giveplayer[MAX_PLAYER_NAME];
     new carid = GetPlayerVehicleID(playerid);
-	new string[512];
+	// [ECONOMIE ARMES] 900 (etait 512) : la liste des 20 articles Ammunation depasse 512
+	new string[900];
 
 	// ============================================================
 	// DIALOGUES TUTORIEL OBLIGATOIRE
@@ -36625,8 +36685,9 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 				}
 				else if(bizz[bizid][typeZ] == 10) // Ammunation
         	    {
-        	        format(string, sizeof(string), "1. Colt 45 ($%d)\n2. Silencieux ($%d)\n3. Rifle ($%d)\n4. Poing amricain ($%d)\n5. Gilet par balles ($%d)\n6. Laser rouge ($%d)\n7. Laser bleu ($%d)\n8. Laser rose ($%d)\n9. Laser orange ($%d)\n10. Laser vert ($%d)\n11. Laser jaune ($%d)",
-					bizz[bizid][itemCost][0],bizz[bizid][itemCost][1],bizz[bizid][itemCost][2],bizz[bizid][itemCost][3],bizz[bizid][itemCost][4],bizz[bizid][itemCost][5],bizz[bizid][itemCost][6],bizz[bizid][itemCost][7],bizz[bizid][itemCost][8],bizz[bizid][itemCost][9],bizz[bizid][itemCost][10]);
+        	        format(string, sizeof(string), "1. Colt 45 ($%d)\n2. Silencieux ($%d)\n3. Rifle ($%d)\n4. Poing amricain ($%d)\n5. Gilet par balles ($%d)\n6. Laser rouge ($%d)\n7. Laser bleu ($%d)\n8. Laser rose ($%d)\n9. Laser orange ($%d)\n10. Laser vert ($%d)\n11. Laser jaune ($%d)\n12. Desert Eagle ($%d)\n13. Fusil a pompe scié ($%d)\n14. Shotgun ($%d)\n15. Combat Shotgun ($%d)\n16. Micro Uzi ($%d)\n17. Tec9 ($%d)\n18. MP5 ($%d)\n19. AK-47 ($%d)\n20. Sniper Rifle ($%d)",
+					bizz[bizid][itemCost][0],bizz[bizid][itemCost][1],bizz[bizid][itemCost][2],bizz[bizid][itemCost][3],bizz[bizid][itemCost][4],bizz[bizid][itemCost][5],bizz[bizid][itemCost][6],bizz[bizid][itemCost][7],bizz[bizid][itemCost][8],bizz[bizid][itemCost][9],bizz[bizid][itemCost][10],
+					bizz[bizid][itemCost][11],bizz[bizid][itemCost][12],bizz[bizid][itemCost][13],bizz[bizid][itemCost][14],bizz[bizid][itemCost][15],bizz[bizid][itemCost][16],bizz[bizid][itemCost][17],bizz[bizid][itemCost][18],bizz[bizid][itemCost][19]);
 			    	ShowPlayerDialog(playerid, 108, DIALOG_STYLE_LIST,"{2B6AFF} Biz {FFFFFF} Edit - Changer le prix des articles",string,"Selectionner","Annuler");
 				}
 				else if(bizz[bizid][typeZ] == 11) // Sexe Shop
@@ -37642,7 +37703,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			}
 			if(listitem == 3)
         	{
-        	    new BizString[512];
+        	    new BizString[900];
         	    if(bizz[bizid][typeZ] == 1) // 24/7
         	    {
         	        format(BizString, sizeof(BizString), "1. Tlphone ($%d)\n2. Malette ($%d)\n3. Annuaire($%d)\n4. D ($%d)\n5. Prservatif ($%d)\n6. Cagoule (lvl 5 min) ($%d)\n7. Corde ($%d)\n8. Bombe Lacrimo ($%d)\n9. Briquet ($%d)\n10. BoomBox ($%d)\n11. Talkie Walkie ($%d)\n12. Bouquet de Fleures ($%d)\n13. Batte ($%d)\n14. Pied de biche ($%d)\n15. Appareil Photo ($%d)\n16. Ballon de basket ($%d)\n17. Pelle ($%d)",
@@ -37700,8 +37761,9 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 				}
 				else if(bizz[bizid][typeZ] == 10) // Ammunation
         	    {
-        	        format(BizString, sizeof(BizString), "1. Colt 45 ($%d)\n2. Silencieux ($%d)\n3. Rifle ($%d)\n4. Poing amricain ($%d)\n5. Gilet par balles ($%d)\n6. Laser rouge ($%d)\n7. Laser bleu ($%d)\n8. Laser rose ($%d)\n9. Laser orange ($%d)\n10. Laser vert ($%d)\n11. Laser jaune ($%d)",
-					bizz[bizid][itemCost][0],bizz[bizid][itemCost][1],bizz[bizid][itemCost][2],bizz[bizid][itemCost][3],bizz[bizid][itemCost][4],bizz[bizid][itemCost][5],bizz[bizid][itemCost][6],bizz[bizid][itemCost][7],bizz[bizid][itemCost][8],bizz[bizid][itemCost][9],bizz[bizid][itemCost][10]);
+        	        format(BizString, sizeof(BizString), "1. Colt 45 ($%d)\n2. Silencieux ($%d)\n3. Rifle ($%d)\n4. Poing amricain ($%d)\n5. Gilet par balles ($%d)\n6. Laser rouge ($%d)\n7. Laser bleu ($%d)\n8. Laser rose ($%d)\n9. Laser orange ($%d)\n10. Laser vert ($%d)\n11. Laser jaune ($%d)\n12. Desert Eagle ($%d)\n13. Fusil a pompe scié ($%d)\n14. Shotgun ($%d)\n15. Combat Shotgun ($%d)\n16. Micro Uzi ($%d)\n17. Tec9 ($%d)\n18. MP5 ($%d)\n19. AK-47 ($%d)\n20. Sniper Rifle ($%d)",
+					bizz[bizid][itemCost][0],bizz[bizid][itemCost][1],bizz[bizid][itemCost][2],bizz[bizid][itemCost][3],bizz[bizid][itemCost][4],bizz[bizid][itemCost][5],bizz[bizid][itemCost][6],bizz[bizid][itemCost][7],bizz[bizid][itemCost][8],bizz[bizid][itemCost][9],bizz[bizid][itemCost][10],
+					bizz[bizid][itemCost][11],bizz[bizid][itemCost][12],bizz[bizid][itemCost][13],bizz[bizid][itemCost][14],bizz[bizid][itemCost][15],bizz[bizid][itemCost][16],bizz[bizid][itemCost][17],bizz[bizid][itemCost][18],bizz[bizid][itemCost][19]);
 			    	ShowPlayerDialog(playerid, 98, DIALOG_STYLE_LIST,"{2B6AFF} Biz {FFFFFF} Gestion - Prix des articles",BizString,"Valider","Annuler");
 				}
 				else if(bizz[bizid][typeZ] == 11) // Sexe Shop
