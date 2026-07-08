@@ -5168,11 +5168,12 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 // [AUTOBACKUP] Sauvegarde auto parkings.cfg / casinos.cfg
 #include <afrp_autobackup>
 
+// [ECONOMIE] Formatage des montants avec separateurs de milliers
+// (doit etre avant afrp_houseauction, qui utilise FormatMoney)
+#include <afrp_moneyformat>
+
 // [ENCHERE] Systeme d'enchere sur les maisons
 #include <afrp_houseauction>
-
-// [ECONOMIE] Formatage des montants avec separateurs de milliers
-#include <afrp_moneyformat>
 
 // [NGG COMPAT] DESACTIVE - suspect du hang pawncc (test bisect)
 //#include <ngg_compat>
@@ -10375,7 +10376,9 @@ public Immo_ListHouses(playerid)
         cache_get_value_name_int(r, "Price", hPrice);
         cache_get_value_name_float(r, "Pos_x", hx);
         cache_get_value_name_float(r, "Pos_y", hy);
-        format(line, sizeof(line), "{FFAA00}Maison #%d{FFFFFF} - %d$ (%.0f, %.0f)\n", hid, hPrice, hx, hy);
+        new hPriceStr[16];
+        FormatMoney(hPrice, hPriceStr, 16);
+        format(line, sizeof(line), "{FFAA00}Maison #%d{FFFFFF} - %s$ (%.0f, %.0f)\n", hid, hPriceStr, hx, hy);
         strcat(list, line, sizeof(list));
     }
     ShowPlayerDialog(playerid, 9372, DIALOG_STYLE_LIST, "{00BFFF}Immobilier - Maisons a vendre", list, "OK", "Retour");
@@ -11090,7 +11093,8 @@ stock house_UpdateInfos(id)
 	    	else
 	    	{
 	    	    house_Pickup[id] = CreateDynamicPickup(1273, 1, house[id][pos][0], house[id][pos][1], house[id][pos][2],0,0,-1,PICKUP_STREAM_DISTANCE);
-		    	format(string, sizeof(string), "{009D00}[%s  vendre]\nPrix d'achat : {FFFFFF}$%d",house[id][description],house[id][price]);
+		    	new hPriceStr[16]; FormatMoney(house[id][price], hPriceStr, 16);
+		    	format(string, sizeof(string), "{009D00}[%s  vendre]\nPrix d'achat : {FFFFFF}$%s",house[id][description],hPriceStr);
 		    	house_Label[id] = CreateDynamic3DTextLabel(string,0x33CCFFF6,house[id][pos][0], house[id][pos][1], house[id][pos][2]+1,7.0,INVALID_PLAYER_ID,INVALID_VEHICLE_ID,0,0,0,-1,LABEL_STREAM_DISTANCE);
 	    	}
 	}
@@ -17104,10 +17108,15 @@ stock pay_showDialog(playerid,prices)
         return 1;
     }
 		
+    // [ECONOMIE] Separateurs de milliers pour la lisibilite des gros montants
     new prize[32],bank[32],cashs[32];
-	format(prize,sizeof(prize),"Prix : $%d",prices);
-	format(bank,sizeof(bank),"Banque : $%d",PlayerInfo[playerid][pAccount]);
-	format(cashs,sizeof(cashs),"Cash : $%d",PlayerInfo[playerid][pCash]);
+    new priceStr[16],bankStr[16],cashStr[16];
+    FormatMoney(prices, priceStr, 16);
+    FormatMoney(PlayerInfo[playerid][pAccount], bankStr, 16);
+    FormatMoney(PlayerInfo[playerid][pCash], cashStr, 16);
+	format(prize,sizeof(prize),"Prix : $%s",priceStr);
+	format(bank,sizeof(bank),"Banque : $%s",bankStr);
+	format(cashs,sizeof(cashs),"Cash : $%s",cashStr);
     PlayerTextDrawSetString(playerid,pay_TextArticle[playerid],"_");
     PlayerTextDrawSetString(playerid,pay_TextPrice[playerid],prize);
     PlayerTextDrawSetString(playerid,pay_TextBank[playerid],bank);

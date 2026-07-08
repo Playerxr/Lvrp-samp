@@ -64,10 +64,12 @@ stock HouseAuction_UpdateLabel(hid)
 {
 	new mins = houseAuction_TimeLeft[hid] / 60;
 	new secs = houseAuction_TimeLeft[hid] % 60;
+	new bidStr[16];
+	FormatMoney(houseAuction_CurrentBid[hid], bidStr, 16);
 	new labelStr[160];
 	format(labelStr, sizeof(labelStr),
-		"{FFD700}ENCHERE EN COURS{FFFFFF}\nPrix actuel : $%d\nPar : %s\nTemps restant : %d:%02d\n{CCCCCC}/enchere <montant> pour surenchir",
-		houseAuction_CurrentBid[hid], houseAuction_BidderName[hid], mins, secs);
+		"{FFD700}ENCHERE EN COURS{FFFFFF}\nPrix actuel : $%s\nPar : %s\nTemps restant : %d:%02d\n{CCCCCC}/enchere <montant> pour surenchir",
+		bidStr, houseAuction_BidderName[hid], mins, secs);
 
 	if(_:houseAuction_Label[hid] != _:INVALID_3DTEXT_ID)
 	{
@@ -218,8 +220,9 @@ stock HouseAuction_Cmd(playerid, montant)
 		: house[hid][price];
 	if(montant < minBid)
 	{
-		new msg[128];
-		format(msg, sizeof(msg), "{CF9756} Info {FFFFFF} Enchere minimum : $%d.", minBid);
+		new msg[128], minBidStr[16];
+		FormatMoney(minBid, minBidStr, 16);
+		format(msg, sizeof(msg), "{CF9756} Info {FFFFFF} Enchere minimum : $%s.", minBidStr);
 		return msg_Client(playerid, COLOR_INFO, msg);
 	}
 	if(PlayerInfo[playerid][pCash] < montant)
@@ -237,8 +240,9 @@ stock HouseAuction_Cmd(playerid, montant)
 
 	HouseAuction_UpdateLabel(hid);
 
-	new announceMsg[144];
-	format(announceMsg, sizeof(announceMsg), "{FFD700}[Enchere]{FFFFFF} %s encherit $%d sur une maison !", PlayerInfo[playerid][pRealName], montant);
+	new announceMsg[144], montantStr[16];
+	FormatMoney(montant, montantStr, 16);
+	format(announceMsg, sizeof(announceMsg), "{FFD700}[Enchere]{FFFFFF} %s encherit $%s sur une maison !", PlayerInfo[playerid][pRealName], montantStr);
 	for(new i = 0; i < MAX_PLAYERS_CURRENT + 1; i++)
 	{
 		if(!IsPlayerConnected(i) || IsPlayerNPC(i)) continue;
@@ -273,8 +277,9 @@ stock HouseAuction_AdminStart(playerid, hid, startPrice, durationSec)
 
 	HouseAuction_UpdateLabel(hid);
 
-	new adminMsg[160];
-	format(adminMsg, sizeof(adminMsg), "{FFD700}[Enchere]{FFFFFF} Un admin a lance une enchere sur la maison #%d ! Prix de depart : $%d.", hid, startPrice);
+	new adminMsg[160], startPriceStr[16];
+	FormatMoney(startPrice, startPriceStr, 16);
+	format(adminMsg, sizeof(adminMsg), "{FFD700}[Enchere]{FFFFFF} Un admin a lance une enchere sur la maison #%d ! Prix de depart : $%s.", hid, startPriceStr);
 	SendClientMessageToAll(0xFFD700FF, adminMsg);
 	msg_Client(playerid, COLOR_HOUSE, "{00C600} Maison {FFFFFF} Enchere lancee avec succes.");
 	return 1;
