@@ -5168,6 +5168,9 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 // [AUTOBACKUP] Sauvegarde auto parkings.cfg / casinos.cfg
 #include <afrp_autobackup>
 
+// [ENCHERE] Systeme d'enchere sur les maisons
+#include <afrp_houseauction>
+
 // [NGG COMPAT] DESACTIVE - suspect du hang pawncc (test bisect)
 //#include <ngg_compat>
 
@@ -29699,6 +29702,8 @@ public OnGameModeInit()
     Casino_Init();
     // Sauvegarde auto de parkings.cfg/casinos.cfg (voir afrp_autobackup.inc)
     AutoBackup_Init();
+    // Systeme d'enchere sur les maisons (voir afrp_houseauction.inc)
+    HouseAuction_Init();
 
     gServerReload = 0;
 	return 1;
@@ -50893,6 +50898,10 @@ public OnPlayerCommandText(playerid, cmdtext[])
 					
 				if(house[var][owned] == 0)
 				{
+					// [ENCHERE] Achat instantane bloque si une enchere est en cours,
+					// pour ne pas contourner le systeme de /enchere
+					if(houseAuction_Active[var])
+						{return msg_Client(playerid,COLOR_INFO,"{CF9756} Info {FFFFFF} Cette maison est en cours d'enchere, utilisez /enchere <montant>.");}
                     pay_tempPrice[playerid] = house[var][price];
 					pay_tempType[playerid] = 13;
 					pay_tempArticle[playerid] = 1;
@@ -69379,6 +69388,16 @@ public OnPlayerCommandText(playerid, cmdtext[])
     if(strcmp(cmd, "/emotes", true) == 0 || strcmp(cmd, "/e", true) == 0)
     {
         return Emotes_ShowCategories(playerid);
+    }
+
+    // [ENCHERE] /enchere <montant> : encherir sur la maison a proximite
+    // (voir afrp_houseauction.inc)
+    if(strcmp(cmd, "/enchere", true) == 0)
+    {
+        tmp = strtok(cmdtext, idx);
+        if(!strlen(tmp))
+            return msg_Client(playerid, COLOR_WHITE, "{A98500} Usage {FFFFB2} /enchere <montant>");
+        return HouseAuction_Cmd(playerid, strval(tmp));
     }
 
     // [HUD] /hud : toggle barres vie/armure + ping custom
