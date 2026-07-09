@@ -39,6 +39,8 @@
 #define FMG_POMPIER  4
 #define FMG_GANG     5
 #define FMG_MAFIA    6
+#define FMG_CIA      7
+#define FMG_JUSTICE  8
 
 #define FM_DLG_MENU    9800
 #define FM_DLG_TARGET  9801
@@ -85,7 +87,13 @@ static const fmEntries[][e_fmEntry] = {
 	{FMG_GANG,    "Voir toutes mes commandes",  "/gang",         FM_PLAIN},
 
 	// ---- MAFIA (illegal fType 2) ----
-	{FMG_MAFIA,   "Voir toutes mes commandes",  "/mafia",        FM_PLAIN}
+	{FMG_MAFIA,   "Voir toutes mes commandes",  "/mafia",        FM_PLAIN},
+
+	// ---- CIA (pMember 9) ----
+	{FMG_CIA,     "Voir toutes mes commandes",  "/cia",          FM_PLAIN},
+
+	// ---- JUSTICE / COUR (pMember 14) ----
+	{FMG_JUSTICE, "Voir toutes mes commandes",  "/justice",      FM_PLAIN}
 };
 
 // Etat par joueur
@@ -113,7 +121,9 @@ stock FactionMenu_GetGroup(playerid)
 {
 	new m = PlayerInfo[playerid][pMember];
 	if(m >= 1 && m <= 5) return FMG_POLICE;
+	if(m == 9) return FMG_CIA;
 	if(m == FACTION_HOPITAL) return FMG_MEDIC;
+	if(m == FACTION_JUSTICE) return FMG_JUSTICE;
 	if(m >= 11 && m <= 13) return FMG_ARMY;
 	if(m == 999) return FMG_POMPIER;
 	if(m >= 200)
@@ -135,6 +145,8 @@ stock FactionMenu_GroupName(grp, dest[], size)
 		case FMG_POMPIER: format(dest, size, "Pompiers");
 		case FMG_GANG:    format(dest, size, "Gang");
 		case FMG_MAFIA:   format(dest, size, "Mafia");
+		case FMG_CIA:     format(dest, size, "CIA");
+		case FMG_JUSTICE: format(dest, size, "Justice / Cour");
 		default:          format(dest, size, "Faction");
 	}
 	return 1;
