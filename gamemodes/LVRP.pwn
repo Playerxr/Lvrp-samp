@@ -5178,6 +5178,9 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 // [ENCHERE] Systeme d'enchere sur les biz (commerces)
 #include <afrp_bizauction>
 
+// [SECURITE ADMIN] Niveau requis configurable pour /a creer et /a donner
+#include <afrp_adminlevels>
+
 // [NGG COMPAT] DESACTIVE - suspect du hang pawncc (test bisect)
 //#include <ngg_compat>
 
@@ -29266,7 +29269,12 @@ stock streamer_Init()
     // dans les zones avec beaucoup de v�hicules / tunings / labels.
     // Defauts SAMP : OBJECTS=800, 3DLABELS=1024, PICKUPS=800 -> on baisse.
     Streamer_SetVisibleItems(STREAMER_TYPE_OBJECT, 500);
-    Streamer_SetVisibleItems(STREAMER_TYPE_3D_TEXT_LABEL, 64);
+    // [FIX GANG TAG] 64 etait trop bas : les noms de gang/mafia (un label par
+    // joueur) disparaissaient des qu'un rassemblement depassait le quota avec
+    // les autres labels (maisons/biz/parkings) du secteur. Priorite donnee en
+    // plus aux tags de gang dans afrp_gangtag.inc pour qu'ils survivent en
+    // dernier si la limite est quand meme atteinte.
+    Streamer_SetVisibleItems(STREAMER_TYPE_3D_TEXT_LABEL, 150);
     Streamer_SetVisibleItems(STREAMER_TYPE_PICKUP, 256);
     Streamer_SetVisibleItems(STREAMER_TYPE_MAP_ICON, 100);
 }
@@ -29797,6 +29805,8 @@ public OnGameModeInit()
     HouseAuction_Init();
     // Systeme d'enchere sur les biz (voir afrp_bizauction.inc)
     BizAuction_Init();
+    // Niveau admin requis pour /a creer et /a donner (voir afrp_adminlevels.inc)
+    AdminLevels_Init();
 
     gServerReload = 0;
 	return 1;
@@ -63579,9 +63589,16 @@ public OnPlayerCommandText(playerid, cmdtext[])
 				else
 		            {msg_Client(playerid, COLOR_NOACCES, "{FF0069} Erreur {FFFFFF} Vous n'tes pas autoris  utiliser cette commande!"); return 1;}
 			}
+			// [SECURITE ADMIN] /a niveausensible <1-6> : ajuste le niveau requis
+			// pour /a creer et /a donner (voir afrp_adminlevels.inc)
+			else if(strcmp(tmp, "niveausensible", true) == 0)
+			{
+				tmp = strtok(cmdtext, idx);
+				return AdminLevels_Cmd(playerid, tmp);
+			}
             else if(strcmp(tmp, "donner", true) == 0)
 			{
-			    if (PlayerInfo[playerid][pAdmin] >= 3)
+			    if (PlayerInfo[playerid][pAdmin] >= AdminSensitiveLevel)
 				{
 				    tmp = strtok(cmdtext, idx);
 					if(!strlen(tmp))
@@ -65005,7 +65022,7 @@ public OnPlayerCommandText(playerid, cmdtext[])
 			}
 			else if(strcmp(tmp, "creer", true) == 0)
 			{
-			    if (PlayerInfo[playerid][pAdmin] >= 3)
+			    if (PlayerInfo[playerid][pAdmin] >= AdminSensitiveLevel)
 				{
 			    	tmp = strtok(cmdtext, idx);
 					if(!strlen(tmp))

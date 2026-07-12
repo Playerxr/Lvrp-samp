@@ -39,20 +39,17 @@ stock GangTag_Update(playerid)
 	if(FactionInfo[facID][fCreate] != 1) return 0;
 	if(!strlen(FactionInfo[facID][fName])) return 0;
 
-	// Couleur : couleur du gang si choisie, sinon fallback selon le type
-	new tagColor;
-	if(FactionInfo[facID][fType] == 1 && FactionInfo[facID][fChoseColor] == 1 && FactionInfo[facID][fColor] != 0)
-		tagColor = (FactionInfo[facID][fColor] | 0xFF); // force alpha visible
-	else if(FactionInfo[facID][fType] == 2)
-		tagColor = 0x8B0000FF; // mafia = rouge fonce
-	else
-		tagColor = 0xC83232FF; // gang sans couleur = gris-rouge
+	// [FIX] Toujours blanc, quelle que soit la couleur du gang
+	new tagColor = 0xFFFFFFFF;
 
 	new tag[40];
 	format(tag, sizeof(tag), "%s", FactionInfo[facID][fName]);
 
+	// [FIX DISPARITION] priorite elevee (10) pour que ce label survive en
+	// dernier si la limite de labels visibles est atteinte (rassemblements
+	// de gang/mafia nombreux) - voir Streamer_SetVisibleItems dans OnGameModeInit
 	gangTagLabel[playerid] = CreateDynamic3DTextLabel(tag, tagColor,
-		0.0, 0.0, 0.55, 12.0, playerid, INVALID_VEHICLE_ID, 0, -1, -1, -1, LABEL_STREAM_DISTANCE);
+		0.0, 0.0, 0.55, 12.0, playerid, INVALID_VEHICLE_ID, 0, -1, -1, -1, LABEL_STREAM_DISTANCE, STREAMER_TAG_AREA:-1, 10);
 	gangTagActive[playerid] = true;
 	return 1;
 }
