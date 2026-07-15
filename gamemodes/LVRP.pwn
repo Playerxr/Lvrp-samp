@@ -5180,6 +5180,7 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 
 // [SECURITE ADMIN] Niveau requis configurable pour /a creer et /a donner
 #include <afrp_adminlevels>
+#include <afrp_parkingpayant>
 
 // [NGG COMPAT] DESACTIVE - suspect du hang pawncc (test bisect)
 //#include <ngg_compat>
@@ -21611,6 +21612,9 @@ stock Parking_SpawnVehicleAt(playerid, slot)
     if(pid == -1)
         {return msg_Client(playerid, COLOR_INFO, "{CF9756} Parking {FFFFFF} Vous n'�tes plus dans le parking.");}
 
+    // [PARKING PAYANT] verif du solde avant tout (10k, +25k si fourriere)
+    if(!ParkingPay_CanAfford(playerid, carSqlid)) return 1;
+
     new idx = vehicle_GetId(carSqlid);
 
     // [FIX PARKING] Vehicule non charge en memoire (ex: apres restart) -> le charger depuis DB
@@ -21654,6 +21658,8 @@ stock Parking_SpawnVehicleAt(playerid, slot)
     new msg[128];
     format(msg, sizeof(msg), "{42AAFF} Parking {FFFFFF} Votre %s a �t� amene au parking.", vehicle[idx][cDescription]);
     msg_Client(playerid, COLOR_WHITE, msg);
+    // [PARKING PAYANT] debit + ticket + label
+    ParkingPay_ApplyPayment(playerid, carSqlid, pid, idx);
     return 1;
 }
 
@@ -21685,6 +21691,8 @@ stock Parking_DespawnVehicleAt(playerid, slot)
     new msg[128];
     format(msg, sizeof(msg), "{FF6666} Parking {FFFFFF} Votre %s a �t� despawn. Retournez au parking pour le spawn de nouveau.", vehicle[idx][cDescription]);
     msg_Client(playerid, COLOR_WHITE, msg);
+    // [PARKING PAYANT] efface le ticket sans amende (choix volontaire du joueur)
+    ParkingPay_OnManualDespawn(carSqlid);
     return 1;
 }
 
@@ -28233,6 +28241,8 @@ public vehicle_LoadPlayer(playerid, slot)
 		new pMsg[128];
 		format(pMsg, sizeof(pMsg), "{42AAFF} Parking {FFFFFF} Votre %s est arrive au parking (point rouge minimap).", vehicle[vehicleid][cDescription]);
 		msg_Client(playerid, COLOR_WHITE, pMsg);
+		// [PARKING PAYANT] debit + ticket + label
+		ParkingPay_ApplyPayment(playerid, vehicle[vehicleid][SQLID], parkingLoadPid, vehicleid);
 	}
 	// Reset PVars parking apres usage
 	DeletePVar(playerid, "parking_LoadSlot");
@@ -29797,6 +29807,8 @@ public OnGameModeInit()
 
     // Init systeme parking dynamique (charge scriptfiles/parkings.cfg)
     Parking_Init();
+    // Init parking payant (10k / 30 min + timer expiration)
+    ParkingPay_Init();
     // Init systeme casino (charge scriptfiles/casinos.cfg)
     Casino_Init();
     // Sauvegarde auto de parkings.cfg/casinos.cfg (voir afrp_autobackup.inc)
@@ -52626,10 +52638,15 @@ public OnPlayerCommandText(playerid, cmdtext[])
 	        Parking_ShowList(playerid);
 	        return 1;
 	    }
+	    if(strcmp(tmp, "payer", true) == 0)
+	    {
+	        return ParkingPay_Cmd_Extend(playerid);
+	    }
 	    if(strcmp(tmp, "aide", true) == 0 || strcmp(tmp, "help", true) == 0)
 	    {
 	        msg_Client(playerid, COLOR_WHITE, "{42AAFF} Parking  Aide :");
 	        msg_Client(playerid, COLOR_WHITE, "{FFFFFF}/parking : menu joueur (spawn/despawn vos v�hicules)");
+	        msg_Client(playerid, COLOR_WHITE, "{FFFFFF}/parking payer : prolonge de 30 min (10.000$)");
 	        if(PlayerInfo[playerid][pAdmin] >= 1)
 	            {msg_Client(playerid, COLOR_WHITE, "{FFFFFF}/parking lister : liste tous les parkings (admin)");}
 	        if(PlayerInfo[playerid][pAdmin] >= 3)
@@ -52639,7 +52656,7 @@ public OnPlayerCommandText(playerid, cmdtext[])
 	        }
 	        return 1;
 	    }
-	    msg_Client(playerid, COLOR_WHITE, "{A98500} Usage {FFFFB2} /parking [creer|supprimer|lister|aide]");
+	    msg_Client(playerid, COLOR_WHITE, "{A98500} Usage {FFFFB2} /parking [payer|creer|supprimer|lister|aide]");
 	    return 1;
 	}
 //---------------------------[ FACTION HOPITAL ]---------------------------------
