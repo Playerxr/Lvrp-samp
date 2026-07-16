@@ -5181,6 +5181,7 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 // [SECURITE ADMIN] Niveau requis configurable pour /a creer et /a donner
 #include <afrp_adminlevels>
 #include <afrp_parkingpayant>
+#include <afrp_venuepriv>
 
 // [NGG COMPAT] DESACTIVE - suspect du hang pawncc (test bisect)
 //#include <ngg_compat>
@@ -29809,6 +29810,8 @@ public OnGameModeInit()
     Parking_Init();
     // Init parking payant (10k / 30 min + timer expiration)
     ParkingPay_Init();
+    // Init lieux prives (restaurants, clubs, boutiques...)
+    Venue_Init();
     // Init systeme casino (charge scriptfiles/casinos.cfg)
     Casino_Init();
     // Sauvegarde auto de parkings.cfg/casinos.cfg (voir afrp_autobackup.inc)
@@ -30856,6 +30859,12 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     if(dialogid == 9500 || dialogid == 9501)
     {
         return Emotes_OnDialogResponse(playerid, dialogid, response, listitem);
+    }
+
+    // [VENUE PRIVE] Dispatch des dialogs 9960-9963
+    if(dialogid >= 9960 && dialogid <= 9963)
+    {
+        return Venue_OnDialogResponse(playerid, dialogid, response, listitem, inputtext);
     }
 
     // [JOBS] Dispatch du menu metiers (9770) + promo auto 10 min (9773)
@@ -52658,6 +52667,18 @@ public OnPlayerCommandText(playerid, cmdtext[])
 	    }
 	    msg_Client(playerid, COLOR_WHITE, "{A98500} Usage {FFFFB2} /parking [payer|creer|supprimer|lister|aide]");
 	    return 1;
+	}
+	else if(strcmp(cmd, "/venue", true) == 0 || strcmp(cmd, "/lieu", true) == 0)
+	{
+	    // Recupere le reste de la commande apres "/venue" (comme sub+args)
+	    new venueParams[144];
+	    new vp = idx;
+	    new vlp = strlen(cmdtext);
+	    while(vp < vlp && cmdtext[vp] == ' ') vp++;
+	    new vpi = 0;
+	    while(vp < vlp && vpi < 143) { venueParams[vpi++] = cmdtext[vp++]; }
+	    venueParams[vpi] = 0;
+	    return Venue_Cmd(playerid, venueParams);
 	}
 //---------------------------[ FACTION HOPITAL ]---------------------------------
 	else if(strcmp(cmd, "/duty", true) == 0)
