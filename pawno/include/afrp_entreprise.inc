@@ -295,9 +295,10 @@ stock Ent_Cmd(playerid, params[])
 {
 	if(!strlen(params))
 	{
-		msg_Client(playerid, COLOR_WHITE, "{42AAFF} Entreprise {FFFFFF} /entreprise [info|creer|verser|retirer|embauche|virer|salaire|employes|supprimer]");
+		msg_Client(playerid, COLOR_WHITE, "{42AAFF} Entreprise {FFFFFF} /entreprise [info|creer|verser|retirer|embauche|virer|salaire|employes|camion|supprimer]");
+		msg_Client(playerid, COLOR_WHITE, "{FFFFFF}Missions : /cargo (dans un camion d'entreprise, pres d'un depot)");
 		if(PlayerInfo[playerid][pAdmin] >= 3)
-			msg_Client(playerid, COLOR_WHITE, "{FFFFFF}Admin : /entreprise lister, /entreprise transferer <joueur>");
+			msg_Client(playerid, COLOR_WHITE, "{FFFFFF}Admin : /entreprise lister/transferer, /cargo creer/supprimer/lister");
 		return 1;
 	}
 
@@ -343,6 +344,12 @@ stock Ent_Cmd(playerid, params[])
 		new okStr[220];
 		format(okStr, sizeof(okStr), "{42AAFF} Entreprise {FFFFFF} {FFFFB2}%s{FFFFFF} creee (-%d$). Utilise /entreprise embauche <joueur> <salaire> pour recruter, /entreprise verser <montant> pour alimenter la caisse.", entreprises[eid][entName], ENT_CREATE_COST);
 		return msg_Client(playerid, COLOR_WHITE, okStr);
+	}
+
+	// ===== camion (achat camion cargo) =====
+	if(strcmp(sub, "camion", true) == 0)
+	{
+		return Cargo_BuyTruck(playerid);
 	}
 
 	// ===== info =====

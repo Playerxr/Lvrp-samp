@@ -5185,6 +5185,7 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 #include <afrp_venuepriv>
 #include <afrp_coffrefix>
 #include <afrp_meublesdehors>
+#include <afrp_cargomission>
 
 // [NGG COMPAT] DESACTIVE - suspect du hang pawncc (test bisect)
 //#include <ngg_compat>
@@ -29825,6 +29826,8 @@ public OnGameModeInit()
     Venue_Init();
     // Init entreprises legales (patronat + caisse + salaires)
     Ent_Init();
+    // Init missions cargo (depots + camions d'entreprise)
+    Cargo_Init();
     // Init systeme casino (charge scriptfiles/casinos.cfg)
     Casino_Init();
     // Sauvegarde auto de parkings.cfg/casinos.cfg (voir afrp_autobackup.inc)
@@ -52747,6 +52750,17 @@ public OnPlayerCommandText(playerid, cmdtext[])
 	    while(ep < elp && epi < 143) { entParams[epi++] = cmdtext[ep++]; }
 	    entParams[epi] = 0;
 	    return Ent_Cmd(playerid, entParams);
+	}
+	else if(strcmp(cmd, "/cargo", true) == 0)
+	{
+	    new cgParams[144];
+	    new cp = idx;
+	    new clp = strlen(cmdtext);
+	    while(cp < clp && cmdtext[cp] == ' ') cp++;
+	    new cpi = 0;
+	    while(cp < clp && cpi < 143) { cgParams[cpi++] = cmdtext[cp++]; }
+	    cgParams[cpi] = 0;
+	    return Cargo_Cmd(playerid, cgParams);
 	}
 //---------------------------[ FACTION HOPITAL ]---------------------------------
 	else if(strcmp(cmd, "/duty", true) == 0)
