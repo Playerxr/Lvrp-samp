@@ -5184,6 +5184,7 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 #include <afrp_entreprise>
 #include <afrp_venuepriv>
 #include <afrp_coffrefix>
+#include <afrp_meublesdehors>
 
 // [NGG COMPAT] DESACTIVE - suspect du hang pawncc (test bisect)
 //#include <ngg_compat>
@@ -29689,6 +29690,7 @@ public OnGameModeInit()
 	//mecano_Load();
     fbi_Load();
 	house_LoadModels();
+	MD_Init(); // [MEUBLES DEHORS] charge les meubles exterieurs (apres house_LoadModels)
 	init_Texts();
 	ResetElevatorQueue();
 	Elevator_Initialize();
@@ -30876,6 +30878,39 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     if(dialogid >= 9960 && dialogid <= 9963)
     {
         return Venue_OnDialogResponse(playerid, dialogid, response, listitem, inputtext);
+    }
+
+    // [MEUBLES DEHORS] Dispatch des dialogs 9970-9973
+    if(dialogid >= 9970 && dialogid <= 9973)
+    {
+        return MD_OnDialogResponse(playerid, dialogid, response, listitem);
+    }
+
+    // [MOBILIER CHOIX] Dialog 9974 : dehors ou maison
+    if(dialogid == 9974)
+    {
+        if(!response) return 1;
+        if(listitem == 0)
+        {
+            // Dans la maison : verifie qu'on est bien dans un interieur de maison.
+            // Les interieurs de maison ont un Z eleve (> 0), ce qui confirme
+            // qu'on est bien dedans et pas dans le monde exterieur.
+            new Float:hx, Float:hy, Float:hz;
+            GetPlayerPos(playerid, hx, hy, hz);
+            if(gPlayerInHouse[playerid] == -1 || hz <= 0.0)
+                return msg_Client(playerid, COLOR_INFO, "{CF9756} Info {FFFFFF} Tu dois etre dans ta maison pour le mobilier interieur.");
+            ShowPlayerDialog(playerid,26,DIALOG_STYLE_LIST,"{00C600} Maison {FFFFFF} Mobilier","{FFFFFF}- Acheter un mobilier\n- Editer un mobilier (Liste)\n- Editer un mobilier (Clique)\n- Vendre un mobilier (Liste)\n- Vendre un mobilier (Clique)\n- Vendre tout le mobilier","Valider","Annuler");
+            player_Dialog[playerid]=0;
+            return 1;
+        }
+        else if(listitem == 1)
+        {
+            // Dehors : refuse si on est a l'interieur d'une maison
+            if(gPlayerInHouse[playerid] != -1)
+                return msg_Client(playerid, COLOR_INFO, "{CF9756} Info {FFFFFF} Tu es dans une maison. Choisis 'Dans la maison'.");
+            return MD_ShowMenu(playerid);
+        }
+        return 1;
     }
 
     // [JOBS] Dispatch du menu metiers (9770) + promo auto 10 min (9773)
@@ -48032,8 +48067,14 @@ public OnPlayerModelSelection(playerid, response, listid, modelid)
 {
     new Float:x,Float:y,Float:z,string[128];
     GetPlayerPos(playerid,x,y,z);
+    // [MEUBLES DEHORS] si le joueur pose un meuble a l'exterieur, on route ici
+    if(MD_OnModelSelection(playerid, response, modelid))
+        {return 1;}
     if(!response)
         {return 1;}
+    // [SECURITE] pas dans une maison => on n'ecrit pas dans house[-1]
+    if(gPlayerInHouse[playerid] < 0 || gPlayerInHouse[playerid] >= MAX_HOUSE)
+        {return msg_Client(playerid, COLOR_INFO, "{CF9756} Info {FFFFFF} Tu n'es pas dans une maison.");}
     new fur = house_CheckUnusedFurniture(gPlayerInHouse[playerid]);
     if(fur==-1)
         {return msg_Client(playerid,COLOR_HOUSE,"{00C600} Maison {FFFFFF} Vous n'avez plus d'emplacements libre.");}
@@ -48826,6 +48867,9 @@ public OnPlayerEditAttachedObject(playerid, response, index, modelid, boneid, Fl
 
 public OnPlayerEditDynamicObject(playerid, objectid, response, Float:x, Float:y, Float:z, Float:rx, Float:ry, Float:rz)
 {
+    // [MEUBLES DEHORS] edition d'un meuble exterieur : traite ici en priorite
+    if(MD_OnEditObject(playerid, objectid, response, x, y, z, rx, ry, rz))
+        {return 1;}
     new Float:oldX, Float:oldY, Float:oldZ,string[128],
 		Float:oldRotX, Float:oldRotY, Float:oldRotZ;
     GetDynamicObjectPos(objectid, oldX, oldY, oldZ);
@@ -51368,17 +51412,17 @@ public OnPlayerCommandText(playerid, cmdtext[])
 	        }
 	        else if(strcmp(tmp,"mobi",true) == 0 || strcmp(tmp,"mobilier",true) == 0)
 	        {
-	            if(gPlayerInHouse[playerid] == -1)
-	            	{msg_Client(playerid,COLOR_INFO,"{CF9756} Info {FFFFFF} Vous devez tre dans une maison.");return 1;}
-	            	
-	            if((strcmp(PlayerInfo[playerid][pRealName], house[gPlayerInHouse[playerid]][owner], true) == 1 || strcmp(PlayerInfo[playerid][pRealName], house[gPlayerInHouse[playerid]][owner], true) == 1 || strcmp(PlayerInfo[playerid][pRealName], house[gPlayerInHouse[playerid]][owner], true) == 1) && AdminDuty[playerid] == 0)
-					{msg_Client(playerid,COLOR_INFO,"{CF9756} Info {FFFFFF} Vous n'tes pas le propritaire.");return 1;}
-
-				if(IsPlayerInRangeOfPoint(playerid,25.0,223.9703,1291.1472,1082.1406))
-				    {return msg_Client(playerid,COLOR_INFO,"{CF9756} Info {FFFFFF} Impossible dans un HLM.");}
-
-				ShowPlayerDialog(playerid,26,DIALOG_STYLE_LIST,"{00C600} Maison {FFFFFF} Mobilier","{FFFFFF}- Acheter un mobilier\n- Editer un mobilier (Liste)\n- Editer un mobilier (Clique)\n- Vendre un mobilier (Liste)\n- Vendre un mobilier (Clique)\n- Vendre tout le mobilier","Valider","Annuler");
-                player_Dialog[playerid]=0;
+	            // [MEUBLES DEHORS] Si on est dans une maison : verifier proprio (comme avant)
+	            if(gPlayerInHouse[playerid] != -1)
+	            {
+	                if((strcmp(PlayerInfo[playerid][pRealName], house[gPlayerInHouse[playerid]][owner], true) == 1) && AdminDuty[playerid] == 0)
+	                    {msg_Client(playerid,COLOR_INFO,"{CF9756} Info {FFFFFF} Vous n'tes pas le propritaire.");return 1;}
+	                if(IsPlayerInRangeOfPoint(playerid,25.0,223.9703,1291.1472,1082.1406))
+	                    {return msg_Client(playerid,COLOR_INFO,"{CF9756} Info {FFFFFF} Impossible dans un HLM.");}
+	            }
+	            // Propose le choix : dans la maison ou dehors (exterieur)
+	            ShowPlayerDialog(playerid, 9974, DIALOG_STYLE_LIST, "{00C600} Mobilier {FFFFFF} Ou placer ?",
+	                "{FFFFFF}- Dans la maison\n- Dehors (exterieur, max 10)", "Valider", "Annuler");
 	        	return 1;
 	        }
 	    }
