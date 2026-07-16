@@ -28569,6 +28569,9 @@ public house_Load()
     }
     if(gServerReload==0)
 		{printf("    .. %d maison(s) charge(s)",totalHouses);}
+	// [FIX MEUBLES] Charge les meubles UNIQUEMENT apres que house[] soit
+	// completement peuple, sinon race condition => DELETE en boucle en DB.
+	mysql_pquery(MYSQL,"SELECT * FROM lvrp_server_houses_furnitures ORDER BY id ASC","house_LoadFurnitures");
 }
 
 stock house_LoadModels()
@@ -28605,13 +28608,11 @@ public house_LoadFurnitures()
         cache_get_value_index_int(i,1, tmp);
 	    // FIX CRASH : borner tmp pour eviter house[OOB][used]
 	    if(tmp < 0 || tmp >= MAX_HOUSE) { continue; }
-	    if(house[tmp][used]!= 1)// Maison non-dfinie
-     	{
-          	cache_get_value_index_int(i,0, tmp);
-			format(sql, sizeof(sql), "DELETE FROM lvrp_server_houses_furnitures WHERE id=%d LIMIT 1", tmp);
-			mysql_pquery(MYSQL,sql);
-			continue;
-		}
+	    // [FIX MEUBLES] Ne PAS supprimer le meuble si la maison n'existe pas
+	    // encore en memoire : c'etait la cause du bug "meubles disparaissent
+	    // au restart". Si la maison a vraiment ete supprimee par un admin,
+	    // le meuble reste orphelin en DB (mieux qu'une perte de donnees).
+	    if(house[tmp][used] != 1) { continue; }
   		cache_get_value_index_int(i,1, tmp);
 	    mob = house_CheckUnusedFurniture(tmp);
 	    cache_get_value_index_int(i,0, house[tmp][fFurSQLid][mob]);
@@ -29646,7 +29647,9 @@ public OnGameModeInit()
 	mysql_pquery(MYSQL,"SELECT * FROM lvrp_server_bizz ORDER BY id ASC","bizz_Load");
 	mysql_pquery(MYSQL,"SELECT * FROM lvrp_server_uniquebizz ORDER BY id ASC","uniquebizz_Load");
 	mysql_pquery(MYSQL,"SELECT * FROM lvrp_server_houses ORDER BY id ASC","house_Load");
-	mysql_pquery(MYSQL,"SELECT * FROM lvrp_server_houses_furnitures ORDER BY id ASC","house_LoadFurnitures");
+	// [FIX MEUBLES] Le chargement des meubles est desormais chaine a la fin de
+	// house_Load pour eviter la race qui faisait supprimer TOUS les meubles de
+	// la DB quand le callback meubles arrivait avant que house[] soit peuplee.
 	mysql_pquery(MYSQL,"SELECT * FROM lvrp_server_vehicles ORDER BY id ASC","vehicle_Load"); // [FIX] ORDER BY garantit correspondance ID SA-MP <-> SQLID
 	mysql_pquery(MYSQL,"SELECT * FROM lvrp_server_camera ORDER BY id ASC","camera_Load");
 	mysql_pquery(MYSQL,"SELECT * FROM lvrp_factions_polices ORDER BY id ASC","police_Load");
