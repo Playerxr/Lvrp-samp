@@ -5183,6 +5183,7 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 #include <afrp_parkingpayant>
 #include <afrp_entreprise>
 #include <afrp_venuepriv>
+#include <afrp_coffrefix>
 
 // [NGG COMPAT] DESACTIVE - suspect du hang pawncc (test bisect)
 //#include <ngg_compat>
@@ -51899,10 +51900,12 @@ public OnPlayerCommandText(playerid, cmdtext[])
 			new counter = 0,mycar;
 			// [FIX /v coffre] Boucle etendue a MAX_CAR : les v�hicules joueurs charg�s via
 			// vehicle_LoadPlayer (CreateVehicle) peuvent avoir un SA-MP vehicleid > totalVehicles
+			// [FIX GROS VEHICULES] rayon de detection adapte a la taille : sur un camion,
+			// poids-lourd ou conteneur, le coffre est loin du centre du vehicule.
 			for(new i=1; i<MAX_CAR; i++)
 			{
 				if(vehicle[i][used] == 0) continue;
-				if(CheckPlayerDistanceToVehicle(3.5, playerid, i))
+				if(CheckPlayerDistanceToVehicle(CoffreDetectRadius(i), playerid, i))
 					{mycar = i; counter++;}
 			}
 			if(car_PlayerInSafe[playerid] !=0)
