@@ -28,6 +28,10 @@
 #define VP_FILE               "venues_prives.cfg"
 #define VP_ENTRY_RADIUS       3.0
 #define VP_LABEL_DIST         15.0
+#define VP_BARRIER_RADIUS     1.8      // rayon de la sphere qui repousse
+#define VP_BARRIER_OFFSET     1.5      // distance en avant de l'entree
+#define VP_BARRIER_PUSHBACK   3.5      // recul en metres si on passe sans payer
+#define VP_AUTH_SEC           4        // grace period apres paiement legit
 #define VP_DLG_ENTRY          9960
 #define VP_DLG_PIN_CLIENT     9961
 #define VP_DLG_PIN_SET        9962
@@ -45,7 +49,9 @@ enum e_Venue
 	vpEntryFee,
 	vpPin[8],           // "" (vide) = pas de PIN
 	vpLocked,           // 0 ouvert, 1 ferme
-	vpRevenue           // total encaisse (info uniquement)
+	vpRevenue,          // total encaisse (info uniquement)
+	Float:vpBarrierX, Float:vpBarrierY, Float:vpBarrierZ,   // centre de la sphere barriere
+	STREAMER_TAG_AREA:vpBarrierArea                          // handle streamer, -1 si pas cree
 };
 new venues[VP_MAX_VENUE][e_Venue];
 new venuePickup[VP_MAX_VENUE];
@@ -53,18 +59,21 @@ new venueExitPickup[VP_MAX_VENUE];
 new Text3D:venueLabel[VP_MAX_VENUE];
 new Text3D:venueExitLabel[VP_MAX_VENUE];
 new venue_PendingVid[MAX_PLAYERS];    // venue selectionne pour dialog en cours
+new venue_AuthUntil[MAX_PLAYERS];     // gettime() jusqu'auquel le joueur est authorise a franchir la barriere
 new venue_Count = 0;
 
 stock Venue_Init()
 {
 	for(new i = 0; i < VP_MAX_VENUE; i++)
 	{
-		venues[i][vpUsed]      = 0;
-		venuePickup[i]         = -1;
-		venueExitPickup[i]     = -1;
-		venueLabel[i]          = Text3D:INVALID_3DTEXT_ID;
-		venueExitLabel[i]      = Text3D:INVALID_3DTEXT_ID;
+		venues[i][vpUsed]         = 0;
+		venuePickup[i]            = -1;
+		venueExitPickup[i]        = -1;
+		venueLabel[i]             = Text3D:INVALID_3DTEXT_ID;
+		venueExitLabel[i]         = Text3D:INVALID_3DTEXT_ID;
+		venues[i][vpBarrierArea]  = STREAMER_TAG_AREA:-1;
 	}
+	for(new p = 0; p < MAX_PLAYERS; p++) venue_AuthUntil[p] = 0;
 	Venue_Load();
 	return 1;
 }
@@ -116,6 +125,20 @@ stock Venue_Load()
 		Venue_ReadField(line, i, tmpBuf, sizeof(tmpBuf), 31); venues[vid][vpLocked]  = strval(tmpBuf);
 		Venue_ReadField(line, i, tmpBuf, sizeof(tmpBuf), 31); venues[vid][vpRevenue] = strval(tmpBuf);
 
+		// Champs barriere (peuvent etre absents des vieux fichiers)
+		Venue_ReadField(line, i, tmpBuf, sizeof(tmpBuf), 31); venues[vid][vpBarrierX] = floatstr(tmpBuf);
+		Venue_ReadField(line, i, tmpBuf, sizeof(tmpBuf), 31); venues[vid][vpBarrierY] = floatstr(tmpBuf);
+		Venue_ReadField(line, i, tmpBuf, sizeof(tmpBuf), 31); venues[vid][vpBarrierZ] = floatstr(tmpBuf);
+
+		// Retro-compat : barriere pas dans le fichier => on la place a l'entree + 1.5m Y
+		if(venues[vid][vpBarrierX] == 0.0 && venues[vid][vpBarrierY] == 0.0 && venues[vid][vpBarrierZ] == 0.0)
+		{
+			venues[vid][vpBarrierX] = venues[vid][vpEntryX];
+			venues[vid][vpBarrierY] = venues[vid][vpEntryY] + VP_BARRIER_OFFSET;
+			venues[vid][vpBarrierZ] = venues[vid][vpEntryZ];
+		}
+
+		venues[vid][vpBarrierArea] = STREAMER_TAG_AREA:-1;
 		venues[vid][vpUsed] = 1;
 		Venue_CreateVisuals(vid);
 		venue_Count++;
@@ -130,11 +153,11 @@ stock Venue_Save()
 	if(fexist(VP_FILE)) fremove(VP_FILE);
 	new File:f = fopen(VP_FILE, io_write);
 	if(!f) return 0;
-	new line[512];
+	new line[640];
 	for(new i = 0; i < VP_MAX_VENUE; i++)
 	{
 		if(venues[i][vpUsed] != 1) continue;
-		format(line, sizeof(line), "%s|%d|%.4f|%.4f|%.4f|%.4f|%.4f|%.4f|%d|%d|%d|%s|%d|%d\n",
+		format(line, sizeof(line), "%s|%d|%.4f|%.4f|%.4f|%.4f|%.4f|%.4f|%d|%d|%d|%s|%d|%d|%.4f|%.4f|%.4f\n",
 			venues[i][vpName],
 			venues[i][vpOwnerSqlid],
 			venues[i][vpEntryX], venues[i][vpEntryY], venues[i][vpEntryZ],
@@ -143,7 +166,8 @@ stock Venue_Save()
 			venues[i][vpEntryFee],
 			venues[i][vpPin],
 			venues[i][vpLocked],
-			venues[i][vpRevenue]);
+			venues[i][vpRevenue],
+			venues[i][vpBarrierX], venues[i][vpBarrierY], venues[i][vpBarrierZ]);
 		fwrite(f, line);
 	}
 	fclose(f);
@@ -187,6 +211,16 @@ stock Venue_CreateVisuals(vid)
 	}
 	Venue_UpdateLabel(vid);
 
+	// Sphere barriere : bloque physiquement les gens qui essayent d'entrer
+	// sans avoir paye. Position juste en avant de la porte (fixee au /venue creer).
+	if(_:venues[vid][vpBarrierArea] == _:STREAMER_TAG_AREA:-1
+		&& !(venues[vid][vpBarrierX] == 0.0 && venues[vid][vpBarrierY] == 0.0 && venues[vid][vpBarrierZ] == 0.0))
+	{
+		venues[vid][vpBarrierArea] = CreateDynamicSphere(
+			venues[vid][vpBarrierX], venues[vid][vpBarrierY], venues[vid][vpBarrierZ],
+			VP_BARRIER_RADIUS, 0, 0, -1, 0);
+	}
+
 	// Pickup + label a l'interieur (sortie) - seulement si un interieur est defini
 	if(!(venues[vid][vpExitX] == 0.0 && venues[vid][vpExitY] == 0.0 && venues[vid][vpExitZ] == 0.0))
 	{
@@ -216,6 +250,11 @@ stock Venue_DestroyVisuals(vid)
 	{
 		Delete3DTextLabel(venueExitLabel[vid]);
 		venueExitLabel[vid] = Text3D:INVALID_3DTEXT_ID;
+	}
+	if(_:venues[vid][vpBarrierArea] != _:STREAMER_TAG_AREA:-1)
+	{
+		DestroyDynamicArea(venues[vid][vpBarrierArea]);
+		venues[vid][vpBarrierArea] = STREAMER_TAG_AREA:-1;
 	}
 	return 1;
 }
@@ -255,6 +294,8 @@ stock Venue_Enter(playerid, vid)
 	if(venues[vid][vpUsed] != 1) return 0;
 	if(venues[vid][vpExitX] == 0.0 && venues[vid][vpExitY] == 0.0 && venues[vid][vpExitZ] == 0.0)
 		return msg_Client(playerid, COLOR_INFO, "{CF9756} Lieu {FFFFFF} L'interieur n'est pas encore defini par l'admin.");
+	// Grace period : le joueur peut franchir la barriere le temps du teleport.
+	venue_AuthUntil[playerid] = gettime() + VP_AUTH_SEC;
 	SetPlayerInterior(playerid, venues[vid][vpExitInt]);
 	SetPlayerVirtualWorld(playerid, venues[vid][vpExitVW]);
 	SafeSetPlayerPos(playerid, venues[vid][vpExitX], venues[vid][vpExitY], venues[vid][vpExitZ]);
@@ -262,6 +303,49 @@ stock Venue_Enter(playerid, vid)
 	format(msg, sizeof(msg), "{42AAFF} Lieu {FFFFFF} Bienvenue chez {FFFFB2}%s{FFFFFF}.", venues[vid][vpName]);
 	msg_Client(playerid, COLOR_WHITE, msg);
 	return 1;
+}
+
+// Handler barriere : appele depuis OnPlayerEnterDynamicArea. Repousse les
+// joueurs qui essaient d'entrer dans le batiment sans etre autorises.
+// Retourne 1 si un venue a matche l'areaid, 0 sinon (pour ne pas court-circuiter
+// les autres handlers d'aires dynamiques).
+stock Venue_OnPlayerEnterBarrier(playerid, STREAMER_TAG_AREA:areaid)
+{
+	for(new vid = 0; vid < VP_MAX_VENUE; vid++)
+	{
+		if(venues[vid][vpUsed] != 1) continue;
+		if(_:venues[vid][vpBarrierArea] != _:areaid) continue;
+
+		// Grace period : le joueur vient de payer, il traverse la barriere le temps
+		// de son teleport vers l'interieur - on le laisse passer.
+		if(venue_AuthUntil[playerid] >= gettime()) return 1;
+
+		// Le proprio entre toujours librement.
+		if(venues[vid][vpOwnerSqlid] == PlayerInfo[playerid][pSQLID]) return 1;
+
+		// Admin 5+ peut passer (pour verifier les lieux)
+		if(PlayerInfo[playerid][pAdmin] >= 5) return 1;
+
+		// Repousse le joueur vers l'entree (le pickup /venue)
+		new Float:px, Float:py, Float:pz;
+		GetPlayerPos(playerid, px, py, pz);
+		new Float:dx = px - venues[vid][vpBarrierX];
+		new Float:dy = py - venues[vid][vpBarrierY];
+		new Float:dist = floatsqroot(dx*dx + dy*dy);
+		if(dist < 0.01) { dx = 0.0; dy = -1.0; dist = 1.0; }  // pile au centre : recul arbitraire vers -Y
+		new Float:pushX = venues[vid][vpBarrierX] + (dx / dist) * VP_BARRIER_PUSHBACK;
+		new Float:pushY = venues[vid][vpBarrierY] + (dy / dist) * VP_BARRIER_PUSHBACK;
+		SafeSetPlayerPos(playerid, pushX, pushY, venues[vid][vpEntryZ] + 0.2);
+
+		new msg[192];
+		if(venues[vid][vpLocked] == 1)
+			format(msg, sizeof(msg), "{FF3333} Porte {FFFFFF} {FFFFB2}%s{FFFFFF} est ferme au public.", venues[vid][vpName]);
+		else
+			format(msg, sizeof(msg), "{FF3333} Porte {FFFFFF} Entree payante ({FFFFB2}%d${FFFFFF}). Tape {FFFFB2}/venue{FFFFFF} pour entrer.", venues[vid][vpEntryFee]);
+		msg_Client(playerid, COLOR_INFO, msg);
+		return 1;
+	}
+	return 0;
 }
 
 stock Venue_ChargeAndEnter(playerid, vid)
@@ -538,6 +622,13 @@ stock Venue_Cmd(playerid, params[])
 		new n = 0; while(n < 63 && rest[n]) { venues[vid][vpName][n] = rest[n]; n++; } venues[vid][vpName][n] = 0;
 		venues[vid][vpOwnerSqlid] = 0;
 		GetPlayerPos(playerid, venues[vid][vpEntryX], venues[vid][vpEntryY], venues[vid][vpEntryZ]);
+		// Barriere placee 1.5m dans la direction ou regarde l'admin (vers la porte).
+		new Float:facing;
+		GetPlayerFacingAngle(playerid, facing);
+		venues[vid][vpBarrierX] = venues[vid][vpEntryX] - floatsin(facing, degrees) * VP_BARRIER_OFFSET;
+		venues[vid][vpBarrierY] = venues[vid][vpEntryY] + floatcos(facing, degrees) * VP_BARRIER_OFFSET;
+		venues[vid][vpBarrierZ] = venues[vid][vpEntryZ];
+		venues[vid][vpBarrierArea] = STREAMER_TAG_AREA:-1;
 		venues[vid][vpExitX] = 0.0; venues[vid][vpExitY] = 0.0; venues[vid][vpExitZ] = 0.0;
 		venues[vid][vpExitInt] = 0; venues[vid][vpExitVW] = 0;
 		venues[vid][vpEntryFee] = 500;
@@ -547,8 +638,32 @@ stock Venue_Cmd(playerid, params[])
 		venue_Count++;
 		Venue_CreateVisuals(vid);
 		Venue_Save();
+		new okStr[220];
+		format(okStr, sizeof(okStr), "{42AAFF} Lieu {FFFFFF} Cree (ID %d) : {FFFFB2}%s{FFFFFF}. Barriere placee dans la direction ou tu regardes. Etape suivante : /venue interieur DEDANS puis /venue proprio <joueur>.", vid, venues[vid][vpName]);
+		return msg_Client(playerid, COLOR_WHITE, okStr);
+	}
+
+	if(strcmp(sub, "barriere", true) == 0 || strcmp(sub, "porte", true) == 0)
+	{
+		if(PlayerInfo[playerid][pAdmin] < 3)
+			return msg_Client(playerid, COLOR_INFO, "{FF0000} Admin {FFFFFF} Reserve admin 3+.");
+		new vid = -1;
+		new Float:bestDist = 30.0;
+		for(new k = 0; k < VP_MAX_VENUE; k++)
+		{
+			if(venues[k][vpUsed] != 1) continue;
+			new Float:d = GetPlayerDistanceFromPoint(playerid, venues[k][vpEntryX], venues[k][vpEntryY], venues[k][vpEntryZ]);
+			if(d < bestDist) { bestDist = d; vid = k; }
+		}
+		if(vid == -1)
+			return msg_Client(playerid, COLOR_INFO, "{CF9756} Lieu {FFFFFF} Aucun lieu a moins de 30m.");
+		// Nouvelle barriere = position actuelle du joueur (mets-toi pile a l'endroit du blocage)
+		GetPlayerPos(playerid, venues[vid][vpBarrierX], venues[vid][vpBarrierY], venues[vid][vpBarrierZ]);
+		Venue_DestroyVisuals(vid);
+		Venue_CreateVisuals(vid);
+		Venue_Save();
 		new okStr[160];
-		format(okStr, sizeof(okStr), "{42AAFF} Lieu {FFFFFF} Cree (ID %d) : {FFFFB2}%s{FFFFFF}. Tape /venue interieur DEDANS pour fixer la sortie, puis /venue proprio <joueur>.", vid, venues[vid][vpName]);
+		format(okStr, sizeof(okStr), "{42AAFF} Lieu {FFFFFF} Barriere de {FFFFB2}%s{FFFFFF} placee ici (rayon %.1fm).", venues[vid][vpName], VP_BARRIER_RADIUS);
 		return msg_Client(playerid, COLOR_WHITE, okStr);
 	}
 

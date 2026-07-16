@@ -23749,6 +23749,9 @@ stock encode_lights(light1, light2, light3, light4)
 }
 public OnPlayerEnterDynamicArea(playerid, areaid)
 {
+	// [VENUE PRIVE] barriere anti-resquille aux entrees des lieux prives
+	if(Venue_OnPlayerEnterBarrier(playerid, areaid)) return 1;
+
 	if(areaid==zoneTrain[0])
 	{
 	    if(GetPlayerState(playerid) == PLAYER_STATE_DRIVER && GetVehicleModel(GetPlayerVehicleID(playerid)) == 538)
