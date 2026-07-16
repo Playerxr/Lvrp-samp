@@ -5181,6 +5181,7 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 // [SECURITE ADMIN] Niveau requis configurable pour /a creer et /a donner
 #include <afrp_adminlevels>
 #include <afrp_parkingpayant>
+#include <afrp_entreprise>
 #include <afrp_venuepriv>
 
 // [NGG COMPAT] DESACTIVE - suspect du hang pawncc (test bisect)
@@ -23277,6 +23278,7 @@ public OnPlayerConnect(playerid)
     JobBar_OnConnect(playerid); // [JOB RANK] init slots barre XP
     VipPerks_OnConnect(playerid); // [VIP PERKS] reset cooldowns tp + tag
     GangTag_OnConnect(playerid); // [GANG TAG] init slot label
+    Ent_OnPlayerConnect(playerid); // [ENTREPRISE] reset compteur minutes accumulees
     Jobs_OnConnect(playerid); // [JOBS] reset streak
     FAQ_OnConnect(playerid); // [FAQ] reset cooldown aide auto
     HpPersist_OnConnect(playerid); // [HP PERSIST] reset flag restauration vie
@@ -29818,6 +29820,8 @@ public OnGameModeInit()
     ParkingPay_Init();
     // Init lieux prives (restaurants, clubs, boutiques...)
     Venue_Init();
+    // Init entreprises legales (patronat + caisse + salaires)
+    Ent_Init();
     // Init systeme casino (charge scriptfiles/casinos.cfg)
     Casino_Init();
     // Sauvegarde auto de parkings.cfg/casinos.cfg (voir afrp_autobackup.inc)
@@ -52685,6 +52689,17 @@ public OnPlayerCommandText(playerid, cmdtext[])
 	    while(vp < vlp && vpi < 143) { venueParams[vpi++] = cmdtext[vp++]; }
 	    venueParams[vpi] = 0;
 	    return Venue_Cmd(playerid, venueParams);
+	}
+	else if(strcmp(cmd, "/entreprise", true) == 0 || strcmp(cmd, "/ent", true) == 0)
+	{
+	    new entParams[144];
+	    new ep = idx;
+	    new elp = strlen(cmdtext);
+	    while(ep < elp && cmdtext[ep] == ' ') ep++;
+	    new epi = 0;
+	    while(ep < elp && epi < 143) { entParams[epi++] = cmdtext[ep++]; }
+	    entParams[epi] = 0;
+	    return Ent_Cmd(playerid, entParams);
 	}
 //---------------------------[ FACTION HOPITAL ]---------------------------------
 	else if(strcmp(cmd, "/duty", true) == 0)

@@ -51,7 +51,8 @@ enum e_Venue
 	vpLocked,           // 0 ouvert, 1 ferme
 	vpRevenue,          // total encaisse (info uniquement)
 	Float:vpBarrierX, Float:vpBarrierY, Float:vpBarrierZ,   // centre de la sphere barriere
-	STREAMER_TAG_AREA:vpBarrierArea                          // handle streamer, -1 si pas cree
+	STREAMER_TAG_AREA:vpBarrierArea,                        // handle streamer, -1 si pas cree
+	vpEnterprise[64]    // "" (vide) = revenus au proprio, sinon vers caisse entreprise
 };
 new venues[VP_MAX_VENUE][e_Venue];
 new venuePickup[VP_MAX_VENUE];
@@ -130,6 +131,9 @@ stock Venue_Load()
 		Venue_ReadField(line, i, tmpBuf, sizeof(tmpBuf), 31); venues[vid][vpBarrierY] = floatstr(tmpBuf);
 		Venue_ReadField(line, i, tmpBuf, sizeof(tmpBuf), 31); venues[vid][vpBarrierZ] = floatstr(tmpBuf);
 
+		// Nom entreprise (peut etre absent des vieux fichiers)
+		Venue_ReadField(line, i, venues[vid][vpEnterprise], 64, 63);
+
 		// Retro-compat : barriere pas dans le fichier => on la place a l'entree + 1.5m Y
 		if(venues[vid][vpBarrierX] == 0.0 && venues[vid][vpBarrierY] == 0.0 && venues[vid][vpBarrierZ] == 0.0)
 		{
@@ -157,7 +161,7 @@ stock Venue_Save()
 	for(new i = 0; i < VP_MAX_VENUE; i++)
 	{
 		if(venues[i][vpUsed] != 1) continue;
-		format(line, sizeof(line), "%s|%d|%.4f|%.4f|%.4f|%.4f|%.4f|%.4f|%d|%d|%d|%s|%d|%d|%.4f|%.4f|%.4f\n",
+		format(line, sizeof(line), "%s|%d|%.4f|%.4f|%.4f|%.4f|%.4f|%.4f|%d|%d|%d|%s|%d|%d|%.4f|%.4f|%.4f|%s\n",
 			venues[i][vpName],
 			venues[i][vpOwnerSqlid],
 			venues[i][vpEntryX], venues[i][vpEntryY], venues[i][vpEntryZ],
@@ -167,7 +171,8 @@ stock Venue_Save()
 			venues[i][vpPin],
 			venues[i][vpLocked],
 			venues[i][vpRevenue],
-			venues[i][vpBarrierX], venues[i][vpBarrierY], venues[i][vpBarrierZ]);
+			venues[i][vpBarrierX], venues[i][vpBarrierY], venues[i][vpBarrierZ],
+			venues[i][vpEnterprise]);
 		fwrite(f, line);
 	}
 	fclose(f);
@@ -362,19 +367,33 @@ stock Venue_ChargeAndEnter(playerid, vid)
 		SafeGivePlayerMoney(playerid, -fee, "Entree lieu prive");
 		venues[vid][vpRevenue] += fee;
 
-		// Credite le proprio si connecte
-		new proOwner = INVALID_PLAYER_ID;
-		for(new p = 0; p < MAX_PLAYERS_CURRENT + 1; p++)
+		// Si le venue est lie a une entreprise : le paiement va dans la caisse.
+		if(strlen(venues[vid][vpEnterprise]) > 0 && Ent_CreditByName(venues[vid][vpEnterprise], fee))
 		{
-			if(!IsPlayerConnected(p) || IsPlayerNPC(p)) continue;
-			if(PlayerInfo[p][pSQLID] == venues[vid][vpOwnerSqlid]) { proOwner = p; break; }
+			// Notifie le proprio si connecte (info seulement, argent va en caisse)
+			for(new p = 0; p < MAX_PLAYERS_CURRENT + 1; p++)
+			{
+				if(!IsPlayerConnected(p) || IsPlayerNPC(p)) continue;
+				if(PlayerInfo[p][pSQLID] != venues[vid][vpOwnerSqlid]) continue;
+				new notif[160];
+				format(notif, sizeof(notif), "{42AAFF} Lieu {FFFFFF} Client chez {FFFFB2}%s{FFFFFF} : +%d$ dans la caisse {FFFFB2}%s{FFFFFF}.", venues[vid][vpName], fee, venues[vid][vpEnterprise]);
+				msg_Client(p, COLOR_WHITE, notif);
+				break;
+			}
 		}
-		if(proOwner != INVALID_PLAYER_ID)
+		else
 		{
-			SafeGivePlayerMoney(proOwner, fee, "Recette lieu prive");
-			new notif[128];
-			format(notif, sizeof(notif), "{42AAFF} Lieu {FFFFFF} Un client est entre chez toi ({FFFFB2}%s{FFFFFF}) : +%d$.", venues[vid][vpName], fee);
-			msg_Client(proOwner, COLOR_WHITE, notif);
+			// Pas d'entreprise ou nom introuvable : argent dans la poche du proprio (comportement d'origine)
+			for(new p = 0; p < MAX_PLAYERS_CURRENT + 1; p++)
+			{
+				if(!IsPlayerConnected(p) || IsPlayerNPC(p)) continue;
+				if(PlayerInfo[p][pSQLID] != venues[vid][vpOwnerSqlid]) continue;
+				SafeGivePlayerMoney(p, fee, "Recette lieu prive");
+				new notif[128];
+				format(notif, sizeof(notif), "{42AAFF} Lieu {FFFFFF} Un client est entre chez toi ({FFFFB2}%s{FFFFFF}) : +%d$.", venues[vid][vpName], fee);
+				msg_Client(p, COLOR_WHITE, notif);
+				break;
+			}
 		}
 		Venue_Save();
 	}
@@ -581,6 +600,44 @@ stock Venue_Cmd(playerid, params[])
 			"{FFAA00}Prix d'entree",
 			"{FFFFFF}Nouveau prix d'entree (0 a 500000$) :",
 			"Valider", "Annuler");
+	}
+
+	if(strcmp(sub, "entreprise", true) == 0)
+	{
+		new vid = Venue_GetNearestEntry(playerid);
+		if(vid == -1) return msg_Client(playerid, COLOR_INFO, "{CF9756} Lieu {FFFFFF} Approche-toi de ton entree.");
+		if(venues[vid][vpOwnerSqlid] != PlayerInfo[playerid][pSQLID])
+			return msg_Client(playerid, COLOR_INFO, "{CF9756} Lieu {FFFFFF} Tu n'es pas le proprio.");
+		if(strlen(rest) == 0)
+		{
+			new curTxt[128];
+			if(strlen(venues[vid][vpEnterprise]) == 0)
+				format(curTxt, sizeof(curTxt), "{FFFFFF}Aucune entreprise liee. Recettes = poche proprio.\nUsage : /venue entreprise <nom> ou 'off'.");
+			else
+				format(curTxt, sizeof(curTxt), "{FFFFFF}Actuellement liee a : {FFFFB2}%s{FFFFFF}.\nUsage : /venue entreprise <nom> ou 'off'.", venues[vid][vpEnterprise]);
+			return ShowPlayerDialog(playerid, 9994, DIALOG_STYLE_MSGBOX, "Lien entreprise", curTxt, "OK", "");
+		}
+		if(strcmp(rest, "off", true) == 0)
+		{
+			venues[vid][vpEnterprise][0] = 0;
+			Venue_Save();
+			return msg_Client(playerid, COLOR_WHITE, "{42AAFF} Lieu {FFFFFF} Lien entreprise retire. Recettes vont en poche proprio.");
+		}
+		// Verifier que l'entreprise existe et que le joueur en fait partie
+		if(Ent_FindByName(rest) == -1)
+			return msg_Client(playerid, COLOR_INFO, "{CF9756} Lieu {FFFFFF} Entreprise introuvable.");
+		new eidCheck = Ent_FindByOwner(PlayerInfo[playerid][pSQLID]);
+		new empEid, empSlot;
+		new bool:hasAccess = (eidCheck != -1 && strcmp(entreprises[eidCheck][entName], rest, true) == 0);
+		if(!hasAccess && Ent_FindEmployeeSlot(PlayerInfo[playerid][pSQLID], empEid, empSlot))
+			hasAccess = (empEid != -1 && strcmp(entreprises[empEid][entName], rest, true) == 0);
+		if(!hasAccess)
+			return msg_Client(playerid, COLOR_INFO, "{CF9756} Lieu {FFFFFF} Tu n'es ni patron ni employe de cette entreprise.");
+		new n = 0; while(n < 63 && rest[n]) { venues[vid][vpEnterprise][n] = rest[n]; n++; } venues[vid][vpEnterprise][n] = 0;
+		Venue_Save();
+		new okStr[160];
+		format(okStr, sizeof(okStr), "{42AAFF} Lieu {FFFFFF} Ce lieu envoie maintenant ses recettes dans la caisse {FFFFB2}%s{FFFFFF}.", venues[vid][vpEnterprise]);
+		return msg_Client(playerid, COLOR_WHITE, okStr);
 	}
 
 	if(strcmp(sub, "ferme", true) == 0 || strcmp(sub, "fermer", true) == 0)
