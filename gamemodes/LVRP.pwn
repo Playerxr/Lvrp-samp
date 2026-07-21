@@ -4892,9 +4892,15 @@ public PaieAuto_Tick()
         {
             PaieAuto_Time[i] = 0;
             new montant = GetJobPaie(currentJob);
+            // [BIENVENUE] boost 72h premiere apparition : paie horaire doublee
+            new mult = Bienvenue_PayMultiplier(i);
+            montant *= mult;
             SafeGivePlayerMoney(i, montant, "Paie horaire job");
-            new pstring[140];
-            format(pstring, sizeof(pstring), "{00FF00}\xbb Paie horaire \xab{FFFFFF} Vous recevez ${FFFF00}%d{FFFFFF} pour 1h de travail.", montant);
+            new pstring[180];
+            if(mult > 1)
+                format(pstring, sizeof(pstring), "{00FF00}\xbb Paie horaire \xab{FFFFFF} Vous recevez ${FFFF00}%d{FFFFFF} pour 1h de travail {FFD700}(x%d bonus nouveau joueur){FFFFFF}.", montant, mult);
+            else
+                format(pstring, sizeof(pstring), "{00FF00}\xbb Paie horaire \xab{FFFFFF} Vous recevez ${FFFF00}%d{FFFFFF} pour 1h de travail.", montant);
             msg_Client(i, COLOR_WHITE, pstring);
         }
     }
@@ -5161,6 +5167,9 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 
 // [DAILY BONUS] 5000$ + item al�atoire a la 1ere connexion du jour
 #include <afrp_dailybonus>
+
+// [BIENVENUE] Bonus de premiere apparition (750k + paie job doublee 72h) - retention
+#include <afrp_bienvenue>
 
 // [FIX MAISONS] Anti-doublon d'entrees de maisons trop proches
 #include <afrp_housefix>
@@ -10678,6 +10687,9 @@ public OnPlayerLogin(playerid,pass[])
 
 	// [DAILY BONUS] Verifie/donne le bonus de connexion quotidien (5000$ + item)
 	DailyBonus_CheckOnLogin(playerid);
+
+	// [BIENVENUE] Bonus de premiere apparition (une seule fois par compte)
+	Bienvenue_CheckOnLogin(playerid);
 	
 	// On check les extentions de la table user_lvrp
 	MySQLCheckAccountOther(PlayerInfo[playerid][pSQLID]);
@@ -29849,6 +29861,8 @@ public OnGameModeInit()
     Cargo_Init();
     // Init port d'arme (guerites + detenteurs du permis)
     PortArme_Init();
+    // Init bonus de premiere apparition (liste des comptes deja bonusses)
+    Bienvenue_Init();
     // Init systeme casino (charge scriptfiles/casinos.cfg)
     Casino_Init();
     // Sauvegarde auto de parkings.cfg/casinos.cfg (voir afrp_autobackup.inc)
