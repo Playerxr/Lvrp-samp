@@ -44371,6 +44371,20 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 	        {
 	            msg_Client(playerid,COLOR_WHITE,"{FF2727} Admin {FFABAD} Stat edit.");
 	            PlayerInfo[Clicked[playerid]][pDonateRank] = listitem;
+	            // [FIX VIP EXPIRE IMMEDIAT] pVipTime n'etait jamais initialise ici :
+	            // timer_1mn() decremente pVipTime chaque minute et remet pDonateRank a 0
+	            // des que pVipTime atteint 0. Comme pVipTime restait a 0 (jamais mis a jour),
+	            // tout VIP accorde ici etait annule automatiquement dans la minute qui suivait.
+	            if(listitem > 0)
+	            {
+	                PlayerInfo[Clicked[playerid]][pVipTime] = 43200; // 30 jours (timer_1mn = 1 decrement/minute)
+	                MySQLUpdatePlayerIntSingle(PlayerInfo[Clicked[playerid]][pSQLID], "VipTime", PlayerInfo[Clicked[playerid]][pVipTime]);
+	            }
+	            else
+	            {
+	                PlayerInfo[Clicked[playerid]][pVipTime] = 0;
+	                MySQLUpdatePlayerIntSingle(PlayerInfo[Clicked[playerid]][pSQLID], "VipTime", 0);
+	            }
 		        IniStatsPanel(playerid);// On remontre le panel
 		        MySQLUpdatePlayerIntSingle(PlayerInfo[Clicked[playerid]][pSQLID], "DonateRank", PlayerInfo[Clicked[playerid]][pDonateRank]);
 		        VipTag_Update(Clicked[playerid]); // [VIP PERKS] rafraichit le tag flottant selon le nouveau palier
@@ -67419,7 +67433,7 @@ public OnPlayerCommandText(playerid, cmdtext[])
 					{
 	    				if(PlayerInfo[i][pDonateRank] != 0)
 				    	{
-							format(string, 256, "{800080}- V.I.P %s {FFFFFF}%s", PlayerInfo[i][pRealName]);
+							format(string, 256, "{800080}- V.I.P {FFFFFF}%s", PlayerInfo[i][pRealName]);
 							msg_Client(playerid, COLOR_WHITE, string);
 						}
 					}
