@@ -5186,6 +5186,7 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 #include <afrp_coffrefix>
 #include <afrp_meublesdehors>
 #include <afrp_cargomission>
+#include <afrp_portarme>
 
 // [NGG COMPAT] DESACTIVE - suspect du hang pawncc (test bisect)
 //#include <ngg_compat>
@@ -17093,7 +17094,7 @@ stock Ammu_GetPrice(bizid, index)
     new plancher = 0;
     switch(index)
     {
-        case 0:  plancher = 10000000;  // Colt 45           - 100 balles
+        case 0:  plancher = 50000;     // Colt 45 (arme la moins puissante) - 100 balles
         case 1:  plancher = 18000000;  // Colt 45 silencieux- 100 balles
         case 2:  plancher = 35000000;  // Country Rifle     - 40 balles
         case 11: plancher = 55000000;  // Desert Eagle      - 50 balles
@@ -20275,7 +20276,18 @@ stock drop_PlayerOnPickup(p)
 	  	    if(drop[i][model] == 1212) // Argent
 				{SafeGivePlayerMoney(p, drop[i][quantity],"Gagne argent  terre");}
             else if(drop[i][model] > 1 && drop[i][model] < 50) // Arme
-				{SafeGivePlayerWeapon(p, drop[i][model], drop[i][quantity]);}
+				{
+					// [PORT D'ARME] arme a feu reservee aux detenteurs du permis ;
+					// melee toujours libre, admin en service toujours autorise ;
+					// sans permis l'arme disparait au lieu d'etre donnee (anti-hack).
+					if(!PortArme_CanPickup(p, drop[i][model]))
+					{
+						drop_Remove(i);
+						msg_Client(p, COLOR_INFO, "{CF9756} Info {FFFFFF} Tu n'as pas de port d'arme : cette arme n'est pas ramassable et disparait.");
+						return 1;
+					}
+					SafeGivePlayerWeapon(p, drop[i][model], drop[i][quantity]);
+				}
 			else 
 				{inventory_UpdateItem(p,drop[i][model],drop[i][quantity]);}
 			drop_Remove(i);
@@ -29828,6 +29840,8 @@ public OnGameModeInit()
     Ent_Init();
     // Init missions cargo (depots + camions d'entreprise)
     Cargo_Init();
+    // Init port d'arme (guerites + detenteurs du permis)
+    PortArme_Init();
     // Init systeme casino (charge scriptfiles/casinos.cfg)
     Casino_Init();
     // Sauvegarde auto de parkings.cfg/casinos.cfg (voir afrp_autobackup.inc)
@@ -52761,6 +52775,17 @@ public OnPlayerCommandText(playerid, cmdtext[])
 	    while(cp < clp && cpi < 143) { cgParams[cpi++] = cmdtext[cp++]; }
 	    cgParams[cpi] = 0;
 	    return Cargo_Cmd(playerid, cgParams);
+	}
+	else if(strcmp(cmd, "/portarme", true) == 0)
+	{
+	    new paParams[144];
+	    new pap = idx;
+	    new palp = strlen(cmdtext);
+	    while(pap < palp && cmdtext[pap] == ' ') pap++;
+	    new papi = 0;
+	    while(pap < palp && papi < 143) { paParams[papi++] = cmdtext[pap++]; }
+	    paParams[papi] = 0;
+	    return PortArme_Cmd(playerid, paParams);
 	}
 //---------------------------[ FACTION HOPITAL ]---------------------------------
 	else if(strcmp(cmd, "/duty", true) == 0)
