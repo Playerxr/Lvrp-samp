@@ -139,6 +139,23 @@ stock Fidelite_OnLogin(playerid)
 	return 1;
 }
 
+// /tempsjeu : affiche au joueur ses heures de jeu et son prochain palier.
+stock Fidelite_ShowStatus(playerid)
+{
+	new heures = PlayerInfo[playerid][pConnectTime];
+	new currentMilestone = heures / FID_HOURS_PER_MILESTONE;
+	new nextAt = (currentMilestone + 1) * FID_HOURS_PER_MILESTONE;
+	new reste = nextAt - heures;
+	new rwStr[24];
+	FormatMoney(FID_REWARD, rwStr, sizeof(rwStr));
+	new body[400];
+	format(body, sizeof(body),
+		"{FFFFFF}Temps de jeu total : {FFFF00}%d heures{FFFFFF}\nPaliers de fidelite atteints : {FFFF00}%d{FFFFFF}\n\n{FFD700}Prochaine recompense :{FFFFFF}\nDans {FFFF00}%d heure(s){FFFFFF} de jeu (a %d h) tu gagneras {00FF00}%s ${FFFFFF}.\n\n{CCCCCC}Tu gagnes %s $ automatiquement tous les %d h de presence en jeu.",
+		heures, currentMilestone, reste, nextAt, rwStr, rwStr, FID_HOURS_PER_MILESTONE);
+	ShowPlayerDialog(playerid, 9946, DIALOG_STYLE_MSGBOX, "{FFD700}Ton temps de jeu", body, "OK", "");
+	return 1;
+}
+
 // A appeler juste apres l'increment de pConnectTime (dans PayDay).
 // Verse 2M par nouveau palier de 50h franchi.
 stock Fidelite_CheckMilestone(playerid)

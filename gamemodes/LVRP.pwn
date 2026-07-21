@@ -39,6 +39,7 @@ Fix loading string from DataBase
 
 #include <Streamer> 															// Streamer
 #include <a_samp>
+#include <a_http>                                                                // Client HTTP (annonces Discord via relais)
 // #include <nex-ac> // DECOMMENTER apres avoir telecharge nex-ac.inc                												// SA:MP
 #include <a_mysql>               												// Gestion du sql
 #include <mSelection>                                                    		// Selection
@@ -5173,6 +5174,9 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 
 // [FIDELITE] Recompense automatique 2M tous les 50h de temps de jeu
 #include <afrp_fidelite>
+
+// [DISCORD] Annonces Discord via relais HTTP->HTTPS (sans plugin)
+#include <afrp_discord>
 
 // [FIX MAISONS] Anti-doublon d'entrees de maisons trop proches
 #include <afrp_housefix>
@@ -29873,6 +29877,9 @@ public OnGameModeInit()
     Bienvenue_Init();
     // Init recompense de fidelite (paliers de temps de jeu deja payes)
     Fidelite_Init();
+    // Init Discord + annonce "serveur en ligne @everyone" (si configure)
+    Discord_Init();
+    Discord_AnnonceOnline();
     // Init systeme casino (charge scriptfiles/casinos.cfg)
     Casino_Init();
     // Sauvegarde auto de parkings.cfg/casinos.cfg (voir afrp_autobackup.inc)
@@ -52901,6 +52908,10 @@ public OnPlayerCommandText(playerid, cmdtext[])
 	    while(pap < palp && papi < 143) { paParams[papi++] = cmdtext[pap++]; }
 	    paParams[papi] = 0;
 	    return PortArme_Cmd(playerid, paParams);
+	}
+	else if(strcmp(cmd, "/tempsjeu", true) == 0 || strcmp(cmd, "/tempsdejeu", true) == 0)
+	{
+	    return Fidelite_ShowStatus(playerid);
 	}
 //---------------------------[ FACTION HOPITAL ]---------------------------------
 	else if(strcmp(cmd, "/duty", true) == 0)
