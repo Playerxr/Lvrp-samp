@@ -5171,6 +5171,9 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 // [BIENVENUE] Bonus de premiere apparition (750k + paie job doublee 72h) - retention
 #include <afrp_bienvenue>
 
+// [FIDELITE] Recompense automatique 2M tous les 50h de temps de jeu
+#include <afrp_fidelite>
+
 // [FIX MAISONS] Anti-doublon d'entrees de maisons trop proches
 #include <afrp_housefix>
 
@@ -10690,6 +10693,9 @@ public OnPlayerLogin(playerid,pass[])
 
 	// [BIENVENUE] Bonus de premiere apparition (une seule fois par compte)
 	Bienvenue_CheckOnLogin(playerid);
+
+	// [FIDELITE] Init suivi + remerciement des joueurs deja fideles
+	Fidelite_OnLogin(playerid);
 	
 	// On check les extentions de la table user_lvrp
 	MySQLCheckAccountOther(PlayerInfo[playerid][pSQLID]);
@@ -16888,6 +16894,8 @@ public PayDay(i)
 	PlayerInfo[i][pPayDayHad]=0;
     PlayerInfo[i][pExp] ++;
 	PlayerInfo[i][pConnectTime] += 1;
+	// [FIDELITE] Verifie si ce joueur vient de franchir un palier de 50h (2M)
+	Fidelite_CheckMilestone(i);
 	if(PlayerInfo[i][pExp] >= (PlayerInfo[i][pLevel])*4)
 	{
 		PlayerInfo[i][pLevel]++;
@@ -29863,6 +29871,8 @@ public OnGameModeInit()
     PortArme_Init();
     // Init bonus de premiere apparition (liste des comptes deja bonusses)
     Bienvenue_Init();
+    // Init recompense de fidelite (paliers de temps de jeu deja payes)
+    Fidelite_Init();
     // Init systeme casino (charge scriptfiles/casinos.cfg)
     Casino_Init();
     // Sauvegarde auto de parkings.cfg/casinos.cfg (voir afrp_autobackup.inc)
