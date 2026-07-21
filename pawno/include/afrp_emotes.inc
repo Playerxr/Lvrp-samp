@@ -323,7 +323,12 @@ stock Emotes_Play(playerid, cat, idx)
 		}
 		default: return 0;
 	}
-	ApplyAnimation(playerid, lib, anim, speed, loop, lockx, locky, freeze, etime);
+	// [FIX EMOTES] forcesync=1 obligatoire : sans ce parametre (defaut 0),
+	// beaucoup d'animations "idle"/RP ne s'affichent PAS pour le joueur qui
+	// les declenche lui-meme (piege classique SA-MP). C'etait la cause
+	// probable du "aucune emote ne se joue" - le code appelait bien
+	// ApplyAnimation, mais sans forcesync l'anim ne se voyait jamais.
+	ApplyAnimation(playerid, lib, anim, speed, loop, lockx, locky, freeze, etime, 1);
 	return 1;
 }
 

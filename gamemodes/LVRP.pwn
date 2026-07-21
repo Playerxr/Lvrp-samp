@@ -5187,6 +5187,7 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 #include <afrp_meublesdehors>
 #include <afrp_cargomission>
 #include <afrp_portarme>
+#include <afrp_gangcreation>
 
 // [NGG COMPAT] DESACTIVE - suspect du hang pawncc (test bisect)
 //#include <ngg_compat>
@@ -5544,8 +5545,14 @@ public Turf_CaptureTick()
             if(!IsPlayerConnected(p) || IsPlayerNPC(p)) continue;
             if(gPlayerLogged[p] != 1) continue;
             new pMem = PlayerInfo[p][pMember];
-            if(pMem <= 0 || pMem >= MAX_FACTION) continue;  // Pas dans un gang/mafia
-            if(FactionInfo[pMem][fCreate] != 1) continue;
+            // [FIX CAPTURE TURF] pMember des gangs/mafias vaut facID+200 (voir afrp_gangtag.inc),
+            // PAS l'index brut. L'ancien code comparait pMem (>=200) a MAX_FACTION (20) : cette
+            // condition etait TOUJOURS vraie pour un vrai membre de gang, donc AUCUN joueur
+            // n'etait jamais compte comme attaquant/defenseur et la capture ne progressait jamais.
+            if(pMem < 200) continue;  // Pas dans un gang/mafia
+            new facIdx = pMem - 200;
+            if(facIdx < 0 || facIdx >= MAX_FACTION) continue;
+            if(FactionInfo[facIdx][fCreate] != 1) continue;
             // Doit �tre dans cette zone
             GetPlayerPos(p, px, py, pz);
             if(!(px >= Turfs[ti][tMinX] && px <= Turfs[ti][tMaxX] &&
@@ -5554,12 +5561,12 @@ public Turf_CaptureTick()
             if(medic_PlayerNeedMedic[p] == 2) continue;
 
             // Comparer le nom de sa faction au tOwner du turf
-            if(strcmp(FactionInfo[pMem][fName], Turfs[ti][tOwner], true) == 0)
+            if(strcmp(FactionInfo[facIdx][fName], Turfs[ti][tOwner], true) == 0)
                 defenders++;
             else
             {
                 attackers++;
-                attackerFacID = pMem;
+                attackerFacID = facIdx;
             }
         }
 
@@ -30903,6 +30910,12 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
         return MD_OnDialogResponse(playerid, dialogid, response, listitem);
     }
 
+    // [GANG CREATION] Dispatch du choix de QG (9944)
+    if(dialogid == 9944)
+    {
+        return GangCreate_OnDialogResponse(playerid, dialogid, response, listitem);
+    }
+
     // [MOBILIER CHOIX] Dialog 9974 : dehors ou maison
     if(dialogid == 9974)
     {
@@ -49925,6 +49938,67 @@ public OnPlayerCommandText(playerid, cmdtext[])
 		ShowPlayerDialog(playerid, 7100, DIALOG_STYLE_MSGBOX, "{FFAA00}Territoires", tlist, "OK", "");
 		return 1;
 	}
+	// [TURF CAPTURE] /territoire : statut de la zone actuelle, ouvert a tous les
+	// joueurs (contrairement a /turfdebug qui est reserve aux admins). Se capture
+	// en restant dans la zone (5 min sans defenseur adverse) - cette commande
+	// sert juste a voir ou en est la capture en cours.
+	if(strcmp(cmd, "/territoire", true) == 0 || strcmp(cmd, "/capturer", true) == 0)
+	{
+		new curTurf = player_CurrentTurf[playerid];
+		if(curTurf == -1 || curTurf >= MAX_TURFS || Turfs[curTurf][tUsed] != 1)
+			return msg_Client(playerid, COLOR_INFO, "{CF9756} Territoire {FFFFFF} Tu n'es dans aucun territoire actuellement.");
+
+		if(Turfs[curTurf][tType] != 0)
+		{
+			new infoMsg[160];
+			format(infoMsg, sizeof(infoMsg), "{FFAA00} Territoire {FFFFFF} %s n'est pas un territoire de gang capturable.", Turfs[curTurf][tName]);
+			return msg_Client(playerid, COLOR_WHITE, infoMsg);
+		}
+
+		new pMem = PlayerInfo[playerid][pMember];
+		new bool:inGang = (pMem >= 200 && (pMem - 200) >= 0 && (pMem - 200) < MAX_FACTION && FactionInfo[pMem - 200][fCreate] == 1);
+		new now3 = gettime();
+		new currentCooldown3 = (gangWar_Active == 1) ? GANGWAR_COOLDOWN : TURF_CAPTURE_COOLDOWN;
+		new cdLeft2 = currentCooldown3 - (now3 - Turfs[curTurf][tLastCapture]);
+		new currentTicks3 = (gangWar_Active == 1) ? GANGWAR_CAPTURE_TICKS : TURF_CAPTURE_TICKS;
+
+		new body2[400];
+		new headStr[160];
+		format(headStr, sizeof(headStr), "{FFFFFF}Territoire : {FFFFB2}%s{FFFFFF}\nProprietaire : {FFFFB2}%s{FFFFFF}\n", Turfs[curTurf][tName], Turfs[curTurf][tOwner]);
+		strcat(body2, headStr);
+
+		if(!inGang)
+		{
+			strcat(body2, "\n{CCCCCC}Tu dois etre membre d'un gang pour participer a une capture ici.");
+		}
+		else if(cdLeft2 > 0)
+		{
+			new cdStr[96];
+			format(cdStr, sizeof(cdStr), "\n{FF6347}Cooldown actif : encore %d min avant de pouvoir recapturer cette zone.", (cdLeft2 / 60) + 1);
+			strcat(body2, cdStr);
+		}
+		else if(strcmp(FactionInfo[pMem - 200][fName], Turfs[curTurf][tOwner], true) == 0)
+		{
+			strcat(body2, "\n{00FF00}C'est deja ton territoire. Defends-le si un rival s'y installe !");
+		}
+		else if(turf_CaptureFacID[curTurf] == -1)
+		{
+			strcat(body2, "\n{FFAA00}Reste ici sans defenseur adverse pour lancer une capture (5 min).");
+		}
+		else
+		{
+			new pct = (currentTicks3 > 0) ? (turf_CapturePoints[curTurf] * 100 / currentTicks3) : 0;
+			new progStr[160];
+			if(turf_CaptureFacID[curTurf] == pMem - 200)
+				format(progStr, sizeof(progStr), "\n{FFAA00}Capture en cours par ton gang : %d%% (%d/%d sec). Reste dans la zone !", pct, turf_CapturePoints[curTurf] * 2, currentTicks3 * 2);
+			else
+				format(progStr, sizeof(progStr), "\n{FF6347}Une autre faction est en train de capturer cette zone (%d%%).", pct);
+			strcat(body2, progStr);
+		}
+
+		ShowPlayerDialog(playerid, 7102, DIALOG_STYLE_MSGBOX, "{FFAA00}Mon territoire", body2, "OK", "");
+		return 1;
+	}
 	// [TURF DEBUG] /turfdebug <id> : diagnostic en direct pour comprendre
 	// pourquoi une capture ne progresse pas (defenseurs presents, cooldown...)
 	if(strcmp(cmd, "/turfdebug", true) == 0)
@@ -49945,18 +50019,21 @@ public OnPlayerCommandText(playerid, cmdtext[])
 			if(!IsPlayerConnected(p) || IsPlayerNPC(p)) continue;
 			if(gPlayerLogged[p] != 1) continue;
 			new pMem = PlayerInfo[p][pMember];
-			if(pMem <= 0 || pMem >= MAX_FACTION) continue;
-			if(FactionInfo[pMem][fCreate] != 1) continue;
+			// [FIX CAPTURE TURF] meme correction que Turf_CaptureTick : pMember = facID+200
+			if(pMem < 200) continue;
+			new facIdx = pMem - 200;
+			if(facIdx < 0 || facIdx >= MAX_FACTION) continue;
+			if(FactionInfo[facIdx][fCreate] != 1) continue;
 			GetPlayerPos(p, dpx, dpy, dpz);
 			if(!(dpx >= Turfs[dbgId][tMinX] && dpx <= Turfs[dbgId][tMaxX] &&
 				 dpy >= Turfs[dbgId][tMinY] && dpy <= Turfs[dbgId][tMaxY])) continue;
 			if(medic_PlayerNeedMedic[p] == 2) continue;
-			if(strcmp(FactionInfo[pMem][fName], Turfs[dbgId][tOwner], true) == 0)
+			if(strcmp(FactionInfo[facIdx][fName], Turfs[dbgId][tOwner], true) == 0)
 				dbgDefenders++;
 			else
 			{
 				dbgAttackers++;
-				dbgAttackerFacID = pMem;
+				dbgAttackerFacID = facIdx;
 			}
 		}
 
@@ -59587,6 +59664,25 @@ public OnPlayerCommandText(playerid, cmdtext[])
 	{
 	    if(IsPlayerConnected(playerid))
 	    {
+	        // [GANG CREATION] /gang creer <nom> : accessible a tous les joueurs qui
+	        // ne sont pas deja dans une faction, meme avant le check pMember>=200
+	        // ci-dessous (logique : on cree un gang justement quand on n'en a pas).
+	        new gcTmp[16];
+	        new gcIdx = idx;
+	        new gcLen = strlen(cmdtext);
+	        while(gcIdx < gcLen && cmdtext[gcIdx] == ' ') gcIdx++;
+	        new gcp = 0;
+	        while(gcIdx < gcLen && cmdtext[gcIdx] != ' ' && gcp < 15) { gcTmp[gcp++] = cmdtext[gcIdx++]; }
+	        gcTmp[gcp] = 0;
+	        if(strcmp(gcTmp, "creer", true) == 0)
+	        {
+	            while(cmdtext[gcIdx] == ' ') gcIdx++;
+	            new gcParams[64];
+	            new gcpi = 0;
+	            while(gcIdx < gcLen && gcpi < 63) { gcParams[gcpi++] = cmdtext[gcIdx++]; }
+	            gcParams[gcpi] = 0;
+	            return GangCreate_Cmd(playerid, gcParams);
+	        }
 	        if(PlayerInfo[playerid][pMember] >= 200 || PlayerInfo[playerid][pLeader] >= 200)
 	        {
 	            new facID = PlayerInfo[playerid][pMember]-200;
