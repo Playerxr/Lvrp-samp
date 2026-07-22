@@ -30953,12 +30953,9 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
         if(!response) return 1;
         if(listitem == 0)
         {
-            // Dans la maison : verifie qu'on est bien dans un interieur de maison.
-            // Les interieurs de maison ont un Z eleve (> 0), ce qui confirme
-            // qu'on est bien dedans et pas dans le monde exterieur.
-            new Float:hx, Float:hy, Float:hz;
-            GetPlayerPos(playerid, hx, hy, hz);
-            if(gPlayerInHouse[playerid] == -1 || hz <= 0.0)
+            // Dans la maison : le flag calcule au moment de /ma mobilier fait foi
+            // (id maison valide + interieur != 0). Voir [FIX MEUBLES DEHORS].
+            if(GetPVarInt(playerid, "mobi_inHouse") != 1)
                 return msg_Client(playerid, COLOR_INFO, "{CF9756} Info {FFFFFF} Tu dois etre dans ta maison pour le mobilier interieur.");
             ShowPlayerDialog(playerid,26,DIALOG_STYLE_LIST,"{00C600} Maison {FFFFFF} Mobilier","{FFFFFF}- Acheter un mobilier\n- Editer un mobilier (Liste)\n- Editer un mobilier (Clique)\n- Vendre un mobilier (Liste)\n- Vendre un mobilier (Clique)\n- Vendre tout le mobilier","Valider","Annuler");
             player_Dialog[playerid]=0;
@@ -30966,8 +30963,9 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
         }
         else if(listitem == 1)
         {
-            // Dehors : refuse si on est a l'interieur d'une maison
-            if(gPlayerInHouse[playerid] != -1)
+            // Dehors : refuse seulement si on est PHYSIQUEMENT dans une maison
+            // (interieur != 0), plus le faux positif gPlayerInHouse==0.
+            if(GetPVarInt(playerid, "mobi_inHouse") == 1)
                 return msg_Client(playerid, COLOR_INFO, "{CF9756} Info {FFFFFF} Tu es dans une maison. Choisis 'Dans la maison'.");
             return MD_ShowMenu(playerid);
         }
@@ -31673,9 +31671,18 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 		}
 		else if(player_Dialog[playerid] == 3)
 		{
-		    format(string,sizeof(string),"{FF2727} Admin {FFABAD} Vous avez chang l'id du modle en : %d",strval(inputtext));
+		    // [FIX PORTES] Aucune verif avant : un ID vide/invalide (strval -> 0)
+		    // rendait la porte invisible (modele 0 n'existe pas) - "la porte disparait".
+		    new newGateModel = strval(inputtext);
+		    if(newGateModel <= 0)
+		    {
+		        msg_Client(playerid,COLOR_INFO,"{CF9756} Admin {FFFFFF} ID de modele invalide, aucun changement applique.");
+		        gate_Dialog(playerid);
+		        return 1;
+		    }
+		    format(string,sizeof(string),"{FF2727} Admin {FFABAD} Vous avez chang l'id du modle en : %d",newGateModel);
 			msg_Client(playerid,COLOR_WHITE,string);
-		    gate[player_Variable[playerid]][model]=strval(inputtext);
+		    gate[player_Variable[playerid]][model]=newGateModel;
 		    gate_Save(player_Variable[playerid]);
 		    gate_Update(player_Variable[playerid]);
 		    gate_Dialog(playerid);
@@ -49019,7 +49026,9 @@ public OnPlayerEditDynamicObject(playerid, objectid, response, Float:x, Float:y,
 		    gate[i][pos][4] = ry;
 		    gate[i][pos][5] = rz;
 		    gate_Save(i);
-		    gate_Update(i);
+		    // [FIX PORTES] gate_Update() detruit/recree l'objet a la position FERMEE :
+		    // inutile ici, MoveDynamicObject (tout en haut de ce callback) a deja
+		    // place l'objet exactement ou l'admin vient de le mettre.
 		    gate_Dialog(playerid);
 		}
 		if(admin_VarType[playerid]==4)
@@ -49033,7 +49042,12 @@ public OnPlayerEditDynamicObject(playerid, objectid, response, Float:x, Float:y,
 		    gate[i][pos][10] = ry;
 		    gate[i][pos][11] = rz;
 		    gate_Save(i);
-		    gate_Update(i);
+		    // [FIX PORTES] Avant : gate_Update() detruisait/recreait l'objet a la
+		    // position FERMEE juste apres avoir edite la position OUVERTE -> la
+		    // porte "sautait" en arriere sous les yeux de l'admin, qui croyait que
+		    // le changement ne prenait pas. On remet juste la porte au repos
+		    // (fermee) sans detruire l'objet.
+		    MoveDynamicObject(gate_Object[i], gate[i][pos][0], gate[i][pos][1], gate[i][pos][2], 2.0, gate[i][pos][3], gate[i][pos][4], gate[i][pos][5]);
 		    gate_Dialog(playerid);
 		}
 		if(stop_DialogEdit[playerid]==3)
@@ -51551,14 +51565,21 @@ public OnPlayerCommandText(playerid, cmdtext[])
 	        }
 	        else if(strcmp(tmp,"mobi",true) == 0 || strcmp(tmp,"mobilier",true) == 0)
 	        {
-	            // [MEUBLES DEHORS] Si on est dans une maison : verifier proprio (comme avant)
-	            if(gPlayerInHouse[playerid] != -1)
+	            // [FIX MEUBLES DEHORS] gPlayerInHouse peut valoir 0 (defaut MySQL) pour un
+	            // joueur DEHORS, or 0 est un id de maison valide -> le code croyait qu'on
+	            // etait dans la maison 0 et bloquait ("pas le proprietaire"). On considere
+	            // "dans une maison" seulement si l'id est valide ET qu'on est dans un
+	            // interieur (les interieurs de maison ont GetPlayerInterior != 0).
+	            new bool:inHouseNow = (gPlayerInHouse[playerid] >= 0 && gPlayerInHouse[playerid] < MAX_HOUSE
+	                && GetPlayerInterior(playerid) != 0);
+	            if(inHouseNow)
 	            {
 	                if((strcmp(PlayerInfo[playerid][pRealName], house[gPlayerInHouse[playerid]][owner], true) == 1) && AdminDuty[playerid] == 0)
 	                    {msg_Client(playerid,COLOR_INFO,"{CF9756} Info {FFFFFF} Vous n'tes pas le propritaire.");return 1;}
 	                if(IsPlayerInRangeOfPoint(playerid,25.0,223.9703,1291.1472,1082.1406))
 	                    {return msg_Client(playerid,COLOR_INFO,"{CF9756} Info {FFFFFF} Impossible dans un HLM.");}
 	            }
+	            SetPVarInt(playerid, "mobi_inHouse", inHouseNow ? 1 : 0);
 	            // Propose le choix : dans la maison ou dehors (exterieur)
 	            ShowPlayerDialog(playerid, 9974, DIALOG_STYLE_LIST, "{00C600} Mobilier {FFFFFF} Ou placer ?",
 	                "{FFFFFF}- Dans la maison\n- Dehors (exterieur, max 10)", "Valider", "Annuler");
