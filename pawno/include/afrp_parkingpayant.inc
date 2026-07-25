@@ -29,8 +29,8 @@
 #endif
 #define AFRP_PARKINGPAYANT_INCLUDED
 
-#define PP_FEE_INITIAL      10000
-#define PP_FEE_EXTEND       10000
+#define PP_FEE_INITIAL      500
+#define PP_FEE_EXTEND       500
 #define PP_FEE_IMPOUND      25000        // supplement fourriere
 #define PP_DURATION_SEC     (30 * 60)
 #define PP_WARN_SEC         (5 * 60)     // avertir 5 min avant expiration
@@ -85,8 +85,11 @@ stock ParkingPay_AllocSlot()
 // Prend en compte le supplement fourriere si la voiture y est.
 stock ParkingPay_CanAfford(playerid, carSqlid)
 {
-	new required = PP_FEE_INITIAL;
 	new existing = ParkingPay_FindByCar(carSqlid);
+	// Ticket deja actif (non expire) : pas de nouvelle facturation, voir ParkingPay_ApplyPayment.
+	if(existing != -1 && PPTicket[existing][ppUsed] == 1)
+		return 1;
+	new required = PP_FEE_INITIAL;
 	if(existing != -1 && PPTicket[existing][ppUsed] == 2)
 		required += PP_FEE_IMPOUND;
 	if(PlayerInfo[playerid][pCash] < required)
@@ -107,8 +110,37 @@ stock ParkingPay_CanAfford(playerid, carSqlid)
 stock ParkingPay_ApplyPayment(playerid, carSqlid, pid, vidx)
 {
 	if(carSqlid <= 0 || vidx == -1) return 0;
-	new required = PP_FEE_INITIAL;
 	new tid = ParkingPay_FindByCar(carSqlid);
+
+	// [FIX RESET TICKET] un vehicule deja gare avec un ticket ACTIF (pas expire,
+	// pas en fourriere) ne doit pas etre re-facture ni voir son ticket ecrase :
+	// avant ce fix, re-spawner/deplacer un vehicule deja paye (ex: /parking sur
+	// un autre parking, ou rechargement apres reconnexion) remettait le
+	// chrono a 30 min et prenait a nouveau les frais, meme si le joueur avait
+	// deja prolonge (ex: 175 min restantes perdues). On se contente de
+	// reattacher le label 3D a la nouvelle position du vehicule.
+	if(tid != -1 && PPTicket[tid][ppUsed] == 1)
+	{
+		if(_:PPTicket[tid][ppLabel] != _:INVALID_3DTEXT_ID)
+		{
+			Delete3DTextLabel(PPTicket[tid][ppLabel]);
+			PPTicket[tid][ppLabel] = Text3D:INVALID_3DTEXT_ID;
+		}
+		PPTicket[tid][ppParkingId] = pid;
+		new keepStr[96];
+		format(keepStr, sizeof(keepStr), "{42AAFF}PARKING PAYE");
+		PPTicket[tid][ppLabel] = Create3DTextLabel(keepStr, 0x42AAFFFF, 0.0, 0.0, 0.0, 20.0, 0, 0);
+		Attach3DTextLabelToVehicle(PPTicket[tid][ppLabel], vidx, 0.0, 0.0, 1.5);
+		ParkingPay_UpdateLabel(tid);
+
+		new keepMinutes = (PPTicket[tid][ppExpireTs] - gettime()) / 60;
+		new keepMsg[160];
+		format(keepMsg, sizeof(keepMsg), "{42AAFF} Parking {FFFFFF} Vehicule replace, ticket deja actif conserve ({FFFFB2}%d min restantes{FFFFFF}).", keepMinutes);
+		msg_Client(playerid, COLOR_WHITE, keepMsg);
+		return 1;
+	}
+
+	new required = PP_FEE_INITIAL;
 	new bool:wasImpounded = (tid != -1 && PPTicket[tid][ppUsed] == 2);
 	if(wasImpounded) required += PP_FEE_IMPOUND;
 	SafeGivePlayerMoney(playerid, -required, "Parking payant");
@@ -264,6 +296,20 @@ public ParkingPay_Tick()
 	return 1;
 }
 
+// Verifie si playerid est bien le "proprietaire" du vehicule vidx pour le
+// parking payant : proprio personnel (ownerSQLID = pSQLID), ou membre de la
+// faction qui l'a achete via /factionbuy (CAR_FACTION : ownerSQLID stocke le
+// facID = pMember-200, PAS le SQLID joueur - d'ou le faux "n'est pas a toi"
+// que se prenaient les joueurs en gang/mafia sur leurs propres vehicules).
+stock ParkingPay_IsOwner(playerid, vidx)
+{
+	if(vehicle[vidx][ownerSQLID] == PlayerInfo[playerid][pSQLID]) return 1;
+	if(vehicle[vidx][cType] == CAR_FACTION && PlayerInfo[playerid][pMember] >= 200
+		&& vehicle[vidx][ownerSQLID] == PlayerInfo[playerid][pMember] - 200)
+		return 1;
+	return 0;
+}
+
 // /parking payer : prolonge de 30 min le ticket du vehicule dans lequel
 // le joueur est assis, ou du vehicule le plus proche (< 10m) si a pied.
 stock ParkingPay_Cmd_Extend(playerid)
@@ -281,7 +327,7 @@ stock ParkingPay_Cmd_Extend(playerid)
 		for(new v = 1; v < MAX_CAR; v++)
 		{
 			if(vehicle[v][used] != 1) continue;
-			if(vehicle[v][ownerSQLID] != PlayerInfo[playerid][pSQLID]) continue;
+			if(!ParkingPay_IsOwner(playerid, v)) continue;
 			GetVehiclePos(v, vx, vy, vz);
 			new Float:d = GetPlayerDistanceFromPoint(playerid, vx, vy, vz);
 			if(d < bestDist) { bestDist = d; vidx = v; }
@@ -290,7 +336,7 @@ stock ParkingPay_Cmd_Extend(playerid)
 	if(vidx == -1)
 		return msg_Client(playerid, COLOR_INFO, "{CF9756} Parking {FFFFFF} Monte dans ton vehicule ou approche-toi (< 10m) pour prolonger.");
 
-	if(vehicle[vidx][ownerSQLID] != PlayerInfo[playerid][pSQLID])
+	if(!ParkingPay_IsOwner(playerid, vidx))
 		return msg_Client(playerid, COLOR_INFO, "{CF9756} Parking {FFFFFF} Ce vehicule n'est pas a toi.");
 
 	new carSqlid = vehicle[vidx][SQLID];
