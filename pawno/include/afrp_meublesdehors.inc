@@ -104,6 +104,11 @@ stock MD_Load()
 		MD_ReadField(line, i, tmpBuf, sizeof(tmpBuf), 31); MDfurn[slot][mdVW]  = strval(tmpBuf);
 		MD_ReadField(line, i, tmpBuf, sizeof(tmpBuf), 31); MDfurn[slot][mdInt] = strval(tmpBuf);
 		if(MDfurn[slot][mdModel] <= 0) continue;
+		// [FIX DISPARITION] corrige les entrees sauvegardees avant le fix (VW/interior
+		// captures en live, parfois non-nuls par erreur) : "dehors" doit toujours
+		// etre dans le monde public pour rester visible par tout le monde.
+		MDfurn[slot][mdVW]  = 0;
+		MDfurn[slot][mdInt] = 0;
 		MDfurn[slot][mdUsed] = 1;
 		MD_CreateObject(slot);
 		md_Count++;
@@ -187,8 +192,15 @@ stock MD_Place(playerid, furModel)
 	MDfurn[slot][mdModel]      = furModel;
 	MDfurn[slot][mdX] = x; MDfurn[slot][mdY] = y; MDfurn[slot][mdZ] = z;
 	MDfurn[slot][mdRX] = 0.0; MDfurn[slot][mdRY] = 0.0; MDfurn[slot][mdRZ] = 0.0;
-	MDfurn[slot][mdVW]  = GetPlayerVirtualWorld(playerid);
-	MDfurn[slot][mdInt] = GetPlayerInterior(playerid);
+	// [FIX DISPARITION] "Dehors" = monde public par definition : on fige VW/interior
+	// a 0/0 plutot que de lire l'etat live du joueur. Entre l'ouverture du menu et
+	// la selection finale du modele (plusieurs dialogs successifs), le joueur peut
+	// avoir traverse une zone qui change temporairement son VW/interior (porte,
+	// business, etc.) ; capturer cet etat live rendait le meuble invisible pour
+	// tout le monde (y compris son proprietaire une fois son VW revenu a 0), ce qui
+	// se voyait comme "le meuble a disparu tout seul".
+	MDfurn[slot][mdVW]  = 0;
+	MDfurn[slot][mdInt] = 0;
 	md_Count++;
 	MD_CreateObject(slot);
 	MD_Save();
