@@ -5123,6 +5123,8 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 
 // [GANG TAG] Nom du gang/mafia flottant au-dessus des membres illegaux
 #include <afrp_gangtag>
+// [LEGAL TAG] Grade + faction legale flottant en dessous des membres legaux
+#include <afrp_legaltag>
 
 // [JOBS] Mise en evidence des jobs : icones carte + /jobs GPS + streak + bonus debutant
 #include <afrp_jobs>
@@ -18433,10 +18435,12 @@ stock GetFactionName(id)
 	    case 6: {name="Prsidence";}
 	    case 7: {name="Mairie 1";}
 	    case 8: {name="Mairie 2";}
+	    case 9: {name="CIA";}
 	    case 10: {name="San News";}
 	    case 11: {name="Arme de Terre";}
 	    case 12: {name="Arme de l'Air";}
 	    case 13: {name="Marine";}
+	    case 14: {name="Justice";}
 	    case 15: {name="Hpital";}
 	    case 200 .. 250: {strmid(name, FactionInfo[id-200][fName], 0,  32, 32);}
 	}
@@ -18510,6 +18514,13 @@ stock GetFactionRank(id,rank)
 	 	    case 6: strmid(name, sanNews[rank6], 0,  32, 32);
 	 	}
 	}
+   	if(id==14)   // FACTION JUSTICE
+   	{
+   	    if(rank >= 1 && rank <= 6)
+   	    {
+   	        strmid(name, Justice_RankNames[rank-1], 0, 32, 32);
+   	    }
+   	}
    	if(id==15)   // FACTION HOPITAL
    	{
    	    if(rank >= 1 && rank <= 8)
@@ -23324,6 +23335,7 @@ public OnPlayerConnect(playerid)
     JobBar_OnConnect(playerid); // [JOB RANK] init slots barre XP
     VipPerks_OnConnect(playerid); // [VIP PERKS] reset cooldowns tp + tag
     GangTag_OnConnect(playerid); // [GANG TAG] init slot label
+    LegalTag_OnConnect(playerid); // [LEGAL TAG] init slot label
     Ent_OnPlayerConnect(playerid); // [ENTREPRISE] reset compteur minutes accumulees
     Jobs_OnConnect(playerid); // [JOBS] reset streak
     FAQ_OnConnect(playerid); // [FAQ] reset cooldown aide auto
@@ -23944,6 +23956,7 @@ public OnPlayerDisconnect(playerid, reason)
     HpPersist_SaveOnDisconnect(playerid); // [HP PERSIST] sauve la vie/armure reelles (hors coma)
     VipPerks_OnDisconnect(playerid); // [VIP PERKS] detruit le tag flottant
     GangTag_OnDisconnect(playerid); // [GANG TAG] detruit le label du gang
+    LegalTag_OnDisconnect(playerid); // [LEGAL TAG] detruit le label de faction
     Cuff_OnDisconnect(playerid); // [CUFFS] anti combat-log : auto-jail si menotte
     Phone_DestroyUI(playerid); // AFRP cleanup ancien telephone (sera vir� en P4)
     // Reset variables phone pour eviter valeurs garbage
@@ -25547,6 +25560,7 @@ public OnPlayerSpawn(playerid)
 	else
 	    {SetPlayerColor(playerid, 0xC8C8C8FF);}
 	GangTag_Update(playerid); // [GANG TAG] nom du gang/mafia au-dessus de la t�te
+	LegalTag_Update(playerid); // [LEGAL TAG] grade + faction legale en dessous du corps
 	// [HP PERSIST] Au 1er spawn apres login : restaur� la vie sauvee ; sinon 100 (respawn normal)
 	if(!HpPersist_ApplyOnSpawn(playerid))
 		{SafeSetPlayerHealth(playerid,100.0);}
@@ -31391,6 +31405,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 	        PlayerInfo[playerid][pRank]=1;
 	        invited_Player[playerid]=-1;
 	        GangTag_Update(playerid); // [GANG TAG] affich� le nom du gang immediatement
+	        LegalTag_Update(playerid); // [LEGAL TAG] affiche grade + faction immediatement
 	    }
 	    else
 	    {
@@ -61235,6 +61250,7 @@ public OnPlayerCommandText(playerid, cmdtext[])
 				{PlayerInfo[playerid][pSpawn] = 0;}
 			OnPlayerUpdateSQL(playerid);
 			GangTag_Update(playerid); // [GANG TAG] retire le nom du gang immediatement
+			LegalTag_Update(playerid); // [LEGAL TAG] retire le tag de faction immediatement
 		}
 		else if(strcmp(tmp, "event", true) == 0)
 		{
