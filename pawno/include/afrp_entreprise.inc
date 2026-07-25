@@ -28,7 +28,7 @@
 
 #define ENT_MAX             30
 #define ENT_MAX_EMP         12          // employes max par entreprise
-#define ENT_CREATE_COST     5000000     // 5M pour creer
+#define ENT_CREATE_COST     50000000    // 50M pour creer
 #define ENT_DISSOLVE_FEE    100000      // 100k retenu a la dissolution
 #define ENT_FILE            "entreprises.cfg"
 #define ENT_TICK_MS         60000       // 60s

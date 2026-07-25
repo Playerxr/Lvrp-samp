@@ -40237,10 +40237,17 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 		// [FIX dialog95] Boucle etendue a MAX_CAR comme dans /v coffre :
 		// les v�hicules joueurs charg�s via vehicle_LoadPlayer peuvent avoir
 		// un SA-MP vehicleid > totalVehicles
+		// [FIX GESTION COFFRE] Ce dialog re-verifie la distance a CHAQUE etape
+		// (y compris pendant la saisie d'une quantite/somme). Avec l'ancien
+		// rayon fixe 3.5m, un joueur pres du coffre d'un camion/gros vehicule
+		// (deja gere par un rayon plus large a l'ouverture, voir CoffreDetectRadius)
+		// se faisait recaler ici avec "Aucun vehicule pres de vous" des qu'il
+		// essayait d'entrer un montant/une quantite - la saisie semblait ne
+		// jamais aboutir.
 		for(new i=1; i<MAX_CAR; i++)
 		{
 			if(vehicle[i][used] == 0) continue;
-			if(CheckPlayerDistanceToVehicle(3.5, playerid, i))
+			if(CheckPlayerDistanceToVehicle(CoffreDetectRadius(i), playerid, i))
 				{resultid = i;counter++;}
 		}
 		if(car_PlayerInSafe[playerid] != 0)
@@ -50565,10 +50572,20 @@ public OnPlayerCommandText(playerid, cmdtext[])
 			// Notifier le joueur
 			SendClientMessage(ap_target, 0x00FF00FF, "{9EC73D}[APPROBATION]{FFFFFF} Votre compte a �t� approuve ! Bienvenue sur AFRP !");
 
+			// [FIX BLOQUE] Le joueur a encore le dialog "En attente de validation"
+			// (9903) ouvert sur son ecran depuis la connexion. Le spawn server-side
+			// ne suffit pas a debloquer le client tant que CE dialog reste affiche -
+			// d'ou "reste bloque jusqu'a ce qu'il sorte et revienne" (une reconnexion
+			// force un nouvel etat qui n'a pas ce dialog ouvert). On le ferme
+			// explicitement (dialogid -1 = fermer le dialog actif) avant de spawner.
+			ShowPlayerDialog(ap_target, -1, DIALOG_STYLE_MSGBOX, "", "", "", "");
+
 			// Sortir du spectating si besoin et spawn le joueur (deja loge)
 			server_TogglePlayerSpectating(ap_target, 0);
 			server_SetPlayerVirtualWorld(ap_target, 0);
 			SpawnPlayer(ap_target);
+			// Garde-fou : s'assurer que les controles sont bien actifs post-spawn
+			TogglePlayerControllable(ap_target, 1);
 
 			// Log admin
 			new ap_log[128];
