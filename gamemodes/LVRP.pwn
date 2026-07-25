@@ -62071,7 +62071,14 @@ public OnPlayerCommandText(playerid, cmdtext[])
 						server_SetPlayerInterior(giveplayerid,PlayerInfo[playerid][pInt]);
 						server_SetPlayerVirtualWorld(giveplayerid,PlayerInfo[playerid][pVirWorld]);
 						if (GetPlayerState(giveplayerid) == 2)
-							{SafeSetVehiclePos(GetPlayerVehicleID(giveplayerid), plocx, plocy+4, plocz);}
+						{
+							// [FIX TP VEHICULE] le vehicule doit suivre le meme interieur/monde que le joueur,
+							// sinon il reste accroche a l'ancien decor => bug visuel a l'arrivee.
+							new vid = GetPlayerVehicleID(giveplayerid);
+							SafeSetVehiclePos(vid, plocx, plocy+4, plocz);
+							LinkVehicleToInterior(vid, PlayerInfo[playerid][pInt]);
+							SetVehicleVirtualWorld(vid, PlayerInfo[playerid][pVirWorld]);
+						}
 						else
 							{SafeSetPlayerPos(giveplayerid,plocx,plocy+2, plocz);}
 						msg_Client(giveplayerid, COLOR_INFO, "{CF9756} Info {FFFFFF} Vous avez t tlport.");
@@ -62191,13 +62198,19 @@ public OnPlayerCommandText(playerid, cmdtext[])
 						var = strval(tmp);
 						new Float:cwx2,Float:cwy2,Float:cwz2;
 						GetVehiclePos(var, cwx2, cwy2, cwz2);
+						// [FIX TP] interieur/monde remis a 0 AVANT le deplacement (et vehicule synchro si a bord),
+						// sinon un conflit interieur/monde cree un bug visuel a l'arrivee.
+						server_SetPlayerInterior(playerid,0);
+						server_SetPlayerVirtualWorld(playerid,0);
 						if (GetPlayerState(playerid) == 2)
-							{SafeSetVehiclePos(idcar, cwx2, cwy2, cwz2);}
+						{
+							SafeSetVehiclePos(idcar, cwx2, cwy2, cwz2);
+							LinkVehicleToInterior(idcar, 0);
+							SetVehicleVirtualWorld(idcar, 0);
+						}
 						else
 							{SafeSetPlayerPos(playerid, cwx2, cwy2, cwz2);}
 						msg_Client(playerid, COLOR_INFO, "{CF9756} Info {FFFFFF} Vous avez t tlport.");
-						server_SetPlayerInterior(playerid,0);
-						server_SetPlayerVirtualWorld(playerid,0);
 						ResetPlayerIntVar(playerid);
 						return 1;
 		        	}
@@ -62210,12 +62223,15 @@ public OnPlayerCommandText(playerid, cmdtext[])
 						new tmpVeh= vehicle_GetId(var);
 						if(tmpVeh == -1)
 						    {return msg_Client(playerid, COLOR_WHITE, "{FF2727} Admin {FFABAD} Ce vhicule n'est pas cr IG.");}
+						server_SetPlayerInterior(playerid,0);
 						if (GetPlayerState(playerid) == 2)
-							{SafeSetVehiclePos(idcar, vehicle[tmpVeh][cLocationx], vehicle[tmpVeh][cLocationy], vehicle[tmpVeh][cLocationz]);}
+						{
+							SafeSetVehiclePos(idcar, vehicle[tmpVeh][cLocationx], vehicle[tmpVeh][cLocationy], vehicle[tmpVeh][cLocationz]);
+							LinkVehicleToInterior(idcar, 0);
+						}
 						else
 							{SafeSetPlayerPos(playerid, vehicle[tmpVeh][cLocationx], vehicle[tmpVeh][cLocationy], vehicle[tmpVeh][cLocationz]);}
 						msg_Client(playerid, COLOR_INFO, "{CF9756} Info {FFFFFF} Vous avez t tlport.");
-						server_SetPlayerInterior(playerid,0);
 						ResetPlayerIntVar(playerid);
 						return 1;
 		        	}
@@ -62225,13 +62241,17 @@ public OnPlayerCommandText(playerid, cmdtext[])
 						if(!strlen(tmp))
 							{msg_Client(playerid, COLOR_WHITE, "{FF6347} Admin {A98500} Usage {FFFFB2} /a goto maison <maisonid>");return 1;}
 						var = strval(tmp);
+						server_SetPlayerInterior(playerid,0);
+						server_SetPlayerVirtualWorld(playerid,0);
 						if (GetPlayerState(playerid) == 2)
-							{SafeSetVehiclePos(idcar, house[var][pos][0], house[var][pos][1], house[var][pos][2]);}
+						{
+							SafeSetVehiclePos(idcar, house[var][pos][0], house[var][pos][1], house[var][pos][2]);
+							LinkVehicleToInterior(idcar, 0);
+							SetVehicleVirtualWorld(idcar, 0);
+						}
 						else
 							{SafeSetPlayerPos(playerid, house[var][pos][0], house[var][pos][1], house[var][pos][2]);}
 						msg_Client(playerid, COLOR_INFO, "{CF9756} Info {FFFFFF} Vous avez t tlport.");
-						server_SetPlayerInterior(playerid,0);
-						server_SetPlayerVirtualWorld(playerid,0);
 						ResetPlayerIntVar(playerid);
 						return 1;
 		        	}
@@ -62241,13 +62261,17 @@ public OnPlayerCommandText(playerid, cmdtext[])
 						if(!strlen(tmp))
 							{msg_Client(playerid, COLOR_WHITE, "{FF6347} Admin {A98500} Usage {FFFFB2} /a goto biz <maisonid>");return 1;}
 						var = strval(tmp);
+						server_SetPlayerInterior(playerid,0);
+						server_SetPlayerVirtualWorld(playerid,0);
 						if (GetPlayerState(playerid) == 2)
-							{SafeSetVehiclePos(idcar, bizz[var][pos][0], bizz[var][pos][1], bizz[var][pos][2]);}
+						{
+							SafeSetVehiclePos(idcar, bizz[var][pos][0], bizz[var][pos][1], bizz[var][pos][2]);
+							LinkVehicleToInterior(idcar, 0);
+							SetVehicleVirtualWorld(idcar, 0);
+						}
 						else
 							{SafeSetPlayerPos(playerid, bizz[var][pos][0], bizz[var][pos][1], bizz[var][pos][2]);}
 						msg_Client(playerid, COLOR_INFO, "{CF9756} Info {FFFFFF} Vous avez t tlport.");
-						server_SetPlayerInterior(playerid,0);
-						server_SetPlayerVirtualWorld(playerid,0);
 						ResetPlayerIntVar(playerid);
 						return 1;
 		        	}
@@ -62262,12 +62286,15 @@ public OnPlayerCommandText(playerid, cmdtext[])
 						tmpY = floatstr(tmp);
 						tmp = strtok(cmdtext, idx);
 						tmpZ = floatstr(tmp);
+						server_SetPlayerInterior(playerid,0);
 						if (GetPlayerState(playerid) == 2)
-							{SafeSetVehiclePos(idcar, tmpX, tmpY, tmpZ);}
+						{
+							SafeSetVehiclePos(idcar, tmpX, tmpY, tmpZ);
+							LinkVehicleToInterior(idcar, 0);
+						}
 						else
 							{SafeSetPlayerPos(playerid, tmpX, tmpY, tmpZ);}
 						msg_Client(playerid, COLOR_INFO, "{CF9756} Info {FFFFFF} Vous avez t tlport.");
-						server_SetPlayerInterior(playerid,0);
 						ResetPlayerIntVar(playerid);
 						return 1;
 		        	}
@@ -62277,12 +62304,15 @@ public OnPlayerCommandText(playerid, cmdtext[])
 						if(!strlen(tmp))
 							{msg_Client(playerid, COLOR_WHITE, "{FF6347} Admin {A98500} Usage {FFFFB2} /a goto garage <garageid>");return 1;}
 						var = strval(tmp);
+						server_SetPlayerInterior(playerid,0);
 						if (GetPlayerState(playerid) == 2)
-							{SafeSetVehiclePos(idcar, garage[var][pos][0], garage[var][pos][1], garage[var][pos][2]);}
+						{
+							SafeSetVehiclePos(idcar, garage[var][pos][0], garage[var][pos][1], garage[var][pos][2]);
+							LinkVehicleToInterior(idcar, 0);
+						}
 						else
 							{SafeSetPlayerPos(playerid, garage[var][pos][0], garage[var][pos][1], garage[var][pos][2]);}
 						msg_Client(playerid, COLOR_INFO, "{CF9756} Info {FFFFFF} Vous avez t tlport.");
-						server_SetPlayerInterior(playerid,0);
 						ResetPlayerIntVar(playerid);
 						return 1;
 		        	}
@@ -62303,22 +62333,28 @@ public OnPlayerCommandText(playerid, cmdtext[])
 					else if(strcmp(tmp,"anpe",true) == 0)
 		        	{
 						msg_Client(playerid, COLOR_INFO, "{CF9756} Info {FFFFFF} Vous avez t tlport.");
+						server_SetPlayerInterior(playerid,0);
 						if (GetPlayerState(playerid) == 2)
-							{SafeSetVehiclePos(idcar, 1722.8861, -1628.6687, 20.2133);}
+						{
+							SafeSetVehiclePos(idcar, 1722.8861, -1628.6687, 20.2133);
+							LinkVehicleToInterior(idcar, 0);
+						}
 						else
 							{SafeSetPlayerPos(playerid, 1722.8861, -1628.6687, 20.2133);}
-						server_SetPlayerInterior(playerid,0);
 						ResetPlayerIntVar(playerid);
 						return 1;
 					}
 					else if(strcmp(tmp,"banque",true) == 0)
 	  				{
-	   					if (GetPlayerState(playerid) == 2)
-							{SafeSetVehiclePos(idcar, 1463.1139,-1022.8700,23.8331);}
+	   					server_SetPlayerInterior(playerid,0);
+						if (GetPlayerState(playerid) == 2)
+						{
+							SafeSetVehiclePos(idcar, 1463.1139,-1022.8700,23.8331);
+							LinkVehicleToInterior(idcar, 0);
+						}
 						else
 							{SafeSetPlayerPos(playerid, 1463.1139,-1022.8700,23.8331);}
 						msg_Client(playerid, COLOR_INFO, "{CF9756} Info {FFFFFF} Vous avez t tlport.");
-						server_SetPlayerInterior(playerid,0);
 						ResetPlayerIntVar(playerid);
 						return 1;
 					}
@@ -62335,12 +62371,15 @@ public OnPlayerCommandText(playerid, cmdtext[])
 					}
 					else if(strcmp(tmp,"hopital",true) == 0)
 		        	{
-		        	    if (GetPlayerState(playerid) == 2)
-							{SafeSetVehiclePos(idcar, 1184.1344,-1324.0149,13.5753);}
+		        	    server_SetPlayerInterior(playerid,0);
+						if (GetPlayerState(playerid) == 2)
+						{
+							SafeSetVehiclePos(idcar, 1184.1344,-1324.0149,13.5753);
+							LinkVehicleToInterior(idcar, 0);
+						}
 						else
 							{SafeSetPlayerPos(playerid, 1184.1344,-1324.0149,13.5753);}
 						msg_Client(playerid, COLOR_INFO, "{CF9756} Info {FFFFFF} Vous avez t tlport.");
-						server_SetPlayerInterior(playerid,0);
 						ResetPlayerIntVar(playerid);
 						return 1;
 					}
@@ -62362,56 +62401,71 @@ public OnPlayerCommandText(playerid, cmdtext[])
 					}
 					else if(strcmp(tmp,"reserve",true) == 0)
 		        	{
+						server_SetPlayerInterior(playerid,0);
 						if (GetPlayerState(playerid) == 2)
-							{SafeSetVehiclePos(idcar, 2571.3479,2714.3323,29.2371);}
+						{
+							SafeSetVehiclePos(idcar, 2571.3479,2714.3323,29.2371);
+							LinkVehicleToInterior(idcar, 0);
+						}
 						else
 							{SafeSetPlayerPos(playerid, 2571.3479,2714.3323,29.2371);}
 						msg_Client(playerid, COLOR_INFO, "{CF9756} Info {FFFFFF} Vous avez t tlport.");
-						server_SetPlayerInterior(playerid,0);
 						ResetPlayerIntVar(playerid);
 						return 1;
 					}
 					else if(strcmp(tmp,"ls",true) == 0)
 		        	{
+						server_SetPlayerInterior(playerid,0);
 						if (GetPlayerState(playerid) == 2)
-							{SafeSetVehiclePos(idcar, 1529.6,-1691.2,13.3);}
+						{
+							SafeSetVehiclePos(idcar, 1529.6,-1691.2,13.3);
+							LinkVehicleToInterior(idcar, 0);
+						}
 						else
 							{SafeSetPlayerPos(playerid, 1529.6,-1691.2,13.3);}
 						msg_Client(playerid, COLOR_INFO, "{CF9756} Info {FFFFFF} Vous avez t tlport.");
-						server_SetPlayerInterior(playerid,0);
 						ResetPlayerIntVar(playerid);
 						return 1;
 					}
 					else if(strcmp(tmp,"lv",true) == 0)
 		        	{
-		        		if (GetPlayerState(playerid) == 2)
-							{SafeSetVehiclePos(idcar, 1699.2, 1435.1, 10.7);}
+		        		server_SetPlayerInterior(playerid,0);
+						if (GetPlayerState(playerid) == 2)
+						{
+							SafeSetVehiclePos(idcar, 1699.2, 1435.1, 10.7);
+							LinkVehicleToInterior(idcar, 0);
+						}
 						else
 							{SafeSetPlayerPos(playerid, 1699.2,1435.1, 10.7);}
 						msg_Client(playerid, COLOR_INFO, "{CF9756} Info {FFFFFF} Vous avez t tlport.");
-						server_SetPlayerInterior(playerid,0);
 						ResetPlayerIntVar(playerid);
 						return 1;
 					}
 					else if(strcmp(tmp,"sf",true) == 0)
 		        	{
-		        		if (GetPlayerState(playerid) == 2)
-							{SafeSetVehiclePos(idcar, -1417.0,-295.8,14.1);}
+		        		server_SetPlayerInterior(playerid,0);
+						if (GetPlayerState(playerid) == 2)
+						{
+							SafeSetVehiclePos(idcar, -1417.0,-295.8,14.1);
+							LinkVehicleToInterior(idcar, 0);
+						}
 						else
 							{SafeSetPlayerPos(playerid, -1417.0,-295.8,14.1);}
 						msg_Client(playerid, COLOR_INFO, "{CF9756} Info {FFFFFF} Vous avez t tlport.");
-						server_SetPlayerInterior(playerid,0);
 						ResetPlayerIntVar(playerid);
 						return 1;
 					}
 					else if(strcmp(tmp,"fc",true) == 0)
 		        	{
-		        		if (GetPlayerState(playerid) == 2)
-							{SafeSetVehiclePos(idcar, -152.2688,1090.5657,19.7422);}
+		        		server_SetPlayerInterior(playerid,0);
+						if (GetPlayerState(playerid) == 2)
+						{
+							SafeSetVehiclePos(idcar, -152.2688,1090.5657,19.7422);
+							LinkVehicleToInterior(idcar, 0);
+						}
 						else
 							{SafeSetPlayerPos(playerid, -152.2688,1090.5657,19.7422);}
 						msg_Client(playerid, COLOR_INFO, "{CF9756} Info {FFFFFF} Vous avez t tlport.");
-						server_SetPlayerInterior(playerid,0);
 						ResetPlayerIntVar(playerid);
 						return 1;
 					}
@@ -62432,7 +62486,13 @@ public OnPlayerCommandText(playerid, cmdtext[])
 							server_SetPlayerInterior(playerid,PlayerInfo[giveplayerid][pInt]);
 							server_SetPlayerVirtualWorld(playerid,PlayerInfo[giveplayerid][pVirWorld]);
 							if (GetPlayerState(playerid) == 2)
-								{SafeSetVehiclePos(idcar, plocx, plocy+4, plocz);}
+							{
+								// [FIX TP VEHICULE] synchro interieur/monde du vehicule avec celui du joueur cible,
+								// sinon le vehicule reste dans l'ancien decor => bug visuel a l'arrivee.
+								SafeSetVehiclePos(idcar, plocx, plocy+4, plocz);
+								LinkVehicleToInterior(idcar, PlayerInfo[giveplayerid][pInt]);
+								SetVehicleVirtualWorld(idcar, PlayerInfo[giveplayerid][pVirWorld]);
+							}
 							else
 								{SafeSetPlayerPos(playerid,plocx,plocy+2, plocz);}
 							msg_Client(playerid, COLOR_INFO, "{CF9756} Info {FFFFFF} Vous avez t tlport.");
@@ -67340,7 +67400,13 @@ public OnPlayerCommandText(playerid, cmdtext[])
 				server_SetPlayerInterior(playerid,PlayerInfo[giveplayerid][pInt]);
 				server_SetPlayerVirtualWorld(playerid,PlayerInfo[giveplayerid][pVirWorld]);
 				if (GetPlayerState(playerid) == 2)
-					{SafeSetVehiclePos(idcar, plocx, plocy+4, plocz);}
+				{
+					// [FIX TP VEHICULE] synchro interieur/monde du vehicule avec celui du joueur cible,
+					// sinon le vehicule reste dans l'ancien decor => bug visuel a l'arrivee.
+					SafeSetVehiclePos(idcar, plocx, plocy+4, plocz);
+					LinkVehicleToInterior(idcar, PlayerInfo[giveplayerid][pInt]);
+					SetVehicleVirtualWorld(idcar, PlayerInfo[giveplayerid][pVirWorld]);
+				}
 				else
 					{SafeSetPlayerPos(playerid,plocx,plocy+2, plocz);}
 				msg_Client(playerid, COLOR_INFO, "{CF9756} Info {FFFFFF} Vous avez t tlport.");
