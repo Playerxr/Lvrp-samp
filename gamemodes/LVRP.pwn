@@ -210,7 +210,7 @@ Fix loading string from DataBase
 #define 			COLOR_POMPIER           0xE600FFAA
 #define             COLOR_ARMEE             0x5B7A3AFF              			// Armee de Terre
 #define             COLOR_ARMEE_AIR         0xFFFF00FF              			// Armee de l'Air (jaune pur)
-#define             COLOR_MARINE            0x0000FFFF              			// Marine (bleu pur)
+#define             COLOR_MARINE            0x00CED1FF              			// Marine (turquoise : le bleu pur se confondait avec le bleu police)
 #define             COLOR_CIA               0x5B5B9FFF              				// Couleur de la CIA              			// Couleur des |Arme|
 #define CAR_ARMEE_TERRE 53 // [FIX] �tait 11 = collision avec CAR_LOC_MOTO(11)
 #define CAR_ARMEE_AIR   54 // [FIX] �tait 12 = collision avec CAR_LOC_CAR(12)
@@ -68084,18 +68084,11 @@ public OnPlayerCommandText(playerid, cmdtext[])
 	}
     else if(strcmp(cmd,"/animlist",true)==0 || strcmp(cmd,"/listeanime",true)==0 || strcmp(cmd,"/listanim",true)==0)
 	{
-	    msg_Client(playerid, COLOR_YELLOW, "________________________________________________________________________________________________________________________");
-		msg_Client(playerid, COLOR_RED,"- Annimations disponibles :");
-	    msg_Client(playerid, COLOR_WHITE,"/fall - /fallback - /akick - /push - /lowbodypush - /handsup - /bomb - /drunk - /getarrested - /laugh - /sup");
-        msg_Client(playerid, COLOR_WHITE," /basket - /headbutt - /medic - /spray - /robman - /taichi - /lookout - /kiss - /cellin - /cellout - /cross - /lay");
-        msg_Client(playerid, COLOR_WHITE,"/deal - /crack - /smoke - /groundsit - /chat - /dance - /fucku - /strip - /hide - /vomit - /eat - /chairsit - /reload");
-        msg_Client(playerid, COLOR_WHITE,"/koface - /kostomach - /rollfall - /carjacked1 - /carjacked2 - /rcarjack1 - /rcarjack2 - /lcarjack1 - /lcarjack2 - /bat");
-        msg_Client(playerid, COLOR_WHITE,"/lifejump - /exhaust - /leftslap - /carlock - /hoodfrisked - /lightcig - /tapcig - /box - /lay2 - /chant - finger");
-        msg_Client(playerid, COLOR_WHITE,"/shouting - /knife - /cop - /elbow - /kneekick - /airkick - /gkick - /gpunch - /fstance - /lowthrow - /highthrow - /aim");
-        msg_Client(playerid, COLOR_WHITE,"/pee - /lean - /coucou - /disperser");
-        msg_Client(playerid, COLOR_YELLOW, "");
-        return 1;
-
+	    // [FIX ANIMLIST] Cette commande affichait un simple mur de texte (dont 5
+	    // commandes qui n'existaient meme plus : /fall /laugh /smoke /vomit /finger).
+	    // Elle ouvre maintenant directement le menu /emotes, plus lisible et a jour.
+	    msg_Client(playerid, COLOR_WHITE,"{FFAA00}[Animations]{FFFFFF} Les anciennes commandes ({FFFFB2}/handsup /dance /lean /box ...{FFFFFF}) marchent toujours.");
+	    return Emotes_ShowCategories(playerid);
 	}
 	else if(strcmp(cmd, "/ligotter", true) ==0 || strcmp(cmd, "/tie", true) == 0)
 	{
