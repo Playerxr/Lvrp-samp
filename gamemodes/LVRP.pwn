@@ -208,7 +208,9 @@ Fix loading string from DataBase
 #define             COLOR_SERVER            0x009FA1FF              			// Couleur des {005660} Serveur {C8C8C8}
 #define 			COLOR_ALLDEPT           0xFF8282AA                          // Couleur des {FF8282} Mdecin {FFFFFF}
 #define 			COLOR_POMPIER           0xE600FFAA
-#define             COLOR_ARMEE             0x5B7A3AFF
+#define             COLOR_ARMEE             0x5B7A3AFF              			// Armee de Terre
+#define             COLOR_ARMEE_AIR         0xFFFF00FF              			// Armee de l'Air (jaune pur)
+#define             COLOR_MARINE            0x0000FFFF              			// Marine (bleu pur)
 #define             COLOR_CIA               0x5B5B9FFF              				// Couleur de la CIA              			// Couleur des |Arme|
 #define CAR_ARMEE_TERRE 53 // [FIX] �tait 11 = collision avec CAR_LOC_MOTO(11)
 #define CAR_ARMEE_AIR   54 // [FIX] �tait 12 = collision avec CAR_LOC_CAR(12)
@@ -25553,8 +25555,12 @@ public OnPlayerSpawn(playerid)
 	    {SetPlayerColor(playerid, COLOR_MAIRIE);}
 	else if(PlayerInfo[playerid][pMember] == 9)
 	    {SetPlayerColor(playerid, COLOR_CIA);}
-	else if(PlayerInfo[playerid][pMember] >= 11 && PlayerInfo[playerid][pMember] <= 13)
+	else if(PlayerInfo[playerid][pMember] == 11)
 	    {SetPlayerColor(playerid, COLOR_ARMEE);}
+	else if(PlayerInfo[playerid][pMember] == 12)
+	    {SetPlayerColor(playerid, COLOR_ARMEE_AIR);}
+	else if(PlayerInfo[playerid][pMember] == 13)
+	    {SetPlayerColor(playerid, COLOR_MARINE);}
 	else if(PlayerInfo[playerid][pMember] == FACTION_HOPITAL)
 	    {SetPlayerColor(playerid, 0xFF69B4FF);} // [HOPITAL] Rose pour la faction hopital
 	else
@@ -25577,7 +25583,9 @@ stock GetPlayerColorByRank(playerid)
     else if(member == 5)                  return COLOR_FBI;
     else if(member >= 6 && member <= 8)   return COLOR_MAIRIE;
     else if(member == 9)                  return COLOR_CIA;
-    else if(member >= 11 && member <= 13) return COLOR_ARMEE;
+    else if(member == 11)                 return COLOR_ARMEE;
+    else if(member == 12)                 return COLOR_ARMEE_AIR;
+    else if(member == 13)                 return COLOR_MARINE;
     else if(member == FACTION_HOPITAL)    return 0xFF69B4FF; // [HOPITAL] Rose
     else                                  return 0xC8C8C8FF;
 }
@@ -68321,7 +68329,7 @@ public OnPlayerCommandText(playerid, cmdtext[])
 	            if(armRank < 0) armRank = 0;
 	            if(armRank > 5) armRank = 5;
 	            SetPlayerSkin(playerid, ArmeeInfo[armId][ar_skin][armRank]);
-	            SetPlayerColor(playerid, COLOR_ARMEE);
+	            SetPlayerColor(playerid, GetPlayerColorByRank(playerid));
 	            format(string,sizeof(string),"{5B7A3A}\xbb Arme \xab{FFFFFF} %s est entr en service.",PlayerInfo[playerid][pRealName]);
 	        }
 	        else
