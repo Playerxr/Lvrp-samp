@@ -43,7 +43,7 @@ static const emotes_VieCourante[][eEmote] = {
 	{"Telephone (parler)",     "PED",      "phone_in",           4.0, 1, 0, 0, 0, 0},
 	{"Telephone (raccrocher)", "PED",      "phone_out",          4.0, 0, 0, 0, 0, 1500},
 	{"Verifier l'heure",       "COP_AMBIENT","Coplook_loop",     4.0, 0, 0, 0, 0, 2200},
-	{"Crachat",                "PED",      "spitoon_in",         4.0, 0, 0, 0, 0, 2000}
+	{"Crachat",                "FOOD",     "EAT_Vomit_P",        4.0, 0, 0, 0, 0, 2000}
 };
 
 // CATEGORIE 1 : POSTURE
@@ -51,7 +51,7 @@ static const emotes_Posture[][eEmote] = {
 	{"S'asseoir (sol)",        "BEACH",    "ParkSit_M_loop",     4.0, 1, 0, 0, 0, 0},
 	{"S'asseoir (chaise)",     "BAR",      "Barcustom_loop",     4.0, 1, 1, 1, 0, 0},
 	{"S'allonger (dos)",       "BEACH",    "bather",             4.0, 1, 1, 1, 0, 0},
-	{"S'allonger (ventre)",    "BEACH",    "Lay_Bac_in",         4.0, 1, 1, 1, 0, 0},
+	{"S'allonger (ventre)",    "BEACH",    "Lay_Bac_loop",       4.0, 1, 1, 1, 0, 0},
 	{"S'accroupir",            "PED",      "crouch_roll_l",      4.0, 1, 1, 1, 0, 0},
 	{"S'appuyer (mur)",        "GANGS",    "leanIDLE",           4.0, 1, 1, 1, 0, 0},
 	{"Mains derriere la tete", "PED",      "endchat_03",         4.0, 1, 0, 0, 0, 0},
@@ -64,9 +64,9 @@ static const emotes_Salutations[][eEmote] = {
 	{"Pouce leve",             "PED",      "endchat_02",         4.0, 0, 0, 0, 0, 2000},
 	{"Faire signe (taxi)",     "ON_LOOKERS","wave_loop",         4.0, 1, 0, 0, 0, 0},
 	{"Hochement de tete",      "PED",      "gang_gunstand",      4.0, 0, 0, 0, 0, 2000},
-	{"Salut militaire",        "PED",      "facsurpr",           4.0, 0, 0, 0, 0, 2000},
-	{"Hausser les epaules",    "ON_LOOKERS","shrug_in",          4.0, 0, 0, 0, 0, 1500},
-	{"Pointer du doigt",       "PED",      "Ariesgun_in",        4.0, 0, 0, 0, 0, 2000}
+	{"Salut militaire",        "PED",      "facsurp",            4.0, 0, 0, 0, 0, 2000},
+	{"Hausser les epaules",    "PED",      "Idle_chat",          4.0, 0, 0, 0, 0, 1500},
+	{"Pointer du doigt",       "ON_LOOKERS","Point_In",          4.0, 0, 0, 0, 0, 2000}
 };
 
 // CATEGORIE 3 : REACTIONS
@@ -88,20 +88,20 @@ static const emotes_Combat[][eEmote] = {
 	{"Croiser doigts",         "GHANDS",   "gsign4",             4.0, 0, 0, 0, 0, 2000},
 	{"Cracher au sol",         "FOOD",     "EAT_Vomit_P",        4.0, 0, 0, 0, 0, 2500},
 	{"Geste menacant",         "GHANDS",   "gsign2",             4.0, 0, 0, 0, 0, 2000},
-	{"Coup de poing (air)",    "PED",      "shake_cara",         4.0, 0, 0, 0, 0, 1500}
+	{"Coup de poing (air)",    "GANGS",    "shake_cara",         4.0, 0, 0, 0, 0, 1500}
 };
 
 // CATEGORIE 5 : POLICE RP
 static const emotes_Police[][eEmote] = {
 	{"Mains en l'air",         "PED",      "handsup",            4.0, 1, 1, 1, 0, 0},
-	{"Reddition (a genoux)",   "PED",      "SURRENDER",          4.0, 1, 1, 1, 0, 0},
+	{"Reddition (a genoux)",   "PED",      "HANDSCOWER",         4.0, 1, 1, 1, 0, 0},
 	{"Menottage (gestes)",     "PED",      "ARRESTgun",          4.0, 0, 0, 0, 0, 3500},
-	{"Diriger circulation",    "PED",      "CopTraf2",           4.0, 1, 0, 0, 0, 0},
-	{"Surveiller (jumelles)",  "BINOCS",   "BINOCS_IN",          4.0, 1, 1, 1, 0, 0},
+	{"Diriger circulation",    "POLICE",   "COPTRAF_STOP",       4.0, 1, 0, 0, 0, 0},
+	{"Surveiller (jumelles)",  "COP_AMBIENT","COPBROWSE_loop",   4.0, 1, 1, 1, 0, 0},
 	{"Inspection (regarde)",   "COP_AMBIENT","Coplook_loop",     4.0, 1, 0, 0, 0, 0},
 	{"Donner ordres",          "ON_LOOKERS","wave_loop",         4.0, 1, 0, 0, 0, 0},
 	{"Tap-frisk (fouille)",    "GANGS",    "Invite_Yes",         4.0, 0, 0, 0, 0, 2500},
-	{"Pointer suspect",        "PED",      "Ariesgun_in",        4.0, 0, 0, 0, 0, 2000}
+	{"Pointer suspect",        "ON_LOOKERS","Point_In",          4.0, 0, 0, 0, 0, 2000}
 };
 
 // CATEGORIE 6 : ARMES RP
@@ -111,8 +111,8 @@ static const emotes_Armes[][eEmote] = {
 	{"Recharger (AK/M4)",      "RIFLE",    "RIFLE_load",         4.0, 0, 0, 0, 0, 1500},
 	{"Recharger (Sniper)",     "RIFLE",    "RIFLE_load",         4.0, 0, 0, 0, 0, 1500},
 	{"Verifier arme",          "PED",      "Idle_Gang1",         4.0, 1, 0, 0, 0, 0},
-	{"Holster (ranger)",       "PED",      "PUTAWAY",            4.0, 0, 0, 0, 0, 2000},
-	{"Sortir arme (lent)",     "PED",      "Gunaim_idle",        4.0, 0, 0, 0, 0, 1500},
+	{"Holster (ranger)",       "WEAPONS",  "SHP_1H_RET",         4.0, 0, 0, 0, 0, 2000},
+	{"Sortir arme (lent)",     "SHOP",     "SHP_GUN_AIM",        4.0, 0, 0, 0, 0, 1500},
 	{"Tir en l'air",           "RIFLE",    "RIFLE_fire",         4.0, 0, 0, 0, 0, 1500},
 	{"Lancer (cocktail)",      "GRENADE",  "WEAPON_throw",       4.0, 0, 0, 0, 0, 2200}
 };
@@ -121,11 +121,11 @@ static const emotes_Armes[][eEmote] = {
 static const emotes_Militaire[][eEmote] = {
 	{"Garde a vous",           "PED",      "gang_gunstand",      4.0, 1, 1, 1, 0, 0},
 	{"Repos (mains derriere)", "PED",      "endchat_03",         4.0, 1, 1, 1, 0, 0},
-	{"Salut militaire",        "PED",      "facsurpr",           4.0, 0, 0, 0, 0, 2000},
+	{"Salut militaire",        "PED",      "facsurp",            4.0, 0, 0, 0, 0, 2000},
 	{"Presenter armes",        "RIFLE",    "RIFLE_load",         4.0, 0, 0, 0, 0, 2000},
 	{"Marche militaire",       "PED",      "WALK_armed",         4.0, 1, 0, 0, 0, 0},
 	{"Faire rapport",          "PED",      "Idle_chat",          4.0, 1, 1, 1, 0, 0},
-	{"S'incliner (respect)",   "KISSING",  "gfwd_b_o",           4.0, 0, 1, 1, 0, 2500},
+	{"S'incliner (respect)",   "COP_AMBIENT","Coplook_nod",      4.0, 0, 1, 1, 0, 2500},
 	{"Porter drapeau (lever)", "CARRY",    "liftup",             4.0, 0, 0, 0, 0, 2500},
 	{"Decoration (recevoir)",  "PED",      "endchat_02",         4.0, 0, 0, 0, 0, 2500},
 	{"Tomber au sol (KO)",     "PED",      "FLOOR_hit",          4.0, 0, 1, 1, 0, 3000},
@@ -138,8 +138,8 @@ static const emotes_Vip[][eEmote] = {
 	{"Danse robot",            "DANCING",  "dnce_M_b",           4.0, 1, 1, 1, 0, 0},
 	{"Danse funky",            "DANCING",  "dnce_M_c",           4.0, 1, 1, 1, 0, 0},
 	{"Danse energique",        "DANCING",  "dnce_M_d",           4.0, 1, 1, 1, 0, 0},
-	{"Pompes (musculation)",   "GYMNASIUM","gym_pushups",        4.0, 1, 1, 1, 0, 0},
-	{"Abdos (sit-ups)",        "GYMNASIUM","gym_situps",         4.0, 1, 1, 1, 0, 0}
+	{"Boxe (sac de frappe)",   "GYMNASIUM","GYM_SHADOWBOX",      4.0, 1, 1, 1, 0, 0},
+	{"Jogging (tapis)",        "GYMNASIUM","GYM_TREAD_JOG",      4.0, 1, 1, 1, 0, 0}
 };
 
 // Header table avec nombre d'emotes par categorie
