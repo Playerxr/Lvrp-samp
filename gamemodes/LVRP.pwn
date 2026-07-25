@@ -45905,6 +45905,11 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 	    	        GetPlayerName(playa,sendername,sizeof(sendername));
 	    	        vehicle[carid][cOwned] = 1;
 	    	        vehicle[carid][cType] = CAR_OWN;
+	    	        // [FIX PROPRIETAIRE] ownerSQLID n'etait jamais mis a jour ici : le vehicule
+	    	        // restait au nom du precedent proprietaire (souvent l'admin lui-meme) pour
+	    	        // tout ce qui verifie ownerSQLID (ex: /parking payer), alors que cOwner/pCar[]
+	    	        // pointaient deja vers le nouveau joueur -> "Ce vehicule n'est pas a toi".
+	    	        vehicle[carid][ownerSQLID] = PlayerInfo[playa][pSQLID];
 	    	        format(vehicle[carid][cOwner], MAX_PLAYER_NAME ,"%s",sendername);
 	    	        format(vehicle[carid][cLicense], 14 ,"%s %d",NICK_NAME,carid);
 	    	        format(string,sizeof(string),"{FF2727} Admin {FFABAD} Le vhicule appartient  : %s.",sendername);
