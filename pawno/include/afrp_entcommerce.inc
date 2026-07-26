@@ -223,6 +223,7 @@ stock EC_DoSellBiz(playerid, qty)
 	entreprises[eid][entCash]  += gain;
 	bizz_Save(bid);
 	Ent_Save();
+	Obj_Progress(playerid, OBJ_VENTE, qty);   // [OBJECTIFS] unites vendues
 
 	new okStr[200];
 	format(okStr, sizeof(okStr), "{FF8C00} Commerce {FFFFFF} {FFFFB2}%d{FFFFFF} unites livrees a {FFFFB2}%s{FFFFFF}. Caisse entreprise : {FFFFB2}+%d${FFFFFF}.",
@@ -302,6 +303,7 @@ stock EC_DoSellEnt(playerid, qty)
 	entreprises[eid][entStock]   -= qty;
 	entreprises[eid][entCash]    += gain;
 	Ent_Save();
+	Obj_Progress(playerid, OBJ_VENTE, qty);   // [OBJECTIFS] unites vendues
 
 	new okStr[200];
 	format(okStr, sizeof(okStr), "{FF8C00} Commerce {FFFFFF} {FFFFB2}%d{FFFFFF} unites vendues a {FFFFB2}%s{FFFFFF}. Caisse : {FFFFB2}+%d${FFFFFF}.",

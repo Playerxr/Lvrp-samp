@@ -3345,6 +3345,11 @@ new PlayerInfo[MAX_PLAYERS][e_Player];
 // des joueurs en ligne (pDonateRank/pVipTime/pCash), donc il a besoin d'y acceder.
 #include <vip_sync>                                                    			// VIP/Cash auto (approuve par le staff dans l'app)
 
+// [OBJECTIFS] Place ici, tot : ses constantes OBJ_* sont utilisees par des
+// hooks disperses dans le gamemode (paie horaire ligne ~4900, arrestations,
+// cargo, commerce). Un enum Pawn doit etre defini AVANT toute utilisation.
+#include <afrp_objectifs>
+
 enum e_Accessory
 {
     Float:pos_x[5],
@@ -4900,6 +4905,7 @@ public PaieAuto_Tick()
             new mult = Bienvenue_PayMultiplier(i);
             montant *= mult;
             SafeGivePlayerMoney(i, montant, "Paie horaire job");
+            Obj_Progress(i, OBJ_ARGENT, montant);   // [OBJECTIFS] argent gagne en travaillant
             new pstring[180];
             if(mult > 1)
                 format(pstring, sizeof(pstring), "{00FF00}\xbb Paie horaire \xab{FFFFFF} Vous recevez ${FFFF00}%d{FFFFFF} pour 1h de travail {FFD700}(x%d bonus nouveau joueur){FFFFFF}.", montant, mult);
@@ -10705,6 +10711,7 @@ public OnPlayerLogin(playerid,pass[])
 
 	// [DAILY BONUS] Verifie/donne le bonus de connexion quotidien (5000$ + item)
 	DailyBonus_CheckOnLogin(playerid);
+	Obj_OnPlayerLogin(playerid); // [OBJECTIFS] charge les objectifs du jour
 
 	// [BIENVENUE] Bonus de premiere apparition (une seule fois par compte)
 	Bienvenue_CheckOnLogin(playerid);
@@ -23348,6 +23355,7 @@ public OnPlayerConnect(playerid)
     VipPerks_OnConnect(playerid); // [VIP PERKS] reset cooldowns tp + tag
     GangTag_OnConnect(playerid); // [GANG TAG] init slot label
     LegalTag_OnConnect(playerid); // [LEGAL TAG] init slot label
+    Obj_OnPlayerConnect(playerid); // [OBJECTIFS] reset de l'etat avant login
     Ent_OnPlayerConnect(playerid); // [ENTREPRISE] reset compteur minutes accumulees
     Jobs_OnConnect(playerid); // [JOBS] reset streak
     FAQ_OnConnect(playerid); // [FAQ] reset cooldown aide auto
@@ -23969,6 +23977,7 @@ public OnPlayerDisconnect(playerid, reason)
     VipPerks_OnDisconnect(playerid); // [VIP PERKS] detruit le tag flottant
     GangTag_OnDisconnect(playerid); // [GANG TAG] detruit le label du gang
     Justice_OnPlayerFree(playerid); // [JUSTICE] retire son dossier de proces s'il en avait un
+    Obj_OnPlayerDisconnect(playerid); // [OBJECTIFS] sauvegarde la progression
     LegalTag_OnDisconnect(playerid); // [LEGAL TAG] detruit le label de faction
     Cuff_OnDisconnect(playerid); // [CUFFS] anti combat-log : auto-jail si menotte
     Phone_DestroyUI(playerid); // AFRP cleanup ancien telephone (sera vir� en P4)
@@ -29927,6 +29936,8 @@ public OnGameModeInit()
     EM_Init();
     // [JUSTICE] Init des dossiers de proces
     Justice_Init();
+    // [OBJECTIFS] Init + timer 60s (temps de jeu, distance parcourue)
+    Obj_Init();
     // [DIAGNOSTIC] Rapport differe de 20s : les maisons/biz/vehicules arrivent
     // par des requetes MySQL asynchrones, les compter maintenant donnerait 0.
     Diag_ScheduleStartup();
@@ -53045,6 +53056,12 @@ public OnPlayerCommandText(playerid, cmdtext[])
 	{
 	    return Diag_ShowDialog(playerid);
 	}
+	// [OBJECTIFS] Objectifs quotidiens
+	else if(strcmp(cmd, "/objectifs", true) == 0 || strcmp(cmd, "/objectif", true) == 0
+	        || strcmp(cmd, "/quotidien", true) == 0)
+	{
+	    return Obj_ShowDialog(playerid);
+	}
 	else if(strcmp(cmd, "/defendre", true) == 0)
 	{
 	    new juParams[64];
@@ -56191,6 +56208,7 @@ public OnPlayerCommandText(playerid, cmdtext[])
 								PlayerInfo[suspect][pWanted] = 0;
 								// [JUSTICE] Sans ce rappel, personne ne saurait qu'un recours existe.
 								msg_Client(suspect, COLOR_WHITE, "{8B008B}\xbb Justice \xab{FFFFFF} Tu contestes cette peine ? Tape {FFFFB2}/appel{FFFFFF} pour saisir la Cour de Justice.");
+								Obj_Progress(playerid, OBJ_ARREST, 1);   // [OBJECTIFS] arrestation
 								format(sql, sizeof(sql), "UPDATE lvrp_users_casiers SET Arrested=Arrested+1 WHERE SQLid=%d",PlayerInfo[suspect][pSQLID]);
 								mysql_pquery(MYSQL,sql);
 								player_Cuffed[suspect] = 0;
@@ -57700,6 +57718,7 @@ public OnPlayerCommandText(playerid, cmdtext[])
 								PlayerInfo[suspect][pWanted] = 0;
 								// [JUSTICE] Sans ce rappel, personne ne saurait qu'un recours existe.
 								msg_Client(suspect, COLOR_WHITE, "{8B008B}\xbb Justice \xab{FFFFFF} Tu contestes cette peine ? Tape {FFFFB2}/appel{FFFFFF} pour saisir la Cour de Justice.");
+								Obj_Progress(playerid, OBJ_ARREST, 1);   // [OBJECTIFS] arrestation
 					     	   	format(sql, sizeof(sql), "UPDATE lvrp_users_casiers SET Arrested=Arrested+1 WHERE SQLid=%d",PlayerInfo[suspect][pSQLID]);
 								mysql_pquery(MYSQL,sql);
 								player_Cuffed[suspect] = 0;

@@ -547,6 +547,7 @@ stock Cargo_DeliverMission(playerid, atDepot, const entName2[])
 	cargo_DestDepot[playerid] = -1;
 	cargo_TruckVeh[playerid] = INVALID_VEHICLE_ID;
 	DisablePlayerCheckpoint(playerid);
+	Obj_Progress(playerid, OBJ_CARGO, 1);   // [OBJECTIFS] livraison reussie
 
 	new msg[200];
 	format(msg, sizeof(msg), "{FF8C00} Cargo {FFFFFF} Livraison reussie ! {FFFFB2}+%d${FFFFFF} verses dans la caisse de {FFFFB2}%s{FFFFFF}.", pay, entName2);

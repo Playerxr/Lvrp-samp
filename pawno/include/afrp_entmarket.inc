@@ -328,6 +328,7 @@ stock EM_DeliverContract(playerid)
 	bizz_Save(bid);
 	Ent_Save();
 	EM_Save();
+	Obj_Progress(playerid, OBJ_VENTE, qty);   // [OBJECTIFS] unites livrees
 
 	new okStr[220];
 	format(okStr, sizeof(okStr), "{FF8C00} Contrat {FFFFFF} {FFFFB2}%d{FFFFFF} unites livrees a {FFFFB2}%s{FFFFFF}. Caisse entreprise : {FFFFB2}+%d${FFFFFF}.%s",
