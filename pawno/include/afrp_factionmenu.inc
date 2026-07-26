@@ -78,19 +78,54 @@ static const fmEntries[][e_fmEntry] = {
 	{FMG_MEDIC,   "Voir toutes mes commandes",  "/med",          FM_PLAIN},
 
 	// ---- ARMEE (pMember 11-13) ----
-	{FMG_ARMY,    "Voir toutes mes commandes",  "/armee",        FM_PLAIN},
+	{FMG_ARMY,    "Prendre/Quitter le service", "/armee service",  FM_PLAIN},
+	{FMG_ARMY,    "S'equiper",                  "/armee equiper",  FM_PLAIN},
+	{FMG_ARMY,    "Entrer/Sortir du QG",        "/armee qg",       FM_PLAIN},
+	{FMG_ARMY,    "Menotter",                   "/armee menotter", FM_TARGET},
+	{FMG_ARMY,    "Demenotter",                 "/armee demenotter", FM_TARGET},
+	{FMG_ARMY,    "Radio interne",              "/armee radio",    FM_TEXT},
+	{FMG_ARMY,    "Garer le vehicule",          "/armee garer",    FM_PLAIN},
+	{FMG_ARMY,    "Annonce",                    "/armee ann",      FM_TEXT},
+	{FMG_ARMY,    "Inviter un joueur",          "/armee inviter",  FM_TARGET},
+	{FMG_ARMY,    "Virer un membre",            "/armee virer",    FM_TARGET},
+	{FMG_ARMY,    "Voir toutes mes commandes",  "/armee",          FM_PLAIN},
 
 	// ---- POMPIERS (pMember 999) ----
-	{FMG_POMPIER, "Voir toutes mes commandes",  "/po",           FM_PLAIN},
+	{FMG_POMPIER, "Eteindre un feu",            "/po feu",         FM_PLAIN},
+	{FMG_POMPIER, "Demander de l'assistance",   "/po ba",          FM_PLAIN},
+	{FMG_POMPIER, "Stopper l'assistance",       "/po sba",         FM_PLAIN},
+	{FMG_POMPIER, "Tracer le dernier appel",    "/po tda",         FM_PLAIN},
+	{FMG_POMPIER, "Garer le vehicule",          "/po garer",       FM_PLAIN},
+	{FMG_POMPIER, "Annonce",                    "/po ann",         FM_TEXT},
+	{FMG_POMPIER, "Inviter un joueur",          "/po inviter",     FM_TARGET},
+	{FMG_POMPIER, "Virer un membre",            "/po virer",       FM_TARGET},
+	{FMG_POMPIER, "Voir toutes mes commandes",  "/po",             FM_PLAIN},
 
 	// ---- GANG (illegal fType 1) ----
-	{FMG_GANG,    "Voir toutes mes commandes",  "/gang",         FM_PLAIN},
+	{FMG_GANG,    "Coffre du gang",             "/gang coffre",    FM_PLAIN},
+	{FMG_GANG,    "Recolter",                   "/gang recolter",  FM_PLAIN},
+	{FMG_GANG,    "Poser un tag",               "/gang tag",       FM_TEXT},
+	{FMG_GANG,    "Inviter un joueur",          "/gang inviter",   FM_TARGET},
+	{FMG_GANG,    "Virer un membre",            "/gang virer",     FM_TARGET},
+	{FMG_GANG,    "Voir toutes mes commandes",  "/gang",           FM_PLAIN},
 
 	// ---- MAFIA (illegal fType 2) ----
-	{FMG_MAFIA,   "Voir toutes mes commandes",  "/mafia",        FM_PLAIN},
+	{FMG_MAFIA,   "Coffre de la mafia",         "/mafia coffre",   FM_PLAIN},
+	{FMG_MAFIA,   "Recolter",                   "/mafia recolter", FM_PLAIN},
+	{FMG_MAFIA,   "Entrer/Sortir du QG",        "/mafia qg",       FM_PLAIN},
+	{FMG_MAFIA,   "Garer le vehicule",          "/mafia garer",    FM_PLAIN},
+	{FMG_MAFIA,   "Inviter un joueur",          "/mafia inviter",  FM_TARGET},
+	{FMG_MAFIA,   "Virer un membre",            "/mafia virer",    FM_TARGET},
+	{FMG_MAFIA,   "Voir toutes mes commandes",  "/mafia",          FM_PLAIN},
 
 	// ---- CIA (pMember 9) ----
-	{FMG_CIA,     "Voir toutes mes commandes",  "/cia",          FM_PLAIN},
+	{FMG_CIA,     "Prendre/Quitter le service", "/cia service",    FM_PLAIN},
+	{FMG_CIA,     "Radio interne",              "/cia radio",      FM_TEXT},
+	{FMG_CIA,     "Garer le vehicule",          "/cia garer",      FM_PLAIN},
+	{FMG_CIA,     "Annonce",                    "/cia ann",        FM_TEXT},
+	{FMG_CIA,     "Inviter un joueur",          "/cia inviter",    FM_TARGET},
+	{FMG_CIA,     "Virer un membre",            "/cia virer",      FM_TARGET},
+	{FMG_CIA,     "Voir toutes mes commandes",  "/cia",            FM_PLAIN},
 
 	// ---- JUSTICE / COUR (pMember 14) ----
 	{FMG_JUSTICE, "Prendre/Quitter le service", "/j duty",       FM_PLAIN},
