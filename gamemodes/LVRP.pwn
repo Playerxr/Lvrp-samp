@@ -30967,8 +30967,8 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
         return Venue_OnDialogResponse(playerid, dialogid, response, listitem, inputtext);
     }
 
-    // [ENTREPRISE] Dispatch du dialog d'achat de local (9984)
-    if(dialogid == 9984)
+    // [ENTREPRISE] Dispatch des dialogs local (9984) et secteur d'activite (9986)
+    if(dialogid == 9984 || dialogid == 9986)
     {
         return Ent_OnDialogResponse(playerid, dialogid, response, listitem);
     }

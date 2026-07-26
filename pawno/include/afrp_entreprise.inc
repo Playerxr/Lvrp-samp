@@ -33,8 +33,29 @@
 #define ENT_FILE            "entreprises.cfg"
 #define ENT_TICK_MS         60000       // 60s
 #define ENT_DLG_LOCAL       9984        // dialog choix du local
+#define ENT_DLG_TYPE        9986        // dialog choix du secteur d'activite
 #define ENT_VW_BASE         7100        // monde virtuel dedie : ENT_VW_BASE + eid
 #define ENT_INT_COUNT       13          // nb de locaux au catalogue
+#define ENT_TYPE_COUNT      8           // nb de secteurs d'activite
+
+// Secteurs d'activite. Purement identitaires pour l'instant (affiches dans
+// /entreprise info, sur l'enseigne du local et dans la liste admin) : aucun
+// bonus chiffre, pour ne desequilibrer aucun type par rapport aux autres.
+enum e_EntType
+{
+	etName[28],
+	etDesc[40]
+};
+static const EntTypes[ENT_TYPE_COUNT][e_EntType] = {
+	{"Transport & Logistique", "Livraisons, fret, missions cargo"},
+	{"Batiment & Travaux",     "Construction, renovation"},
+	{"Securite privee",        "Gardiennage, escorte"},
+	{"Restauration",           "Restaurant, bar, traiteur"},
+	{"Commerce & Import",      "Boutique, revente, import"},
+	{"Garage & Mecanique",     "Reparation, tuning, depannage"},
+	{"Immobilier",             "Achat, vente, gestion de biens"},
+	{"Evenementiel & Medias",  "Soirees, concerts, communication"}
+};
 
 // Catalogue des locaux achetables. Prix volontairement bien plus bas que la
 // creation d'entreprise (50M) : c'est un amenagement, pas un investissement.
@@ -73,6 +94,7 @@ enum e_Ent
 	entOwnerSqlid,
 	entCash,
 	entCreatedTs,
+	entType,                         // 0 = non defini, sinon 1..ENT_TYPE_COUNT
 	entIntId,                        // 0 = aucun local, sinon 1..ENT_INT_COUNT
 	Float:entEntryX, Float:entEntryY, Float:entEntryZ,  // porte d'entree dans le monde
 	entEmpSqlid[ENT_MAX_EMP],
@@ -110,6 +132,17 @@ stock Ent_Init()
 	return 1;
 }
 
+// Nom du secteur d'activite d'une entreprise ("Non defini" si pas choisi).
+// Defini ici (avant Ent_CreateVisuals) car l'enseigne du local l'affiche.
+stock Ent_TypeName(eid, dest[], destSize)
+{
+	dest[0] = 0;
+	new t = entreprises[eid][entType];
+	if(t < 1 || t > ENT_TYPE_COUNT) { strcat(dest, "Non defini", destSize); return 0; }
+	strcat(dest, EntTypes[t-1][etName], destSize);
+	return 1;
+}
+
 // Detruit puis recree le pickup + label d'entree/sortie d'une entreprise.
 stock Ent_DestroyVisuals(eid)
 {
@@ -135,9 +168,10 @@ stock Ent_CreateVisuals(eid)
 	new iid = entreprises[eid][entIntId];
 	if(iid < 1 || iid > ENT_INT_COUNT) return 0;   // pas de local achete
 
-	new labelStr[160];
-	format(labelStr, sizeof(labelStr), "{42AAFF}%s\n{FFFFFF}%s\n{CCCCCC}/entreprise entrer",
-		entreprises[eid][entName], EntInteriors[iid-1][eiName]);
+	new labelStr[220], typeStr[32];
+	Ent_TypeName(eid, typeStr, sizeof(typeStr));
+	format(labelStr, sizeof(labelStr), "{42AAFF}%s\n{FFFF66}%s\n{FFFFFF}%s\n{CCCCCC}/entreprise entrer",
+		entreprises[eid][entName], typeStr, EntInteriors[iid-1][eiName]);
 
 	entPickup[eid] = CreatePickup(1272, 1,
 		entreprises[eid][entEntryX], entreprises[eid][entEntryY], entreprises[eid][entEntryZ], 0);
@@ -216,8 +250,11 @@ stock Ent_Load()
 		Ent_ReadField(line, i, tmpBuf, sizeof(tmpBuf), 31); entreprises[eid][entEntryX] = floatstr(tmpBuf);
 		Ent_ReadField(line, i, tmpBuf, sizeof(tmpBuf), 31); entreprises[eid][entEntryY] = floatstr(tmpBuf);
 		Ent_ReadField(line, i, tmpBuf, sizeof(tmpBuf), 31); entreprises[eid][entEntryZ] = floatstr(tmpBuf);
+		Ent_ReadField(line, i, tmpBuf, sizeof(tmpBuf), 31); entreprises[eid][entType]   = strval(tmpBuf);
 		if(entreprises[eid][entIntId] < 0 || entreprises[eid][entIntId] > ENT_INT_COUNT)
 			entreprises[eid][entIntId] = 0;
+		if(entreprises[eid][entType] < 0 || entreprises[eid][entType] > ENT_TYPE_COUNT)
+			entreprises[eid][entType] = 0;
 
 		entreprises[eid][entUsed] = 1;
 		Ent_CreateVisuals(eid);
@@ -244,7 +281,7 @@ stock Ent_Save()
 			format(tmp, sizeof(tmp), "%d,%d;", entreprises[eid][entEmpSqlid][e], entreprises[eid][entEmpSalary][e]);
 			strcat(empPart, tmp);
 		}
-		format(line, sizeof(line), "%s|%d|%d|%d|%s|%d|%.4f|%.4f|%.4f\n",
+		format(line, sizeof(line), "%s|%d|%d|%d|%s|%d|%.4f|%.4f|%.4f|%d\n",
 			entreprises[eid][entName],
 			entreprises[eid][entOwnerSqlid],
 			entreprises[eid][entCash],
@@ -253,7 +290,8 @@ stock Ent_Save()
 			entreprises[eid][entIntId],
 			entreprises[eid][entEntryX],
 			entreprises[eid][entEntryY],
-			entreprises[eid][entEntryZ]);
+			entreprises[eid][entEntryZ],
+			entreprises[eid][entType]);
 		fwrite(f, line);
 	}
 	fclose(f);
@@ -425,6 +463,40 @@ stock Ent_GetNearestEntry(playerid)
 	return best;
 }
 
+stock Ent_ShowTypeDialog(playerid)
+{
+	new eid = Ent_FindByOwner(PlayerInfo[playerid][pSQLID]);
+	if(eid == -1) return msg_Client(playerid, COLOR_INFO, "{CF9756} Entreprise {FFFFFF} Tu n'es pas patron.");
+
+	new body[900], tmp[96], cur[32];
+	Ent_TypeName(eid, cur, sizeof(cur));
+	format(tmp, sizeof(tmp), "{FFFFFF}Secteur actuel : {FFFFB2}%s{FFFFFF}\n\n", cur);
+	strcat(body, tmp);
+	for(new k = 0; k < ENT_TYPE_COUNT; k++)
+	{
+		format(tmp, sizeof(tmp), "%s{FFFFFF}\t{CCCCCC}%s\n", EntTypes[k][etName], EntTypes[k][etDesc]);
+		strcat(body, tmp);
+	}
+	return ShowPlayerDialog(playerid, ENT_DLG_TYPE, DIALOG_STYLE_TABLIST,
+		"{42AAFF}Entreprise - Secteur d'activite", body, "Choisir", "Annuler");
+}
+
+stock Ent_SetType(playerid, choice)
+{
+	if(choice < 0 || choice >= ENT_TYPE_COUNT) return 0;
+	new eid = Ent_FindByOwner(PlayerInfo[playerid][pSQLID]);
+	if(eid == -1) return msg_Client(playerid, COLOR_INFO, "{CF9756} Entreprise {FFFFFF} Tu n'es pas patron.");
+
+	entreprises[eid][entType] = choice + 1;
+	if(entreprises[eid][entIntId] >= 1) Ent_CreateVisuals(eid);  // enseigne a jour
+	Ent_Save();
+
+	new okStr[190];
+	format(okStr, sizeof(okStr), "{42AAFF} Entreprise {FFFFFF} Secteur d'activite : {FFFFB2}%s{FFFFFF} (%s).",
+		EntTypes[choice][etName], EntTypes[choice][etDesc]);
+	return msg_Client(playerid, COLOR_WHITE, okStr);
+}
+
 stock Ent_ShowLocalDialog(playerid)
 {
 	new eid = Ent_FindByOwner(PlayerInfo[playerid][pSQLID]);
@@ -521,10 +593,19 @@ stock Ent_Cmd_Sortir(playerid)
 // Dispatcher dialog (a appeler depuis OnDialogResponse)
 stock Ent_OnDialogResponse(playerid, dialogid, response, listitem)
 {
-	if(dialogid != ENT_DLG_LOCAL) return 0;
-	if(!response) return 1;
-	Ent_BuyInterior(playerid, listitem);
-	return 1;
+	if(dialogid == ENT_DLG_LOCAL)
+	{
+		if(!response) return 1;
+		Ent_BuyInterior(playerid, listitem);
+		return 1;
+	}
+	if(dialogid == ENT_DLG_TYPE)
+	{
+		if(!response) return 1;
+		Ent_SetType(playerid, listitem);
+		return 1;
+	}
+	return 0;
 }
 
 // Dispatcher principal /entreprise
@@ -533,6 +614,7 @@ stock Ent_Cmd(playerid, params[])
 	if(!strlen(params))
 	{
 		msg_Client(playerid, COLOR_WHITE, "{42AAFF} Entreprise {FFFFFF} /entreprise [info|creer|verser|retirer|embauche|virer|salaire|employes|camionnette|supprimer]");
+		msg_Client(playerid, COLOR_WHITE, "{FFFFFF}Identite : /entreprise type (secteur d'activite)");
 		msg_Client(playerid, COLOR_WHITE, "{FFFFFF}Local : /entreprise local (acheter un interieur), entrer, sortir");
 		msg_Client(playerid, COLOR_WHITE, "{FFFFFF}Missions : /cargo (dans une camionnette d'entreprise, pres d'un depot)");
 		if(PlayerInfo[playerid][pAdmin] >= 3)
@@ -576,6 +658,7 @@ stock Ent_Cmd(playerid, params[])
 		entreprises[eid][entOwnerSqlid] = PlayerInfo[playerid][pSQLID];
 		entreprises[eid][entCash] = 0;
 		entreprises[eid][entCreatedTs] = gettime();
+		entreprises[eid][entType]  = 0;   // secteur a choisir juste apres
 		entreprises[eid][entIntId] = 0;   // pas de local tant qu'il n'a pas achete
 		entreprises[eid][entEntryX] = 0.0;
 		entreprises[eid][entEntryY] = 0.0;
@@ -584,11 +667,16 @@ stock Ent_Cmd(playerid, params[])
 		ent_Count++;
 		Ent_Save();
 		new okStr[220];
-		format(okStr, sizeof(okStr), "{42AAFF} Entreprise {FFFFFF} {FFFFB2}%s{FFFFFF} creee (-%d$). Utilise /entreprise local pour acheter un local, /entreprise embauche <joueur> <salaire> pour recruter.", entreprises[eid][entName], ENT_CREATE_COST);
-		return msg_Client(playerid, COLOR_WHITE, okStr);
+		format(okStr, sizeof(okStr), "{42AAFF} Entreprise {FFFFFF} {FFFFB2}%s{FFFFFF} creee (-%d$). Choisis ton secteur d'activite, puis /entreprise local pour un local et /entreprise embauche pour recruter.", entreprises[eid][entName], ENT_CREATE_COST);
+		msg_Client(playerid, COLOR_WHITE, okStr);
+		// Enchaine directement sur le choix du secteur d'activite.
+		return Ent_ShowTypeDialog(playerid);
 	}
 
-	// ===== local / entrer / sortir =====
+	// ===== type / local / entrer / sortir =====
+	if(strcmp(sub, "type", true) == 0 || strcmp(sub, "secteur", true) == 0
+		|| strcmp(sub, "activite", true) == 0)
+		return Ent_ShowTypeDialog(playerid);
 	if(strcmp(sub, "local", true) == 0 || strcmp(sub, "interieur", true) == 0)
 		return Ent_ShowLocalDialog(playerid);
 	if(strcmp(sub, "entrer", true) == 0)
@@ -624,11 +712,19 @@ stock Ent_Cmd(playerid, params[])
 		new po = Ent_FindPlayerBySqlid(entreprises[eid][entOwnerSqlid]);
 		if(po != INVALID_PLAYER_ID) GetPlayerName(po, ownerName, sizeof(ownerName));
 
-		new body[400];
+		new typeStr[32]; Ent_TypeName(eid, typeStr, sizeof(typeStr));
+		new localStr[32]; strcat(localStr, "aucun");
+		if(entreprises[eid][entIntId] >= 1)
+		{
+			localStr[0] = 0;
+			strcat(localStr, EntInteriors[entreprises[eid][entIntId]-1][eiName], sizeof(localStr));
+		}
+
+		new body[500];
 		format(body, sizeof(body),
-			"{FFFFFF}Nom : {FFFFB2}%s{FFFFFF}\nProprio : %s\nCaisse : {FFFFB2}%d${FFFFFF}\nEmployes : %d / %d\nRole : %s",
-			entreprises[eid][entName], ownerName, entreprises[eid][entCash], nbEmp, ENT_MAX_EMP,
-			asOwner ? "PATRON" : "EMPLOYE");
+			"{FFFFFF}Nom : {FFFFB2}%s{FFFFFF}\nSecteur : {FFFFB2}%s{FFFFFF}\nProprio : %s\nCaisse : {FFFFB2}%d${FFFFFF}\nEmployes : %d / %d\nLocal : %s\nRole : %s",
+			entreprises[eid][entName], typeStr, ownerName, entreprises[eid][entCash], nbEmp, ENT_MAX_EMP,
+			localStr, asOwner ? "PATRON" : "EMPLOYE");
 		return ShowPlayerDialog(playerid, 9997, DIALOG_STYLE_MSGBOX, "Entreprise", body, "OK", "");
 	}
 
@@ -854,8 +950,9 @@ stock Ent_Cmd(playerid, params[])
 			if(entreprises[eid][entUsed] != 1) continue;
 			new nbEmp = 0;
 			for(new e = 0; e < ENT_MAX_EMP; e++) if(entreprises[eid][entEmpUsed][e] == 1) nbEmp++;
-			format(tmp, sizeof(tmp), "ID %d - %s (owner SQL %d) caisse %d$ - %d employes\n",
-				eid, entreprises[eid][entName], entreprises[eid][entOwnerSqlid],
+			new lstType[32]; Ent_TypeName(eid, lstType, sizeof(lstType));
+			format(tmp, sizeof(tmp), "ID %d - %s [%s] (owner SQL %d) caisse %d$ - %d employes\n",
+				eid, entreprises[eid][entName], lstType, entreprises[eid][entOwnerSqlid],
 				entreprises[eid][entCash], nbEmp);
 			strcat(body, tmp);
 			c++;

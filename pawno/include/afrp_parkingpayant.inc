@@ -303,7 +303,22 @@ public ParkingPay_Tick()
 // que se prenaient les joueurs en gang/mafia sur leurs propres vehicules).
 stock ParkingPay_IsOwner(playerid, vidx)
 {
-	if(vehicle[vidx][ownerSQLID] == PlayerInfo[playerid][pSQLID]) return 1;
+	new mySqlid = PlayerInfo[playerid][pSQLID];
+	if(mySqlid < 1) return 0;
+
+	// [FIX "PAS A TOI"] Source de verite = les slots pCar du joueur, exactement
+	// ce que /parking utilise pour lister SES vehicules. On se basait avant
+	// uniquement sur ownerSQLID, un champ different qui peut ne pas avoir ete
+	// renseigne (vieux vehicules, transferts par d'autres chemins de code) :
+	// le joueur pouvait donc sortir sa voiture du parking mais pas la payer.
+	new carSqlid = vehicle[vidx][SQLID];
+	if(carSqlid > 0)
+	{
+		for(new s = 0; s < 6; s++)
+			if(PlayerInfo[playerid][pCar][s] == carSqlid) return 1;
+	}
+
+	if(vehicle[vidx][ownerSQLID] == mySqlid) return 1;
 	if(vehicle[vidx][cType] == CAR_FACTION && PlayerInfo[playerid][pMember] >= 200
 		&& vehicle[vidx][ownerSQLID] == PlayerInfo[playerid][pMember] - 200)
 		return 1;
@@ -340,9 +355,19 @@ stock ParkingPay_Cmd_Extend(playerid)
 		return msg_Client(playerid, COLOR_INFO, "{CF9756} Parking {FFFFFF} Ce vehicule n'est pas a toi.");
 
 	new carSqlid = vehicle[vidx][SQLID];
+	if(carSqlid <= 0)
+		return msg_Client(playerid, COLOR_INFO, "{CF9756} Parking {FFFFFF} Ce vehicule n'est pas enregistre, impossible de le payer.");
+
 	new tid = ParkingPay_FindByCar(carSqlid);
 	if(tid == -1 || PPTicket[tid][ppUsed] != 1)
-		return msg_Client(playerid, COLOR_INFO, "{CF9756} Parking {FFFFFF} Ce vehicule n'a pas de parking paye actif. Retourne au parking pour en creer un.");
+	{
+		// [FIX] Pas de ticket actif : au lieu de renvoyer le joueur au parking,
+		// on en ouvre simplement un ici. Les tickets ne sont volontairement pas
+		// sauvegardes, donc apres CHAQUE redemarrage du serveur /parking payer
+		// repondait "aucun parking paye actif" pour une voiture pourtant garee.
+		if(!ParkingPay_CanAfford(playerid, carSqlid)) return 1;
+		return ParkingPay_ApplyPayment(playerid, carSqlid, -1, vidx);
+	}
 
 	if(PlayerInfo[playerid][pCash] < PP_FEE_EXTEND)
 	{
