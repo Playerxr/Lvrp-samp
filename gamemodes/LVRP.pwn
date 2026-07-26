@@ -5207,6 +5207,7 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 #include <afrp_coffrefix>
 #include <afrp_meublesdehors>
 #include <afrp_cargomission>
+#include <afrp_entcommerce>
 #include <afrp_portarme>
 #include <afrp_gangcreation>
 
@@ -30984,6 +30985,12 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     if(dialogid == 9985)
     {
         return Cargo_OnDialogResponse(playerid, dialogid, response, listitem);
+    }
+
+    // [COMMERCE ENTREPRISE] Dispatch des dialogs 9965-9968
+    if(dialogid >= 9965 && dialogid <= 9968)
+    {
+        return EC_OnDialogResponse(playerid, dialogid, response, listitem, inputtext);
     }
 
     // [MEUBLES DEHORS] Dispatch des dialogs 9970-9973

@@ -28,7 +28,7 @@
 
 #define ENT_MAX             30
 #define ENT_MAX_EMP         12          // employes max par entreprise
-#define ENT_CREATE_COST     50000000    // 50M pour creer
+#define ENT_CREATE_COST     150000000   // 150M pour creer
 #define ENT_DISSOLVE_FEE    100000      // 100k retenu a la dissolution
 #define ENT_FILE            "entreprises.cfg"
 #define ENT_TICK_MS         60000       // 60s
@@ -104,6 +104,7 @@ enum e_Ent
 	entCash,
 	entCreatedTs,
 	entType,                         // 0 = non defini, sinon 1..ENT_TYPE_COUNT
+	entStock,                        // marchandises en stock (voir afrp_entcommerce.inc)
 	entIntId,                        // 0 = aucun local, sinon 1..ENT_INT_COUNT
 	Float:entEntryX, Float:entEntryY, Float:entEntryZ,  // porte d'entree dans le monde
 	entEmpSqlid[ENT_MAX_EMP],
@@ -159,6 +160,7 @@ stock Ent_Init()
 	{
 		entreprises[i][entUsed] = 0;
 		entreprises[i][entIntId] = 0;
+		entreprises[i][entStock] = 0;
 		entPickup[i]     = -1;
 		entExitPickup[i] = -1;
 		entLabel[i]      = Text3D:INVALID_3DTEXT_ID;
@@ -340,6 +342,11 @@ stock Ent_Load()
 			}
 		}
 
+		// Stock de marchandises (voir afrp_entcommerce.inc). Champ ajoute en
+		// dernier : absent des anciennes lignes -> 0, aucune casse.
+		Ent_ReadField(line, i, tmpBuf, sizeof(tmpBuf), 31); entreprises[eid][entStock] = strval(tmpBuf);
+		if(entreprises[eid][entStock] < 0) entreprises[eid][entStock] = 0;
+
 		entreprises[eid][entUsed] = 1;
 		Ent_CreateVisuals(eid);
 		ent_Count++;
@@ -371,7 +378,7 @@ stock Ent_Save()
 			format(tmp, sizeof(tmp), "%d,%d,%d;", entreprises[eid][entEmpSqlid][e], entreprises[eid][entEmpSalary][e], entreprises[eid][entEmpRank][e]);
 			strcat(empPart, tmp);
 		}
-		format(line, sizeof(line), "%s|%d|%d|%d|%s|%d|%.4f|%.4f|%.4f|%d|%s\n",
+		format(line, sizeof(line), "%s|%d|%d|%d|%s|%d|%.4f|%.4f|%.4f|%d|%s|%d\n",
 			entreprises[eid][entName],
 			entreprises[eid][entOwnerSqlid],
 			entreprises[eid][entCash],
@@ -382,7 +389,8 @@ stock Ent_Save()
 			entreprises[eid][entEntryY],
 			entreprises[eid][entEntryZ],
 			entreprises[eid][entType],
-			rankPart);
+			rankPart,
+			entreprises[eid][entStock]);
 		fwrite(f, line);
 	}
 	fclose(f);
@@ -695,6 +703,9 @@ new ent_GestRankIdx[MAX_PLAYERS];
 forward Ent_ShowGestVeh(playerid);
 forward Ent_DeleteVeh(playerid, listitem);
 
+// Menu commerce : defini dans afrp_entcommerce.inc, inclus APRES ce fichier.
+forward EC_ShowMenu(playerid);
+
 stock Ent_ShowGestion(playerid)
 {
 	new eid = Ent_FindByOwner(PlayerInfo[playerid][pSQLID]);
@@ -705,14 +716,15 @@ stock Ent_ShowGestion(playerid)
 
 	new body[512], tmp[128], typeStr[32];
 	Ent_TypeName(eid, typeStr, sizeof(typeStr));
-	format(tmp, sizeof(tmp), "{FFFFFF}%s {CCCCCC}[%s]{FFFFFF}\nCaisse : {FFFFB2}%d${FFFFFF}  -  Employes : %d/%d\n\n",
-		entreprises[eid][entName], typeStr, entreprises[eid][entCash], nbEmp, ENT_MAX_EMP);
+	format(tmp, sizeof(tmp), "{FFFFFF}%s {CCCCCC}[%s]{FFFFFF}\nCaisse : {FFFFB2}%d${FFFFFF}  -  Stock : {FFFFB2}%d{FFFFFF}  -  Employes : %d/%d\n\n",
+		entreprises[eid][entName], typeStr, entreprises[eid][entCash], entreprises[eid][entStock], nbEmp, ENT_MAX_EMP);
 	strcat(body, tmp);
 	strcat(body, "Employes {CCCCCC}(grade, salaire, virer)\n");
 	strcat(body, "{FFFFFF}Camionnettes {CCCCCC}(voir, supprimer)\n");
 	strcat(body, "{FFFFFF}Renommer les grades\n");
 	strcat(body, "{FFFFFF}Secteur d'activite\n");
-	strcat(body, "{FFFFFF}Local {CCCCCC}(acheter / changer)");
+	strcat(body, "{FFFFFF}Local {CCCCCC}(acheter / changer)\n");
+	strcat(body, "{FFFFFF}Commerce {CCCCCC}(acheter du stock, revendre)");
 	return ShowPlayerDialog(playerid, ENT_DLG_GEST, DIALOG_STYLE_LIST,
 		"{42AAFF}Entreprise - Gestion", body, "Ouvrir", "Fermer");
 }
@@ -835,6 +847,7 @@ stock Ent_OnDialogResponse(playerid, dialogid, response, listitem)
 			case 2: return Ent_ShowGestRename(playerid);
 			case 3: return Ent_ShowTypeDialog(playerid);
 			case 4: return Ent_ShowLocalDialog(playerid);
+			case 5: return EC_ShowMenu(playerid);
 		}
 		return 1;
 	}
@@ -987,6 +1000,7 @@ stock Ent_Cmd(playerid, params[])
 	{
 		msg_Client(playerid, COLOR_WHITE, "{42AAFF} Entreprise {FFFFFF} {FFFFB2}/entreprise gestion{FFFFFF} : tout gerer par menus (employes, grades, camionnettes, local)");
 		msg_Client(playerid, COLOR_WHITE, "{FFFFFF}/entreprise [info|creer|verser|retirer|embauche|virer|salaire|employes|camionnette|supprimer]");
+		msg_Client(playerid, COLOR_WHITE, "{FFFFFF}Commerce : /entreprise commerce (acheter du stock, revendre aux biz et entreprises)");
 		msg_Client(playerid, COLOR_WHITE, "{FFFFFF}Identite : /entreprise type (secteur d'activite)");
 		msg_Client(playerid, COLOR_WHITE, "{FFFFFF}Local : /entreprise local (acheter un interieur), entrer, sortir");
 		msg_Client(playerid, COLOR_WHITE, "{FFFFFF}Missions : /cargo (dans une camionnette d'entreprise, pres d'un depot)");
@@ -1032,6 +1046,7 @@ stock Ent_Cmd(playerid, params[])
 		entreprises[eid][entCash] = 0;
 		entreprises[eid][entCreatedTs] = gettime();
 		entreprises[eid][entType]  = 0;   // secteur a choisir juste apres
+		entreprises[eid][entStock] = 0;   // aucun stock au demarrage
 		entreprises[eid][entIntId] = 0;   // pas de local tant qu'il n'a pas achete
 		entreprises[eid][entEntryX] = 0.0;
 		entreprises[eid][entEntryY] = 0.0;
@@ -1051,6 +1066,11 @@ stock Ent_Cmd(playerid, params[])
 	if(strcmp(sub, "gestion", true) == 0 || strcmp(sub, "gerer", true) == 0
 		|| strcmp(sub, "menu", true) == 0)
 		return Ent_ShowGestion(playerid);
+
+	// ===== commerce (achat/revente de marchandises) =====
+	if(strcmp(sub, "commerce", true) == 0 || strcmp(sub, "stock", true) == 0
+		|| strcmp(sub, "marchandises", true) == 0)
+		return EC_ShowMenu(playerid);
 
 	// ===== type / local / entrer / sortir =====
 	if(strcmp(sub, "type", true) == 0 || strcmp(sub, "secteur", true) == 0
@@ -1116,9 +1136,9 @@ stock Ent_Cmd(playerid, params[])
 
 		new body[500];
 		format(body, sizeof(body),
-			"{FFFFFF}Nom : {FFFFB2}%s{FFFFFF}\nSecteur : {FFFFB2}%s{FFFFFF}\nProprio : %s\nCaisse : {FFFFB2}%d${FFFFFF}\nEmployes : %d / %d\nLocal : %s\nRole : %s",
-			entreprises[eid][entName], typeStr, ownerName, entreprises[eid][entCash], nbEmp, ENT_MAX_EMP,
-			localStr, roleStr);
+			"{FFFFFF}Nom : {FFFFB2}%s{FFFFFF}\nSecteur : {FFFFB2}%s{FFFFFF}\nProprio : %s\nCaisse : {FFFFB2}%d${FFFFFF}\nStock : {FFFFB2}%d{FFFFFF} unites\nEmployes : %d / %d\nLocal : %s\nRole : %s",
+			entreprises[eid][entName], typeStr, ownerName, entreprises[eid][entCash], entreprises[eid][entStock],
+			nbEmp, ENT_MAX_EMP, localStr, roleStr);
 		return ShowPlayerDialog(playerid, 9997, DIALOG_STYLE_MSGBOX, "Entreprise", body, "OK", "");
 	}
 

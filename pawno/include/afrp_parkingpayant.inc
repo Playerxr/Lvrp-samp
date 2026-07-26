@@ -1,5 +1,5 @@
 /*
-	afrp_parkingpayant.inc - Parking payant : 10.000$ / 30 minutes
+	afrp_parkingpayant.inc - Parking payant : 500$ / 30 minutes
 
 	Se greffe sur le systeme /parking existant sans y toucher, via
 	quelques appels de hooks dans LVRP.pwn :
@@ -10,13 +10,14 @@
 	  - ParkingPay_Cmd_Extend(playerid) : /parking payer pour prolonger
 
 	Regles :
-	  - Spawn au parking = 10.000$ pour 30 min. Ticket cree.
+	  - Spawn au parking = 500$ pour 30 min. Ticket cree.
 	  - Label 3D au-dessus du vehicule : "PARKING PAYE - XX min restantes"
 	    (blanc > 5min, orange < 5min, rouge = expire imminent).
 	  - A 5 min de la fin : message d'avertissement envoye au proprio.
 	  - A 0 min : vehicule despawn automatique (fourriere).
-	  - /parking payer : +30 min pour 10.000$ (a portee du vehicule).
-	  - Vehicule fourriere : ressortir 25.000$ + 10.000$ (parking neuf) = 35k
+	  - /parking payer : +30 min pour 500$ (a portee du vehicule, pour
+    n'importe quel vehicule - voir ParkingPay_Cmd_Extend).
+	  - Vehicule fourriere : ressortir 25.000$ + 500$ (parking neuf) = 25.500$
 	    au prochain spawn via /parking. La bagnole revient au parking le
 	    plus proche du joueur.
 
@@ -130,7 +131,7 @@ stock ParkingPay_ApplyPayment(playerid, carSqlid, pid, vidx)
 		new keepStr[96];
 		format(keepStr, sizeof(keepStr), "{42AAFF}PARKING PAYE");
 		PPTicket[tid][ppLabel] = Create3DTextLabel(keepStr, 0x42AAFFFF, 0.0, 0.0, 0.0, 20.0, 0, 0);
-		Attach3DTextLabelToVehicle(PPTicket[tid][ppLabel], vidx, 0.0, 0.0, 1.5);
+		Attach3DTextLabelToVehicle(PPTicket[tid][ppLabel], vidx, 0.0, 0.0, 0.7);
 		ParkingPay_UpdateLabel(tid);
 
 		new keepMinutes = (PPTicket[tid][ppExpireTs] - gettime()) / 60;
@@ -165,7 +166,7 @@ stock ParkingPay_ApplyPayment(playerid, carSqlid, pid, vidx)
 	new labelStr[96];
 	format(labelStr, sizeof(labelStr), "{42AAFF}PARKING PAYE\n{FFFFFF}30 min restantes");
 	PPTicket[tid][ppLabel] = Create3DTextLabel(labelStr, 0x42AAFFFF, 0.0, 0.0, 0.0, 20.0, 0, 0);
-	Attach3DTextLabelToVehicle(PPTicket[tid][ppLabel], vidx, 0.0, 0.0, 1.5);
+	Attach3DTextLabelToVehicle(PPTicket[tid][ppLabel], vidx, 0.0, 0.0, 0.7);
 
 	new msg[160];
 	if(wasImpounded)
