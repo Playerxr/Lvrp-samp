@@ -59470,7 +59470,9 @@ public OnPlayerCommandText(playerid, cmdtext[])
 					if(PlayerInfo[playerid][pRank] >= 1)
 					{
 				    	msg_Client(playerid, COLOR_USAGE, "{A98500} Usage {FFFFB2} /pompier <nom>");
-				    	msg_Client(playerid, COLOR_USAGE, "{A98500}Rang {FFFFFF}1{FFFFB2}: grille - tda - ba - sba");
+				    	// [FIX AIDE] "grille" retire : sous-commande inexistante dans /po,
+				    	// l'aide envoyait les pompiers vers une commande morte.
+				    	msg_Client(playerid, COLOR_USAGE, "{A98500}Rang {FFFFFF}1{FFFFB2}: tda - ba - sba");
 				    }
 					if(PlayerInfo[playerid][pRank] >= 6)
 						{msg_Client(playerid, COLOR_USAGE, "{A98500}Rang {FFFFFF}6{FFFFB2}: inviter - rang - virer - garer - ann(once) - gestion - feu - feumanuel - vrang");}
@@ -68300,7 +68302,9 @@ public OnPlayerCommandText(playerid, cmdtext[])
 	    if(!strlen(tmpCIA))
 	    {
 	        msg_Client(playerid,COLOR_WHITE,"{5B5B9F}\xbb CIA \xab{FFFFFF} Commandes disponibles :");
-	        msg_Client(playerid,COLOR_WHITE,"{FFFFB2} service - radio - ann(once) - inviter - virer - grade - equiper - garer");
+	        // [FIX AIDE] "equiper" retire : cette sous-commande n'existe pas dans le
+	        // bloc /cia, l'aide envoyait donc les joueurs vers une commande morte.
+	        msg_Client(playerid,COLOR_WHITE,"{FFFFB2} service - radio - ann(once) - inviter - virer - grade - garer");
 	        return 1;
 	    }
 
