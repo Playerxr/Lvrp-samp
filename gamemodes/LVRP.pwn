@@ -329,6 +329,7 @@ Fix loading string from DataBase
 #define CAR_BOT 60                                                              // Vhicule de bot
 #define CAR_EVENT 61                                                            // Vhicule d'vente
 #define CAR_FACTION 62                                                          // Vehicule de faction (gang/mafia) achet� par leader
+#define CAR_ENTREPRISE 63                                                       // Camionnette cargo d'entreprise (voir afrp_cargomission.inc)
 #define CAR_POLICE      43                                                      // Vhicule Police (gnrique)
 #define CAR_POMPIER     44                                                      // Vhicule Pompiers
 #define CAR_RESERVED 998                      									// Reserve
@@ -26107,6 +26108,15 @@ stock car_Engine(playerid)
 
     if(AdminDuty[playerid]==1)
 		{engine=true;}
+	// [FIX CARGO] Camionnette d'entreprise : demarre pour le patron et ses employes.
+	else if(vehicle[carid][cType] == CAR_ENTREPRISE)
+	{
+	    new cgEntName[64];
+	    if(Cargo_TruckEntName(carid, cgEntName, sizeof(cgEntName)) && Cargo_PlayerCanUse(playerid, cgEntName))
+	        {engine=true;}
+	    else
+	        {return msg_Box(playerid, "~g~", "Entreprise", "Camionnette reservee a l'entreprise.", 5000);}
+	}
 	else if(vehicle[carid][cType] == CAR_LOC_CAR || vehicle[carid][cType] == CAR_LOC_MOTO || vehicle[carid][cType] == CAR_LOC_BOAT || vehicle[carid][cType] == CAR_LOC_PLANE || vehicle[carid][cType] == CAR_LOC_BIKE)
 	{
 	    if(HireCar[playerid] == carid)
@@ -30961,6 +30971,12 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     if(dialogid == 9984)
     {
         return Ent_OnDialogResponse(playerid, dialogid, response, listitem);
+    }
+
+    // [CARGO] Dispatch du dialog d'achat de camionnette (9985)
+    if(dialogid == 9985)
+    {
+        return Cargo_OnDialogResponse(playerid, dialogid, response, listitem);
     }
 
     // [MEUBLES DEHORS] Dispatch des dialogs 9970-9973

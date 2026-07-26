@@ -34,7 +34,7 @@
 #define ENT_TICK_MS         60000       // 60s
 #define ENT_DLG_LOCAL       9984        // dialog choix du local
 #define ENT_VW_BASE         7100        // monde virtuel dedie : ENT_VW_BASE + eid
-#define ENT_INT_COUNT       6           // nb de locaux au catalogue
+#define ENT_INT_COUNT       13          // nb de locaux au catalogue
 
 // Catalogue des locaux achetables. Prix volontairement bien plus bas que la
 // creation d'entreprise (50M) : c'est un amenagement, pas un investissement.
@@ -47,13 +47,23 @@ enum e_EntInt
 	eiInt,
 	Float:eiX, Float:eiY, Float:eiZ, Float:eiA
 };
+// Les "bureaux" viennent des interieurs deja utilises par le gamemode
+// (GetInteriorInfo) ; les logements viennent du catalogue d'interieurs de
+// maison (dialog 24 admin). Tous sont donc deja testes en jeu.
 static const EntInteriors[ENT_INT_COUNT][e_EntInt] = {
-	{"Petit bureau",        250000, 1,  1199.4508,  -74.6475, 1006.2589, 180.0},
-	{"Bureau standard",     500000, 3,  1494.2778, 1303.7288, 1093.2891,   0.0},
-	{"Bureau de direction", 900000, 3, -1032.7937, 1967.4984, 3001.0859, 270.0},
-	{"Salle de reunion",   1400000, 5,   316.7042,  294.6810,  998.4849,   0.0},
-	{"Grand hall",         2000000, 1,  1964.0809, -349.6421, 1092.9454, 180.0},
-	{"Siege social",       3000000, 1,  -774.6643,  550.3431, 2001.0859, 270.0}
+	{"Petit bureau",         250000,  1,  1199.4508,  -74.6475, 1006.2589, 180.0},
+	{"Appartement 2 pieces", 350000, 12,   446.3247,  509.9662, 1001.4195,   0.0},
+	{"Bureau standard",      500000,  3,  1494.2778, 1303.7288, 1093.2891,   0.0},
+	{"Appartement 3 pieces", 650000,  6,   -68.5145, 1353.8485, 1080.2109,   0.0},
+	{"Bureau de direction",  900000,  3, -1032.7937, 1967.4984, 3001.0859, 270.0},
+	{"Maison 4 pieces",     1100000,  8,    2365.30, -1134.920,  1050.910,   0.0},
+	{"Salle de reunion",    1400000,  5,   316.7042,  294.6810,  998.4849,   0.0},
+	{"Maison 5 pieces",     1700000, 10,    24.3769, 1341.1829, 1084.3750,   0.0},
+	{"Grand hall",          2000000,  1,  1964.0809, -349.6421, 1092.9454, 180.0},
+	{"Maison 6 pieces",     2400000,  9,  2319.1272,-1023.9562, 1050.2109,   0.0},
+	{"Siege social",        3000000,  1,  -774.6643,  550.3431, 2001.0859, 270.0},
+	{"Villa 8 pieces",      4000000,  6,   234.0459, 1064.8798, 1084.3099,   0.0},
+	{"Villa 9 pieces",      5000000,  5,    140.180, 1366.5800, 1083.9700,   0.0}
 };
 
 enum e_Ent
@@ -420,7 +430,7 @@ stock Ent_ShowLocalDialog(playerid)
 	new eid = Ent_FindByOwner(PlayerInfo[playerid][pSQLID]);
 	if(eid == -1) return msg_Client(playerid, COLOR_INFO, "{CF9756} Entreprise {FFFFFF} Tu n'es pas patron.");
 
-	new body[600], tmp[96];
+	new body[1200], tmp[96];
 	if(entreprises[eid][entIntId] >= 1)
 	{
 		format(tmp, sizeof(tmp), "{FFFFFF}Local actuel : {FFFFB2}%s{FFFFFF}\nChanger de local repose l'entree ici.\n\n",

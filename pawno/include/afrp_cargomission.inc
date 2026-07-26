@@ -25,8 +25,10 @@
 #define CG_MAX_DEPOT        40
 #define CG_MAX_TRUCK        60
 #define CG_MAX_PER_ENT      3            // camions max par entreprise
-#define CG_TRUCK_COST       2000000      // 2M depuis la caisse
-#define CG_TRUCK_MODEL      414          // Mule (camionnette de livraison)
+#define CG_TRUCK_COST       2000000      // prix par defaut (voir CargoModels)
+#define CG_TRUCK_MODEL      414          // Mule : modele par defaut si non precise
+#define CG_MODEL_COUNT      6            // nb de camionnettes au catalogue
+#define CG_DLG_MODEL        9985         // dialog choix du modele
 #define CG_PAY_PER_UNIT     30           // $ par unite de distance (1 unite ~ 1m)
 #define CG_DEPOT_RADIUS     8.0
 #define CG_DEPOT_FILE       "cargo_depots.cfg"
@@ -48,10 +50,36 @@ enum e_CargoTruck
 	ctUsed,
 	ctEntName[64],
 	ctVehicleid,
+	ctModel,                         // modele choisi a l'achat (0 = defaut)
 	Float:ctSpawnX, Float:ctSpawnY, Float:ctSpawnZ, Float:ctAngle
 };
 new cargoTruck[CG_MAX_TRUCK][e_CargoTruck];
 new cargo_TruckCount = 0;
+
+// Catalogue des camionnettes achetables. Toutes sont des utilitaires legers,
+// maniables en ville, contrairement au Roadtrain (semi-remorque) d'origine.
+enum e_CargoModel
+{
+	cmName[24],
+	cmModel,
+	cmPrice
+};
+static const CargoModels[CG_MODEL_COUNT][e_CargoModel] = {
+	{"Mule",     414, 2000000},   // camionnette de livraison classique
+	{"Boxville", 498, 2200000},   // fourgon de livraison
+	{"Benson",   499, 2400000},   // le plus gros volume
+	{"Yankee",   456, 2300000},   // camion-caisse moyen
+	{"Pony",     413, 1600000},   // petit van, le moins cher
+	{"Burrito",  482, 1800000}    // van rapide
+};
+
+// Retourne l'index catalogue d'un modele, -1 si inconnu.
+stock Cargo_ModelIndex(cgModelId)
+{
+	for(new i = 0; i < CG_MODEL_COUNT; i++)
+		if(CargoModels[i][cmModel] == cgModelId) return i;
+	return -1;
+}
 
 // Etat mission par joueur
 new cargo_MissionActive[MAX_PLAYERS]; // 0/1
@@ -180,9 +208,38 @@ stock Cargo_NearestDepot(playerid)
 stock Cargo_SpawnTruck(id)
 {
 	if(cargoTruck[id][ctUsed] != 1) return 0;
-	cargoTruck[id][ctVehicleid] = CreateVehicle(CG_TRUCK_MODEL,
+	// Modele choisi a l'achat ; les camionnettes d'avant le catalogue (ou une
+	// valeur corrompue) retombent sur le modele par defaut.
+	new mdl = cargoTruck[id][ctModel];
+	if(Cargo_ModelIndex(mdl) == -1) { mdl = CG_TRUCK_MODEL; cargoTruck[id][ctModel] = mdl; }
+
+	new vid = CreateVehicle(mdl,
 		cargoTruck[id][ctSpawnX], cargoTruck[id][ctSpawnY], cargoTruck[id][ctSpawnZ],
 		cargoTruck[id][ctAngle], -1, -1, -1);
+	cargoTruck[id][ctVehicleid] = vid;
+	if(vid == INVALID_VEHICLE_ID || vid < 1 || vid >= MAX_CAR) return 0;
+
+	// [FIX MOTEUR] Le vehicule etait cree en CreateVehicle "brut", sans etre
+	// enregistre dans le tableau vehicle[] du gamemode. Resultat : cGas valait 0
+	// ("Ce vehicule n'a plus d'essence") et cType valait 0 (aucune autorisation
+	// moteur), donc PERSONNE ne pouvait demarrer une camionnette cargo - seul un
+	// admin en mode admin passait outre. On enregistre donc le minimum vital.
+	// SQLID reste a 0 : les deux boucles de sauvegarde (AutoSave_Vehicles et le
+	// reboot) ignorent SQLID <= 0, ce vehicule n'ira donc jamais polluer la BDD.
+	vehicle[vid][used]        = 1;
+	vehicle[vid][SQLID]       = 0;
+	vehicle[vid][cModel]      = mdl;
+	vehicle[vid][cType]       = CAR_ENTREPRISE;
+	vehicle[vid][cOwned]      = 2;
+	vehicle[vid][cGas]        = 100;
+	vehicle[vid][cHealth]     = 1000.0;
+	vehicle[vid][cLock]       = 0;
+	vehicle[vid][cEngine]     = false;
+	vehicle[vid][cLocationx]  = cargoTruck[id][ctSpawnX];
+	vehicle[vid][cLocationy]  = cargoTruck[id][ctSpawnY];
+	vehicle[vid][cLocationz]  = cargoTruck[id][ctSpawnZ];
+	vehicle[vid][cAngle]      = cargoTruck[id][ctAngle];
+	format(vehicle[vid][cDescription], 32, "Camionnette entreprise");
 	return 1;
 }
 
@@ -203,6 +260,9 @@ stock Cargo_LoadTrucks()
 		Cargo_ReadField(line, i, tmpBuf, sizeof(tmpBuf), 31); cargoTruck[id][ctSpawnY] = floatstr(tmpBuf);
 		Cargo_ReadField(line, i, tmpBuf, sizeof(tmpBuf), 31); cargoTruck[id][ctSpawnZ] = floatstr(tmpBuf);
 		Cargo_ReadField(line, i, tmpBuf, sizeof(tmpBuf), 31); cargoTruck[id][ctAngle]  = floatstr(tmpBuf);
+		// Modele ajoute apres coup : les anciennes lignes n'ont pas ce champ, la
+		// lecture renvoie une chaine vide -> 0 -> modele par defaut (Cargo_SpawnTruck).
+		Cargo_ReadField(line, i, tmpBuf, sizeof(tmpBuf), 31); cargoTruck[id][ctModel]  = strval(tmpBuf);
 		if(strlen(cargoTruck[id][ctEntName]) < 1) continue;
 		cargoTruck[id][ctUsed] = 1;
 		Cargo_SpawnTruck(id);
@@ -222,8 +282,9 @@ stock Cargo_SaveTrucks()
 	for(new i = 0; i < CG_MAX_TRUCK; i++)
 	{
 		if(cargoTruck[i][ctUsed] != 1) continue;
-		format(line, sizeof(line), "%s|%.4f|%.4f|%.4f|%.4f\n",
-			cargoTruck[i][ctEntName], cargoTruck[i][ctSpawnX], cargoTruck[i][ctSpawnY], cargoTruck[i][ctSpawnZ], cargoTruck[i][ctAngle]);
+		format(line, sizeof(line), "%s|%.4f|%.4f|%.4f|%.4f|%d\n",
+			cargoTruck[i][ctEntName], cargoTruck[i][ctSpawnX], cargoTruck[i][ctSpawnY], cargoTruck[i][ctSpawnZ], cargoTruck[i][ctAngle],
+			cargoTruck[i][ctModel]);
 		fwrite(f, line);
 	}
 	fclose(f);
@@ -258,7 +319,8 @@ stock Cargo_TruckEntName(vehicleid, dest[], destSize)
 	return 0;
 }
 
-// Achat d'un camion : appele depuis /entreprise camion. Debite la caisse.
+// Achat d'une camionnette : appele depuis /entreprise camionnette.
+// Affiche le catalogue ; l'achat reel se fait dans Cargo_BuyModel.
 stock Cargo_BuyTruck(playerid)
 {
 	new eid = Ent_FindByOwner(PlayerInfo[playerid][pSQLID]);
@@ -270,10 +332,38 @@ stock Cargo_BuyTruck(playerid)
 		format(msg, sizeof(msg), "{CF9756} Entreprise {FFFFFF} Limite de %d camionnettes atteinte.", CG_MAX_PER_ENT);
 		return msg_Client(playerid, COLOR_INFO, msg);
 	}
-	if(entreprises[eid][entCash] < CG_TRUCK_COST)
+
+	new body[400], tmp[96];
+	format(tmp, sizeof(tmp), "{FFFFFF}Caisse : {FFFFB2}%d${FFFFFF}\nLa camionnette spawne devant toi.\n\n", entreprises[eid][entCash]);
+	strcat(body, tmp);
+	for(new k = 0; k < CG_MODEL_COUNT; k++)
+	{
+		format(tmp, sizeof(tmp), "%s{FFFFFF} - {FFFFB2}%d${FFFFFF}\n", CargoModels[k][cmName], CargoModels[k][cmPrice]);
+		strcat(body, tmp);
+	}
+	return ShowPlayerDialog(playerid, CG_DLG_MODEL, DIALOG_STYLE_LIST,
+		"{FF8C00}Entreprise - Choisir une camionnette", body, "Acheter", "Annuler");
+}
+
+// Achat effectif d'un modele du catalogue. Debite la caisse de l'entreprise.
+stock Cargo_BuyModel(playerid, choice)
+{
+	if(choice < 0 || choice >= CG_MODEL_COUNT) return 0;
+	new eid = Ent_FindByOwner(PlayerInfo[playerid][pSQLID]);
+	if(eid == -1)
+		return msg_Client(playerid, COLOR_INFO, "{CF9756} Entreprise {FFFFFF} Tu n'es pas patron d'une entreprise.");
+	if(Cargo_CountTrucksForEnt(entreprises[eid][entName]) >= CG_MAX_PER_ENT)
 	{
 		new msg[128];
-		format(msg, sizeof(msg), "{CF9756} Entreprise {FFFFFF} Caisse insuffisante : une camionnette coute %d$.", CG_TRUCK_COST);
+		format(msg, sizeof(msg), "{CF9756} Entreprise {FFFFFF} Limite de %d camionnettes atteinte.", CG_MAX_PER_ENT);
+		return msg_Client(playerid, COLOR_INFO, msg);
+	}
+
+	new cgPrice = CargoModels[choice][cmPrice];
+	if(entreprises[eid][entCash] < cgPrice)
+	{
+		new msg[160];
+		format(msg, sizeof(msg), "{CF9756} Entreprise {FFFFFF} Caisse insuffisante : ce modele coute {FFFFB2}%d${FFFFFF} (caisse : %d$).", cgPrice, entreprises[eid][entCash]);
 		return msg_Client(playerid, COLOR_INFO, msg);
 	}
 	new slot = -1;
@@ -281,7 +371,7 @@ stock Cargo_BuyTruck(playerid)
 	if(slot == -1)
 		return msg_Client(playerid, COLOR_INFO, "{CF9756} Entreprise {FFFFFF} Limite serveur de camionnettes atteinte.");
 
-	entreprises[eid][entCash] -= CG_TRUCK_COST;
+	entreprises[eid][entCash] -= cgPrice;
 	Ent_Save();
 
 	new Float:x, Float:y, Float:z, Float:a;
@@ -293,15 +383,26 @@ stock Cargo_BuyTruck(playerid)
 
 	cargoTruck[slot][ctUsed] = 1;
 	new n = 0; while(n < 63 && entreprises[eid][entName][n]) { cargoTruck[slot][ctEntName][n] = entreprises[eid][entName][n]; n++; } cargoTruck[slot][ctEntName][n] = 0;
+	cargoTruck[slot][ctModel]  = CargoModels[choice][cmModel];
 	cargoTruck[slot][ctSpawnX] = x; cargoTruck[slot][ctSpawnY] = y; cargoTruck[slot][ctSpawnZ] = z;
 	cargoTruck[slot][ctAngle] = a;
 	cargo_TruckCount++;
 	Cargo_SpawnTruck(slot);
 	Cargo_SaveTrucks();
 
-	new okStr[190];
-	format(okStr, sizeof(okStr), "{42AAFF} Entreprise {FFFFFF} Camionnette cargo achetee (-%d$ de la caisse). Elle spawne ici. Utilise-la pour les missions /cargo.", CG_TRUCK_COST);
+	new okStr[210];
+	format(okStr, sizeof(okStr), "{42AAFF} Entreprise {FFFFFF} Camionnette {FFFFB2}%s{FFFFFF} achetee (-%d$ de la caisse). Elle spawne ici. Utilise-la pour les missions /cargo.",
+		CargoModels[choice][cmName], cgPrice);
 	return msg_Client(playerid, COLOR_WHITE, okStr);
+}
+
+// Dispatcher dialog (a appeler depuis OnDialogResponse)
+stock Cargo_OnDialogResponse(playerid, dialogid, response, listitem)
+{
+	if(dialogid != CG_DLG_MODEL) return 0;
+	if(!response) return 1;
+	Cargo_BuyModel(playerid, listitem);
+	return 1;
 }
 
 // ===================== MISSIONS =====================
