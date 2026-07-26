@@ -5209,6 +5209,7 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 #include <afrp_cargomission>
 #include <afrp_entcommerce>
 #include <afrp_entmarket>
+#include <afrp_justice>
 #include <afrp_portarme>
 #include <afrp_gangcreation>
 
@@ -12300,6 +12301,9 @@ stock timer_Decrement(i)
 			if(PlayerInfo[i][pJailTime] <= 0)
 			{
 				PlayerInfo[i][pJailTime] = 0;
+				// [JUSTICE] La peine est purgee : le dossier de proces eventuel
+				// n'a plus d'objet, on le retire de la liste des juges.
+				Justice_OnPlayerFree(i);
 				if(PlayerInfo[i][pJailed] == 1)
 				{
 					server_SetPlayerInterior(i, 6);
@@ -23961,6 +23965,7 @@ public OnPlayerDisconnect(playerid, reason)
     HpPersist_SaveOnDisconnect(playerid); // [HP PERSIST] sauve la vie/armure reelles (hors coma)
     VipPerks_OnDisconnect(playerid); // [VIP PERKS] detruit le tag flottant
     GangTag_OnDisconnect(playerid); // [GANG TAG] detruit le label du gang
+    Justice_OnPlayerFree(playerid); // [JUSTICE] retire son dossier de proces s'il en avait un
     LegalTag_OnDisconnect(playerid); // [LEGAL TAG] detruit le label de faction
     Cuff_OnDisconnect(playerid); // [CUFFS] anti combat-log : auto-jail si menotte
     Phone_DestroyUI(playerid); // AFRP cleanup ancien telephone (sera vir� en P4)
@@ -29917,6 +29922,8 @@ public OnGameModeInit()
     Cargo_Init();
     // [ANNUAIRE/CONTRATS] charge scriptfiles/contrats.cfg (apres Ent_Init et Cargo_Init)
     EM_Init();
+    // [JUSTICE] Init des dossiers de proces
+    Justice_Init();
     // Init port d'arme (guerites + detenteurs du permis)
     PortArme_Init();
     // Init bonus de premiere apparition (liste des comptes deja bonusses)
@@ -31010,6 +31017,12 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     if(dialogid == 9969 || dialogid == 9964 || (dialogid >= 9955 && dialogid <= 9958))
     {
         return EM_OnDialogResponse(playerid, dialogid, response, listitem, inputtext);
+    }
+
+    // [JUSTICE] Dispatch des dialogs de proces 9940-9943
+    if(dialogid >= 9940 && dialogid <= 9943)
+    {
+        return Justice_OnDialogResponse(playerid, dialogid, response, listitem, inputtext);
     }
 
     // [MEUBLES DEHORS] Dispatch des dialogs 9970-9973
@@ -53012,6 +53025,26 @@ public OnPlayerCommandText(playerid, cmdtext[])
 	{
 	    return EM_ShowDirectory(playerid);
 	}
+	// [JUSTICE] Proces : recours du detenu, defense, verdict
+	else if(strcmp(cmd, "/appel", true) == 0 || strcmp(cmd, "/recours", true) == 0)
+	{
+	    return Justice_CmdAppel(playerid);
+	}
+	else if(strcmp(cmd, "/proces", true) == 0)
+	{
+	    return Justice_ShowCases(playerid);
+	}
+	else if(strcmp(cmd, "/defendre", true) == 0)
+	{
+	    new juParams[64];
+	    new jp = idx;
+	    new jlp = strlen(cmdtext);
+	    while(jp < jlp && cmdtext[jp] == ' ') jp++;
+	    new jpi = 0;
+	    while(jp < jlp && jpi < 63) { juParams[jpi++] = cmdtext[jp++]; }
+	    juParams[jpi] = 0;
+	    return Justice_CmdDefendre(playerid, juParams);
+	}
 	else if(strcmp(cmd, "/contrats", true) == 0)
 	{
 	    return EM_ShowContracts(playerid);
@@ -53321,6 +53354,8 @@ public OnPlayerCommandText(playerid, cmdtext[])
 	    if(!strlen(tmp))
 	    {
 	        msg_Client(playerid, COLOR_WHITE, "{8B008B} Justice {FFFFFF} Commandes :");
+	        msg_Client(playerid, COLOR_WHITE, "{FFFFB2}/proces{FFFFFF} - Examiner les recours et rendre les verdicts (Juge, grade 4+)");
+	        msg_Client(playerid, COLOR_WHITE, "{FFFFB2}/defendre <id>{FFFFFF} - Se porter defenseur d'un detenu (Avocat, grade 3+)");
 	        msg_Client(playerid, COLOR_WHITE, "{FFFFFF}/j duty - Prendre/Quitter le service");
 	        msg_Client(playerid, COLOR_WHITE, "{FFFFFF}/j inviter <id/joueur> (Procureur Republique)");
 	        msg_Client(playerid, COLOR_WHITE, "{FFFFFF}/j rang <id/joueur> <1-6>");
@@ -56143,6 +56178,8 @@ public OnPlayerCommandText(playerid, cmdtext[])
 								}
 								PlayerInfo[suspect][pJailed] = 1;
 								PlayerInfo[suspect][pWanted] = 0;
+								// [JUSTICE] Sans ce rappel, personne ne saurait qu'un recours existe.
+								msg_Client(suspect, COLOR_WHITE, "{8B008B}\xbb Justice \xab{FFFFFF} Tu contestes cette peine ? Tape {FFFFB2}/appel{FFFFFF} pour saisir la Cour de Justice.");
 								format(sql, sizeof(sql), "UPDATE lvrp_users_casiers SET Arrested=Arrested+1 WHERE SQLid=%d",PlayerInfo[suspect][pSQLID]);
 								mysql_pquery(MYSQL,sql);
 								player_Cuffed[suspect] = 0;
@@ -57650,6 +57687,8 @@ public OnPlayerCommandText(playerid, cmdtext[])
 								}
 								PlayerInfo[suspect][pJailed] = 1;
 								PlayerInfo[suspect][pWanted] = 0;
+								// [JUSTICE] Sans ce rappel, personne ne saurait qu'un recours existe.
+								msg_Client(suspect, COLOR_WHITE, "{8B008B}\xbb Justice \xab{FFFFFF} Tu contestes cette peine ? Tape {FFFFB2}/appel{FFFFFF} pour saisir la Cour de Justice.");
 					     	   	format(sql, sizeof(sql), "UPDATE lvrp_users_casiers SET Arrested=Arrested+1 WHERE SQLid=%d",PlayerInfo[suspect][pSQLID]);
 								mysql_pquery(MYSQL,sql);
 								player_Cuffed[suspect] = 0;
