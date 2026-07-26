@@ -32,6 +32,29 @@
 #define ENT_DISSOLVE_FEE    100000      // 100k retenu a la dissolution
 #define ENT_FILE            "entreprises.cfg"
 #define ENT_TICK_MS         60000       // 60s
+#define ENT_DLG_LOCAL       9984        // dialog choix du local
+#define ENT_VW_BASE         7100        // monde virtuel dedie : ENT_VW_BASE + eid
+#define ENT_INT_COUNT       6           // nb de locaux au catalogue
+
+// Catalogue des locaux achetables. Prix volontairement bien plus bas que la
+// creation d'entreprise (50M) : c'est un amenagement, pas un investissement.
+// Interieurs repris de ceux deja utilises par le gamemode (GetInteriorInfo),
+// donc garantis valides et testes en jeu.
+enum e_EntInt
+{
+	eiName[32],
+	eiPrice,
+	eiInt,
+	Float:eiX, Float:eiY, Float:eiZ, Float:eiA
+};
+static const EntInteriors[ENT_INT_COUNT][e_EntInt] = {
+	{"Petit bureau",        250000, 1,  1199.4508,  -74.6475, 1006.2589, 180.0},
+	{"Bureau standard",     500000, 3,  1494.2778, 1303.7288, 1093.2891,   0.0},
+	{"Bureau de direction", 900000, 3, -1032.7937, 1967.4984, 3001.0859, 270.0},
+	{"Salle de reunion",   1400000, 5,   316.7042,  294.6810,  998.4849,   0.0},
+	{"Grand hall",         2000000, 1,  1964.0809, -349.6421, 1092.9454, 180.0},
+	{"Siege social",       3000000, 1,  -774.6643,  550.3431, 2001.0859, 270.0}
+};
 
 enum e_Ent
 {
@@ -40,6 +63,8 @@ enum e_Ent
 	entOwnerSqlid,
 	entCash,
 	entCreatedTs,
+	entIntId,                        // 0 = aucun local, sinon 1..ENT_INT_COUNT
+	Float:entEntryX, Float:entEntryY, Float:entEntryZ,  // porte d'entree dans le monde
 	entEmpSqlid[ENT_MAX_EMP],
 	entEmpSalary[ENT_MAX_EMP],
 	entEmpUsed[ENT_MAX_EMP],
@@ -47,12 +72,21 @@ enum e_Ent
 };
 new entreprises[ENT_MAX][e_Ent];
 new ent_Count = 0;
+new entPickup[ENT_MAX];              // pickup entree (monde exterieur)
+new Text3D:entLabel[ENT_MAX];        // label 3D entree
+new entExitPickup[ENT_MAX];          // pickup sortie (dans le local)
+new Text3D:entExitLabel[ENT_MAX];    // label 3D sortie
 
 stock Ent_Init()
 {
 	for(new i = 0; i < ENT_MAX; i++)
 	{
 		entreprises[i][entUsed] = 0;
+		entreprises[i][entIntId] = 0;
+		entPickup[i]     = -1;
+		entExitPickup[i] = -1;
+		entLabel[i]      = Text3D:INVALID_3DTEXT_ID;
+		entExitLabel[i]  = Text3D:INVALID_3DTEXT_ID;
 		for(new e = 0; e < ENT_MAX_EMP; e++)
 		{
 			entreprises[i][entEmpUsed][e] = 0;
@@ -63,6 +97,51 @@ stock Ent_Init()
 	}
 	Ent_Load();
 	SetTimer("Ent_Tick", ENT_TICK_MS, 1);
+	return 1;
+}
+
+// Detruit puis recree le pickup + label d'entree/sortie d'une entreprise.
+stock Ent_DestroyVisuals(eid)
+{
+	if(entPickup[eid] != -1)     { DestroyPickup(entPickup[eid]);     entPickup[eid] = -1; }
+	if(entExitPickup[eid] != -1) { DestroyPickup(entExitPickup[eid]); entExitPickup[eid] = -1; }
+	if(_:entLabel[eid] != _:INVALID_3DTEXT_ID)
+	{
+		Delete3DTextLabel(entLabel[eid]);
+		entLabel[eid] = Text3D:INVALID_3DTEXT_ID;
+	}
+	if(_:entExitLabel[eid] != _:INVALID_3DTEXT_ID)
+	{
+		Delete3DTextLabel(entExitLabel[eid]);
+		entExitLabel[eid] = Text3D:INVALID_3DTEXT_ID;
+	}
+	return 1;
+}
+
+stock Ent_CreateVisuals(eid)
+{
+	Ent_DestroyVisuals(eid);
+	if(entreprises[eid][entUsed] != 1) return 0;
+	new iid = entreprises[eid][entIntId];
+	if(iid < 1 || iid > ENT_INT_COUNT) return 0;   // pas de local achete
+
+	new labelStr[160];
+	format(labelStr, sizeof(labelStr), "{42AAFF}%s\n{FFFFFF}%s\n{CCCCCC}/entreprise entrer",
+		entreprises[eid][entName], EntInteriors[iid-1][eiName]);
+
+	entPickup[eid] = CreatePickup(1272, 1,
+		entreprises[eid][entEntryX], entreprises[eid][entEntryY], entreprises[eid][entEntryZ], 0);
+	entLabel[eid] = Create3DTextLabel(labelStr, 0xFFFFFFFF,
+		entreprises[eid][entEntryX], entreprises[eid][entEntryY], entreprises[eid][entEntryZ] + 0.8,
+		20.0, 0, 0);
+
+	// Sortie, dans le monde virtuel dedie a cette entreprise
+	new vw = ENT_VW_BASE + eid;
+	entExitPickup[eid] = CreatePickup(1272, 1,
+		EntInteriors[iid-1][eiX], EntInteriors[iid-1][eiY], EntInteriors[iid-1][eiZ], vw);
+	entExitLabel[eid] = Create3DTextLabel("{42AAFF}Sortie\n{CCCCCC}/entreprise sortir", 0xFFFFFFFF,
+		EntInteriors[iid-1][eiX], EntInteriors[iid-1][eiY], EntInteriors[iid-1][eiZ] + 0.8,
+		15.0, vw, 0);
 	return 1;
 }
 
@@ -121,7 +200,17 @@ stock Ent_Load()
 			eslot++;
 		}
 
+		// Local achete (champs ajoutes apres coup : les anciennes lignes sans ces
+		// champs relisent une chaine vide -> 0, donc "aucun local", pas de casse).
+		Ent_ReadField(line, i, tmpBuf, sizeof(tmpBuf), 31); entreprises[eid][entIntId]  = strval(tmpBuf);
+		Ent_ReadField(line, i, tmpBuf, sizeof(tmpBuf), 31); entreprises[eid][entEntryX] = floatstr(tmpBuf);
+		Ent_ReadField(line, i, tmpBuf, sizeof(tmpBuf), 31); entreprises[eid][entEntryY] = floatstr(tmpBuf);
+		Ent_ReadField(line, i, tmpBuf, sizeof(tmpBuf), 31); entreprises[eid][entEntryZ] = floatstr(tmpBuf);
+		if(entreprises[eid][entIntId] < 0 || entreprises[eid][entIntId] > ENT_INT_COUNT)
+			entreprises[eid][entIntId] = 0;
+
 		entreprises[eid][entUsed] = 1;
+		Ent_CreateVisuals(eid);
 		ent_Count++;
 	}
 	fclose(f);
@@ -145,12 +234,16 @@ stock Ent_Save()
 			format(tmp, sizeof(tmp), "%d,%d;", entreprises[eid][entEmpSqlid][e], entreprises[eid][entEmpSalary][e]);
 			strcat(empPart, tmp);
 		}
-		format(line, sizeof(line), "%s|%d|%d|%d|%s\n",
+		format(line, sizeof(line), "%s|%d|%d|%d|%s|%d|%.4f|%.4f|%.4f\n",
 			entreprises[eid][entName],
 			entreprises[eid][entOwnerSqlid],
 			entreprises[eid][entCash],
 			entreprises[eid][entCreatedTs],
-			empPart);
+			empPart,
+			entreprises[eid][entIntId],
+			entreprises[eid][entEntryX],
+			entreprises[eid][entEntryY],
+			entreprises[eid][entEntryZ]);
 		fwrite(f, line);
 	}
 	fclose(f);
@@ -290,12 +383,147 @@ stock Ent_OnPlayerConnect(playerid)
 	return 1;
 }
 
+// ============================================================================
+// LOCAUX (interieurs achetables)
+// ============================================================================
+
+// Retourne l'eid de l'entreprise dans laquelle se tient le joueur, sinon -1.
+// On se base sur le monde virtuel dedie (ENT_VW_BASE + eid), donc deux
+// entreprises ayant choisi le meme interieur ne se voient pas entre elles.
+stock Ent_GetInside(playerid)
+{
+	new vw = GetPlayerVirtualWorld(playerid);
+	new eid = vw - ENT_VW_BASE;
+	if(eid < 0 || eid >= ENT_MAX) return -1;
+	if(entreprises[eid][entUsed] != 1) return -1;
+	if(entreprises[eid][entIntId] < 1) return -1;
+	return eid;
+}
+
+// Entreprise dont l'entree est la plus proche du joueur (< 3m), sinon -1.
+stock Ent_GetNearestEntry(playerid)
+{
+	new Float:bestDist = 3.0, best = -1;
+	for(new eid = 0; eid < ENT_MAX; eid++)
+	{
+		if(entreprises[eid][entUsed] != 1) continue;
+		if(entreprises[eid][entIntId] < 1) continue;
+		new Float:d = GetPlayerDistanceFromPoint(playerid,
+			entreprises[eid][entEntryX], entreprises[eid][entEntryY], entreprises[eid][entEntryZ]);
+		if(d < bestDist) { bestDist = d; best = eid; }
+	}
+	return best;
+}
+
+stock Ent_ShowLocalDialog(playerid)
+{
+	new eid = Ent_FindByOwner(PlayerInfo[playerid][pSQLID]);
+	if(eid == -1) return msg_Client(playerid, COLOR_INFO, "{CF9756} Entreprise {FFFFFF} Tu n'es pas patron.");
+
+	new body[600], tmp[96];
+	if(entreprises[eid][entIntId] >= 1)
+	{
+		format(tmp, sizeof(tmp), "{FFFFFF}Local actuel : {FFFFB2}%s{FFFFFF}\nChanger de local repose l'entree ici.\n\n",
+			EntInteriors[entreprises[eid][entIntId]-1][eiName]);
+		strcat(body, tmp);
+	}
+	else
+		strcat(body, "{FFFFFF}L'entree sera posee la ou tu te trouves.\n\n");
+
+	for(new k = 0; k < ENT_INT_COUNT; k++)
+	{
+		format(tmp, sizeof(tmp), "%s{FFFFFF} - {FFFFB2}%d${FFFFFF}\n",
+			EntInteriors[k][eiName], EntInteriors[k][eiPrice]);
+		strcat(body, tmp);
+	}
+	return ShowPlayerDialog(playerid, ENT_DLG_LOCAL, DIALOG_STYLE_LIST,
+		"{42AAFF}Entreprise - Choisir un local", body, "Acheter", "Annuler");
+}
+
+stock Ent_BuyInterior(playerid, choice)
+{
+	if(choice < 0 || choice >= ENT_INT_COUNT) return 0;
+	new eid = Ent_FindByOwner(PlayerInfo[playerid][pSQLID]);
+	if(eid == -1) return msg_Client(playerid, COLOR_INFO, "{CF9756} Entreprise {FFFFFF} Tu n'es pas patron.");
+
+	// L'entree doit etre posee dehors : un local dont la porte est dans un autre
+	// interieur serait inaccessible aux clients et aux employes.
+	if(GetPlayerInterior(playerid) != 0 || GetPlayerVirtualWorld(playerid) != 0)
+		return msg_Client(playerid, COLOR_INFO, "{CF9756} Entreprise {FFFFFF} Va dehors (rue) pour poser l'entree de ton local.");
+
+	new locPrice = EntInteriors[choice][eiPrice];
+	if(PlayerInfo[playerid][pCash] < locPrice)
+	{
+		new msg[160];
+		format(msg, sizeof(msg), "{CF9756} Entreprise {FFFFFF} Ce local coute {FFFFB2}%d${FFFFFF}, tu n'as pas assez en poche.", locPrice);
+		return msg_Client(playerid, COLOR_INFO, msg);
+	}
+
+	new Float:x, Float:y, Float:z;
+	GetPlayerPos(playerid, x, y, z);
+	SafeGivePlayerMoney(playerid, -locPrice, "Local entreprise");
+
+	entreprises[eid][entIntId]  = choice + 1;
+	entreprises[eid][entEntryX] = x;
+	entreprises[eid][entEntryY] = y;
+	entreprises[eid][entEntryZ] = z;
+	Ent_CreateVisuals(eid);
+	Ent_Save();
+
+	new okStr[220];
+	format(okStr, sizeof(okStr), "{42AAFF} Entreprise {FFFFFF} Local {FFFFB2}%s{FFFFFF} achete (-%d$). L'entree est posee ici : tape {FFFFB2}/entreprise entrer{FFFFFF} devant.",
+		EntInteriors[choice][eiName], locPrice);
+	return msg_Client(playerid, COLOR_WHITE, okStr);
+}
+
+stock Ent_Cmd_Entrer(playerid)
+{
+	new eid = Ent_GetNearestEntry(playerid);
+	if(eid == -1)
+		return msg_Client(playerid, COLOR_INFO, "{CF9756} Entreprise {FFFFFF} Aucune entree d'entreprise a proximite.");
+	new iid = entreprises[eid][entIntId];
+	if(iid < 1 || iid > ENT_INT_COUNT)
+		return msg_Client(playerid, COLOR_INFO, "{CF9756} Entreprise {FFFFFF} Cette entreprise n'a pas de local.");
+
+	SetPlayerInterior(playerid, EntInteriors[iid-1][eiInt]);
+	SetPlayerVirtualWorld(playerid, ENT_VW_BASE + eid);
+	SafeSetPlayerPos(playerid, EntInteriors[iid-1][eiX], EntInteriors[iid-1][eiY], EntInteriors[iid-1][eiZ]);
+	SetPlayerFacingAngle(playerid, EntInteriors[iid-1][eiA]);
+	SetCameraBehindPlayer(playerid);
+
+	new msg[160];
+	format(msg, sizeof(msg), "{42AAFF} Entreprise {FFFFFF} Bienvenue chez {FFFFB2}%s{FFFFFF}. ({FFFFB2}/entreprise sortir{FFFFFF})", entreprises[eid][entName]);
+	return msg_Client(playerid, COLOR_WHITE, msg);
+}
+
+stock Ent_Cmd_Sortir(playerid)
+{
+	new eid = Ent_GetInside(playerid);
+	if(eid == -1)
+		return msg_Client(playerid, COLOR_INFO, "{CF9756} Entreprise {FFFFFF} Tu n'es pas dans un local d'entreprise.");
+	SetPlayerInterior(playerid, 0);
+	SetPlayerVirtualWorld(playerid, 0);
+	SafeSetPlayerPos(playerid, entreprises[eid][entEntryX], entreprises[eid][entEntryY], entreprises[eid][entEntryZ] + 0.5);
+	SetCameraBehindPlayer(playerid);
+	return msg_Client(playerid, COLOR_WHITE, "{42AAFF} Entreprise {FFFFFF} Tu quittes le local.");
+}
+
+// Dispatcher dialog (a appeler depuis OnDialogResponse)
+stock Ent_OnDialogResponse(playerid, dialogid, response, listitem)
+{
+	if(dialogid != ENT_DLG_LOCAL) return 0;
+	if(!response) return 1;
+	Ent_BuyInterior(playerid, listitem);
+	return 1;
+}
+
 // Dispatcher principal /entreprise
 stock Ent_Cmd(playerid, params[])
 {
 	if(!strlen(params))
 	{
 		msg_Client(playerid, COLOR_WHITE, "{42AAFF} Entreprise {FFFFFF} /entreprise [info|creer|verser|retirer|embauche|virer|salaire|employes|camion|supprimer]");
+		msg_Client(playerid, COLOR_WHITE, "{FFFFFF}Local : /entreprise local (acheter un interieur), entrer, sortir");
 		msg_Client(playerid, COLOR_WHITE, "{FFFFFF}Missions : /cargo (dans un camion d'entreprise, pres d'un depot)");
 		if(PlayerInfo[playerid][pAdmin] >= 3)
 			msg_Client(playerid, COLOR_WHITE, "{FFFFFF}Admin : /entreprise lister/transferer, /cargo creer/supprimer/lister");
@@ -338,13 +566,25 @@ stock Ent_Cmd(playerid, params[])
 		entreprises[eid][entOwnerSqlid] = PlayerInfo[playerid][pSQLID];
 		entreprises[eid][entCash] = 0;
 		entreprises[eid][entCreatedTs] = gettime();
+		entreprises[eid][entIntId] = 0;   // pas de local tant qu'il n'a pas achete
+		entreprises[eid][entEntryX] = 0.0;
+		entreprises[eid][entEntryY] = 0.0;
+		entreprises[eid][entEntryZ] = 0.0;
 		for(new e = 0; e < ENT_MAX_EMP; e++) { entreprises[eid][entEmpUsed][e] = 0; }
 		ent_Count++;
 		Ent_Save();
 		new okStr[220];
-		format(okStr, sizeof(okStr), "{42AAFF} Entreprise {FFFFFF} {FFFFB2}%s{FFFFFF} creee (-%d$). Utilise /entreprise embauche <joueur> <salaire> pour recruter, /entreprise verser <montant> pour alimenter la caisse.", entreprises[eid][entName], ENT_CREATE_COST);
+		format(okStr, sizeof(okStr), "{42AAFF} Entreprise {FFFFFF} {FFFFB2}%s{FFFFFF} creee (-%d$). Utilise /entreprise local pour acheter un local, /entreprise embauche <joueur> <salaire> pour recruter.", entreprises[eid][entName], ENT_CREATE_COST);
 		return msg_Client(playerid, COLOR_WHITE, okStr);
 	}
+
+	// ===== local / entrer / sortir =====
+	if(strcmp(sub, "local", true) == 0 || strcmp(sub, "interieur", true) == 0)
+		return Ent_ShowLocalDialog(playerid);
+	if(strcmp(sub, "entrer", true) == 0)
+		return Ent_Cmd_Entrer(playerid);
+	if(strcmp(sub, "sortir", true) == 0)
+		return Ent_Cmd_Sortir(playerid);
 
 	// ===== camion (achat camion cargo) =====
 	if(strcmp(sub, "camion", true) == 0)
@@ -567,6 +807,22 @@ stock Ent_Cmd(playerid, params[])
 				msg_Client(pp, COLOR_WHITE, "{FF3333} Entreprise {FFFFFF} Ton entreprise a ete dissoute par son patron.");
 			entreprises[eid][entEmpUsed][e] = 0;
 		}
+		// Sortir tout le monde du local avant de le supprimer, sinon les joueurs
+		// restent bloques dans un monde virtuel qui n'existe plus.
+		if(entreprises[eid][entIntId] >= 1)
+		{
+			for(new pp = 0; pp < MAX_PLAYERS_CURRENT + 1; pp++)
+			{
+				if(!IsPlayerConnected(pp) || IsPlayerNPC(pp)) continue;
+				if(GetPlayerVirtualWorld(pp) != ENT_VW_BASE + eid) continue;
+				SetPlayerInterior(pp, 0);
+				SetPlayerVirtualWorld(pp, 0);
+				SafeSetPlayerPos(pp, entreprises[eid][entEntryX], entreprises[eid][entEntryY], entreprises[eid][entEntryZ] + 0.5);
+				msg_Client(pp, COLOR_WHITE, "{FF3333} Entreprise {FFFFFF} Le local a ete ferme, tu es sorti.");
+			}
+		}
+		Ent_DestroyVisuals(eid);
+		entreprises[eid][entIntId] = 0;
 		entreprises[eid][entUsed] = 0;
 		ent_Count--; if(ent_Count < 0) ent_Count = 0;
 		Ent_Save();

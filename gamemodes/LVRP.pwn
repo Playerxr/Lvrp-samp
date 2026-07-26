@@ -30957,6 +30957,12 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
         return Venue_OnDialogResponse(playerid, dialogid, response, listitem, inputtext);
     }
 
+    // [ENTREPRISE] Dispatch du dialog d'achat de local (9984)
+    if(dialogid == 9984)
+    {
+        return Ent_OnDialogResponse(playerid, dialogid, response, listitem);
+    }
+
     // [MEUBLES DEHORS] Dispatch des dialogs 9970-9973
     if(dialogid >= 9970 && dialogid <= 9973)
     {
