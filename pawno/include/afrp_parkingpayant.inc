@@ -327,6 +327,13 @@ stock ParkingPay_IsOwner(playerid, vidx)
 
 // /parking payer : prolonge de 30 min le ticket du vehicule dans lequel
 // le joueur est assis, ou du vehicule le plus proche (< 10m) si a pied.
+//
+// [OUVERT A TOUS] Aucune verification de propriete : n'importe qui peut payer
+// la place de n'importe quel vehicule. C'est un choix volontaire - la detection
+// du proprietaire s'appuyait sur des donnees pas toujours coherentes entre
+// elles (pCar / ownerSQLID / vehicules donnes par un admin), et des joueurs
+// se voyaient refuser le paiement de LEUR propre voiture. Payer pour un autre
+// ne peut de toute facon que lui rendre service, donc le risque est nul.
 stock ParkingPay_Cmd_Extend(playerid)
 {
 	new vidx = -1;
@@ -336,23 +343,20 @@ stock ParkingPay_Cmd_Extend(playerid)
 	}
 	else
 	{
-		// Cherche le vehicule proprio le plus proche a < 10m
+		// Vehicule le plus proche a < 10m, a qui qu'il appartienne.
 		new Float:bestDist = 10.0;
 		new Float:vx, Float:vy, Float:vz;
 		for(new v = 1; v < MAX_CAR; v++)
 		{
 			if(vehicle[v][used] != 1) continue;
-			if(!ParkingPay_IsOwner(playerid, v)) continue;
+			if(vehicle[v][SQLID] <= 0) continue;   // vehicule non enregistre
 			GetVehiclePos(v, vx, vy, vz);
 			new Float:d = GetPlayerDistanceFromPoint(playerid, vx, vy, vz);
 			if(d < bestDist) { bestDist = d; vidx = v; }
 		}
 	}
 	if(vidx == -1)
-		return msg_Client(playerid, COLOR_INFO, "{CF9756} Parking {FFFFFF} Monte dans ton vehicule ou approche-toi (< 10m) pour prolonger.");
-
-	if(!ParkingPay_IsOwner(playerid, vidx))
-		return msg_Client(playerid, COLOR_INFO, "{CF9756} Parking {FFFFFF} Ce vehicule n'est pas a toi.");
+		return msg_Client(playerid, COLOR_INFO, "{CF9756} Parking {FFFFFF} Monte dans un vehicule ou approche-toi (< 10m) pour payer sa place.");
 
 	new carSqlid = vehicle[vidx][SQLID];
 	if(carSqlid <= 0)
@@ -381,8 +385,22 @@ stock ParkingPay_Cmd_Extend(playerid)
 	ParkingPay_UpdateLabel(tid);
 
 	new totalMin = (PPTicket[tid][ppExpireTs] - gettime()) / 60;
-	new msg2[160];
+	new msg2[176];
 	format(msg2, sizeof(msg2), "{42AAFF} Parking {FFFFFF} +30 min. Nouveau temps restant : {FFFFB2}%d min{FFFFFF} ({FFFFB2}-%d${FFFFFF}).", totalMin, PP_FEE_EXTEND);
 	msg_Client(playerid, COLOR_WHITE, msg2);
+
+	// Payer pour quelqu'un d'autre est autorise : on previent le proprietaire
+	// du ticket s'il est en ligne et que ce n'est pas lui qui vient de payer.
+	if(!ParkingPay_IsOwner(playerid, vidx))
+	{
+		new ppOwner = ParkingPay_FindPlayerBySqlid(PPTicket[tid][ppOwnerSqlid]);
+		if(ppOwner != INVALID_PLAYER_ID && ppOwner != playerid)
+		{
+			new payerName[MAX_PLAYER_NAME]; GetPlayerName(playerid, payerName, sizeof(payerName));
+			new msg3[176];
+			format(msg3, sizeof(msg3), "{42AAFF} Parking {FFFFFF} {FFFFB2}%s{FFFFFF} a paye la place de ton vehicule (+30 min).", payerName);
+			msg_Client(ppOwner, COLOR_WHITE, msg3);
+		}
+	}
 	return 1;
 }

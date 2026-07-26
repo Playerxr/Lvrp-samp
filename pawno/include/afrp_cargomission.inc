@@ -405,6 +405,80 @@ stock Cargo_OnDialogResponse(playerid, dialogid, response, listitem)
 	return 1;
 }
 
+// Liste des camionnettes de l'entreprise (suppression).
+public Ent_ShowGestVeh(playerid)
+{
+	new eid = Ent_FindByOwner(PlayerInfo[playerid][pSQLID]);
+	if(eid == -1) return msg_Client(playerid, COLOR_INFO, "{CF9756} Entreprise {FFFFFF} Tu n'es pas patron.");
+
+	new body[600], tmp[96], c = 0;
+	strcat(body, "{FFFFFF}Choisis une camionnette pour la supprimer :\n\n");
+	for(new i = 0; i < CG_MAX_TRUCK; i++)
+	{
+		if(cargoTruck[i][ctUsed] != 1) continue;
+		if(strcmp(cargoTruck[i][ctEntName], entreprises[eid][entName], true) != 0) continue;
+		new mi = Cargo_ModelIndex(cargoTruck[i][ctModel]);
+		new mName[24];
+		if(mi != -1) strcat(mName, CargoModels[mi][cmName]);
+		else         strcat(mName, "Camionnette");
+		format(tmp, sizeof(tmp), "%s\n", mName);
+		strcat(body, tmp);
+		c++;
+	}
+	if(c == 0)
+	{
+		msg_Client(playerid, COLOR_INFO, "{CF9756} Entreprise {FFFFFF} Aucune camionnette. /entreprise camionnette pour en acheter une.");
+		return Ent_ShowGestion(playerid);
+	}
+	return ShowPlayerDialog(playerid, ENT_DLG_GEST_VEH, DIALOG_STYLE_LIST,
+		"{42AAFF}Entreprise - Camionnettes", body, "Supprimer", "Retour");
+}
+
+// Supprime la Nieme camionnette de l'entreprise (index d'affichage).
+public Ent_DeleteVeh(playerid, listitem)
+{
+	new eid = Ent_FindByOwner(PlayerInfo[playerid][pSQLID]);
+	if(eid == -1) return 0;
+	new c = 0;
+	for(new i = 0; i < CG_MAX_TRUCK; i++)
+	{
+		if(cargoTruck[i][ctUsed] != 1) continue;
+		if(strcmp(cargoTruck[i][ctEntName], entreprises[eid][entName], true) != 0) continue;
+		if(c == listitem)
+		{
+			new mi = Cargo_ModelIndex(cargoTruck[i][ctModel]);
+			new vname[24];
+			if(mi != -1) strcat(vname, CargoModels[mi][cmName]);
+			else         strcat(vname, "Camionnette");
+
+			// Ejecte les occupants avant de detruire le vehicule.
+			new vid = cargoTruck[i][ctVehicleid];
+			if(vid != INVALID_VEHICLE_ID && vid >= 1 && vid < MAX_CAR)
+			{
+				for(new pp = 0; pp < MAX_PLAYERS_CURRENT + 1; pp++)
+				{
+					if(!IsPlayerConnected(pp) || IsPlayerNPC(pp)) continue;
+					if(GetPlayerVehicleID(pp) == vid) RemovePlayerFromVehicle(pp);
+				}
+				DestroyVehicle(vid);
+				vehicle[vid][used] = 0;      // libere le slot du gamemode
+				vehicle[vid][cType] = 0;
+			}
+			cargoTruck[i][ctUsed] = 0;
+			cargoTruck[i][ctVehicleid] = INVALID_VEHICLE_ID;
+			cargo_TruckCount--; if(cargo_TruckCount < 0) cargo_TruckCount = 0;
+			Cargo_SaveTrucks();
+
+			new okStr[160];
+			format(okStr, sizeof(okStr), "{42AAFF} Entreprise {FFFFFF} Camionnette {FFFFB2}%s{FFFFFF} supprimee. (aucun remboursement)", vname);
+			msg_Client(playerid, COLOR_WHITE, okStr);
+			return 1;
+		}
+		c++;
+	}
+	return 0;
+}
+
 // ===================== MISSIONS =====================
 
 // Verifie que le joueur a le droit d'utiliser ce camion (patron ou employe de l'ent).

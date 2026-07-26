@@ -30967,10 +30967,17 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
         return Venue_OnDialogResponse(playerid, dialogid, response, listitem, inputtext);
     }
 
-    // [ENTREPRISE] Dispatch des dialogs local (9984) et secteur d'activite (9986)
-    if(dialogid == 9984 || dialogid == 9986)
+    // [ENTREPRISE] Dispatch des dialogs local (9984), secteur (9986) et gestion
+    // (9987-9989, 9975-9976). Les dialogs a saisie texte passent par Ent_OnDialogInput.
+    if(dialogid == 9984 || dialogid == 9986 || (dialogid >= 9987 && dialogid <= 9989)
+        || dialogid == 9975 || dialogid == 9976)
     {
         return Ent_OnDialogResponse(playerid, dialogid, response, listitem);
+    }
+    if(dialogid == 9977 || dialogid == 9978 || dialogid == 9979)
+    {
+        if(dialogid == 9977) return Ent_OnDialogResponse(playerid, dialogid, response, listitem);
+        return Ent_OnDialogInput(playerid, dialogid, response, inputtext);
     }
 
     // [CARGO] Dispatch du dialog d'achat de camionnette (9985)

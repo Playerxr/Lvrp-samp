@@ -34,6 +34,15 @@
 #define ENT_TICK_MS         60000       // 60s
 #define ENT_DLG_LOCAL       9984        // dialog choix du local
 #define ENT_DLG_TYPE        9986        // dialog choix du secteur d'activite
+#define ENT_DLG_GEST        9987        // menu principal /entreprise gestion
+#define ENT_DLG_GEST_EMP    9988        // liste des employes
+#define ENT_DLG_GEST_ACT    9989        // actions sur un employe
+#define ENT_DLG_GEST_VEH    9975        // liste des camionnettes
+#define ENT_DLG_GEST_GRADE  9976        // choix du grade a attribuer
+#define ENT_DLG_GEST_RENAME 9977        // renommer un grade (liste)
+#define ENT_DLG_GEST_RNAME2 9978        // renommer un grade (saisie)
+#define ENT_DLG_GEST_SAL    9979        // saisie du nouveau salaire
+#define ENT_RANK_COUNT      5           // grades par entreprise
 #define ENT_VW_BASE         7100        // monde virtuel dedie : ENT_VW_BASE + eid
 #define ENT_INT_COUNT       13          // nb de locaux au catalogue
 #define ENT_TYPE_COUNT      8           // nb de secteurs d'activite
@@ -99,15 +108,50 @@ enum e_Ent
 	Float:entEntryX, Float:entEntryY, Float:entEntryZ,  // porte d'entree dans le monde
 	entEmpSqlid[ENT_MAX_EMP],
 	entEmpSalary[ENT_MAX_EMP],
+	entEmpRank[ENT_MAX_EMP],          // 1..ENT_RANK_COUNT
 	entEmpUsed[ENT_MAX_EMP],
 	entEmpPendingMin[ENT_MAX_EMP]    // compteur minutes connectees en attente de paie
 };
+
+// Grades par defaut d'une entreprise nouvellement creee.
+static const EntDefaultRanks[ENT_RANK_COUNT][20] = {
+	"Apprenti",
+	"Employe",
+	"Confirme",
+	"Chef d'equipe",
+	"Directeur"
+};
 new entreprises[ENT_MAX][e_Ent];
+// Noms des grades, personnalisables par entreprise. Tableau separe car un enum
+// Pawn n'accepte pas de membre a deux dimensions.
+new entRankNames[ENT_MAX][ENT_RANK_COUNT][20];
 new ent_Count = 0;
 new entPickup[ENT_MAX];              // pickup entree (monde exterieur)
 new Text3D:entLabel[ENT_MAX];        // label 3D entree
 new entExitPickup[ENT_MAX];          // pickup sortie (dans le local)
 new Text3D:entExitLabel[ENT_MAX];    // label 3D sortie
+
+// Remet les 5 grades d'une entreprise a leurs noms par defaut.
+stock Ent_ResetRanks(eid)
+{
+	for(new r = 0; r < ENT_RANK_COUNT; r++)
+	{
+		new n = 0;
+		while(n < 19 && EntDefaultRanks[r][n]) { entRankNames[eid][r][n] = EntDefaultRanks[r][n]; n++; }
+		entRankNames[eid][r][n] = 0;
+	}
+	return 1;
+}
+
+// Nom du grade rk (1..ENT_RANK_COUNT) d'une entreprise.
+stock Ent_RankName(eid, rk, dest[], destSize)
+{
+	dest[0] = 0;
+	if(rk < 1 || rk > ENT_RANK_COUNT) { strcat(dest, "?", destSize); return 0; }
+	strcat(dest, entRankNames[eid][rk-1], destSize);
+	if(!strlen(dest)) strcat(dest, EntDefaultRanks[rk-1], destSize);
+	return 1;
+}
 
 stock Ent_Init()
 {
@@ -124,8 +168,10 @@ stock Ent_Init()
 			entreprises[i][entEmpUsed][e] = 0;
 			entreprises[i][entEmpSqlid][e] = 0;
 			entreprises[i][entEmpSalary][e] = 0;
+			entreprises[i][entEmpRank][e] = 1;
 			entreprises[i][entEmpPendingMin][e] = 0;
 		}
+		Ent_ResetRanks(i);
 	}
 	Ent_Load();
 	SetTimer("Ent_Tick", ENT_TICK_MS, 1);
@@ -235,9 +281,21 @@ stock Ent_Load()
 			if(empBuf[j] == ',') j++;
 			// salary
 			pnum = 0;
-			while(empBuf[j] && empBuf[j] != ';' && pnum < 31) { numBuf[pnum++] = empBuf[j++]; }
+			while(empBuf[j] && empBuf[j] != ',' && empBuf[j] != ';' && pnum < 31) { numBuf[pnum++] = empBuf[j++]; }
 			numBuf[pnum] = 0;
 			entreprises[eid][entEmpSalary][eslot] = strval(numBuf);
+			// grade (champ ajoute apres coup : absent des anciennes lignes -> 0 -> 1)
+			new empRank = 0;
+			if(empBuf[j] == ',')
+			{
+				j++;
+				pnum = 0;
+				while(empBuf[j] && empBuf[j] != ';' && pnum < 31) { numBuf[pnum++] = empBuf[j++]; }
+				numBuf[pnum] = 0;
+				empRank = strval(numBuf);
+			}
+			if(empRank < 1 || empRank > ENT_RANK_COUNT) empRank = 1;
+			entreprises[eid][entEmpRank][eslot] = empRank;
 			entreprises[eid][entEmpUsed][eslot] = 1;
 			entreprises[eid][entEmpPendingMin][eslot] = 0;
 			if(empBuf[j] == ';') j++;
@@ -256,6 +314,32 @@ stock Ent_Load()
 		if(entreprises[eid][entType] < 0 || entreprises[eid][entType] > ENT_TYPE_COUNT)
 			entreprises[eid][entType] = 0;
 
+		// Noms des grades : "grade1,grade2,...". Absent des anciennes lignes ->
+		// on garde les grades par defaut poses par Ent_Init.
+		new rankBuf[128];
+		Ent_ReadField(line, i, rankBuf, sizeof(rankBuf), 127);
+		if(strlen(rankBuf) > 0)
+		{
+			new rp = 0, rslot = 0, rc;
+			while(rankBuf[rp] && rslot < ENT_RANK_COUNT)
+			{
+				rc = 0;
+				while(rankBuf[rp] && rankBuf[rp] != ',' && rc < 19)
+					{ entRankNames[eid][rslot][rc++] = rankBuf[rp++]; }
+				entRankNames[eid][rslot][rc] = 0;
+				// Un grade vide retombe sur son nom par defaut.
+				if(rc == 0)
+				{
+					new dn = 0;
+					while(dn < 19 && EntDefaultRanks[rslot][dn]) { entRankNames[eid][rslot][dn] = EntDefaultRanks[rslot][dn]; dn++; }
+					entRankNames[eid][rslot][dn] = 0;
+				}
+				while(rankBuf[rp] && rankBuf[rp] != ',') rp++;   // reste d'un nom trop long
+				if(rankBuf[rp] == ',') rp++;
+				rslot++;
+			}
+		}
+
 		entreprises[eid][entUsed] = 1;
 		Ent_CreateVisuals(eid);
 		ent_Count++;
@@ -270,18 +354,24 @@ stock Ent_Save()
 	if(fexist(ENT_FILE)) fremove(ENT_FILE);
 	new File:f = fopen(ENT_FILE, io_write);
 	if(!f) return 0;
-	new line[1024], empPart[512], tmp[64];
+	new line[1024], empPart[512], tmp[64], rankPart[128];
 	for(new eid = 0; eid < ENT_MAX; eid++)
 	{
 		if(entreprises[eid][entUsed] != 1) continue;
+		rankPart[0] = 0;
+		for(new r = 0; r < ENT_RANK_COUNT; r++)
+		{
+			if(r > 0) strcat(rankPart, ",");
+			strcat(rankPart, entRankNames[eid][r]);
+		}
 		empPart[0] = 0;
 		for(new e = 0; e < ENT_MAX_EMP; e++)
 		{
 			if(entreprises[eid][entEmpUsed][e] != 1) continue;
-			format(tmp, sizeof(tmp), "%d,%d;", entreprises[eid][entEmpSqlid][e], entreprises[eid][entEmpSalary][e]);
+			format(tmp, sizeof(tmp), "%d,%d,%d;", entreprises[eid][entEmpSqlid][e], entreprises[eid][entEmpSalary][e], entreprises[eid][entEmpRank][e]);
 			strcat(empPart, tmp);
 		}
-		format(line, sizeof(line), "%s|%d|%d|%d|%s|%d|%.4f|%.4f|%.4f|%d\n",
+		format(line, sizeof(line), "%s|%d|%d|%d|%s|%d|%.4f|%.4f|%.4f|%d|%s\n",
 			entreprises[eid][entName],
 			entreprises[eid][entOwnerSqlid],
 			entreprises[eid][entCash],
@@ -291,7 +381,8 @@ stock Ent_Save()
 			entreprises[eid][entEntryX],
 			entreprises[eid][entEntryY],
 			entreprises[eid][entEntryZ],
-			entreprises[eid][entType]);
+			entreprises[eid][entType],
+			rankPart);
 		fwrite(f, line);
 	}
 	fclose(f);
@@ -590,6 +681,133 @@ stock Ent_Cmd_Sortir(playerid)
 	return msg_Client(playerid, COLOR_WHITE, "{42AAFF} Entreprise {FFFFFF} Tu quittes le local.");
 }
 
+// ============================================================================
+// GESTION (/entreprise gestion) - menus patron
+// ============================================================================
+
+// Slot employe / grade selectionne, par joueur.
+new ent_GestEmpSlot[MAX_PLAYERS];
+new ent_GestRankIdx[MAX_PLAYERS];
+
+// Gestion des camionnettes : definie dans afrp_cargomission.inc, inclus APRES
+// ce fichier (il a besoin de entreprises[]). Declaration anticipee pour que le
+// menu de gestion ci-dessous puisse l'appeler.
+forward Ent_ShowGestVeh(playerid);
+forward Ent_DeleteVeh(playerid, listitem);
+
+stock Ent_ShowGestion(playerid)
+{
+	new eid = Ent_FindByOwner(PlayerInfo[playerid][pSQLID]);
+	if(eid == -1) return msg_Client(playerid, COLOR_INFO, "{CF9756} Entreprise {FFFFFF} Tu n'es pas patron.");
+
+	new nbEmp = 0;
+	for(new e = 0; e < ENT_MAX_EMP; e++) if(entreprises[eid][entEmpUsed][e] == 1) nbEmp++;
+
+	new body[512], tmp[128], typeStr[32];
+	Ent_TypeName(eid, typeStr, sizeof(typeStr));
+	format(tmp, sizeof(tmp), "{FFFFFF}%s {CCCCCC}[%s]{FFFFFF}\nCaisse : {FFFFB2}%d${FFFFFF}  -  Employes : %d/%d\n\n",
+		entreprises[eid][entName], typeStr, entreprises[eid][entCash], nbEmp, ENT_MAX_EMP);
+	strcat(body, tmp);
+	strcat(body, "Employes {CCCCCC}(grade, salaire, virer)\n");
+	strcat(body, "{FFFFFF}Camionnettes {CCCCCC}(voir, supprimer)\n");
+	strcat(body, "{FFFFFF}Renommer les grades\n");
+	strcat(body, "{FFFFFF}Secteur d'activite\n");
+	strcat(body, "{FFFFFF}Local {CCCCCC}(acheter / changer)");
+	return ShowPlayerDialog(playerid, ENT_DLG_GEST, DIALOG_STYLE_LIST,
+		"{42AAFF}Entreprise - Gestion", body, "Ouvrir", "Fermer");
+}
+
+stock Ent_ShowGestEmp(playerid)
+{
+	new eid = Ent_FindByOwner(PlayerInfo[playerid][pSQLID]);
+	if(eid == -1) return msg_Client(playerid, COLOR_INFO, "{CF9756} Entreprise {FFFFFF} Tu n'es pas patron.");
+
+	new body[1400], tmp[160], c = 0;
+	strcat(body, "Nom\tGrade\tSalaire\n");
+	for(new e = 0; e < ENT_MAX_EMP; e++)
+	{
+		if(entreprises[eid][entEmpUsed][e] != 1) continue;
+		new empName[MAX_PLAYER_NAME]; strcat(empName, "hors ligne");
+		new pp = Ent_FindPlayerBySqlid(entreprises[eid][entEmpSqlid][e]);
+		if(pp != INVALID_PLAYER_ID) GetPlayerName(pp, empName, sizeof(empName));
+		new rkName[24]; Ent_RankName(eid, entreprises[eid][entEmpRank][e], rkName, sizeof(rkName));
+		format(tmp, sizeof(tmp), "%s\t{FFFFB2}%s{FFFFFF}\t%d$/h\n", empName, rkName, entreprises[eid][entEmpSalary][e]);
+		strcat(body, tmp);
+		ent_GestEmpSlot[playerid] = e;   // dernier vu (remplace ci-dessous par le mapping)
+		c++;
+	}
+	if(c == 0)
+	{
+		msg_Client(playerid, COLOR_INFO, "{CF9756} Entreprise {FFFFFF} Aucun employe. Utilise /entreprise embauche <joueur> <salaire>.");
+		return Ent_ShowGestion(playerid);
+	}
+	return ShowPlayerDialog(playerid, ENT_DLG_GEST_EMP, DIALOG_STYLE_TABLIST_HEADERS,
+		"{42AAFF}Entreprise - Employes", body, "Gerer", "Retour");
+}
+
+// Convertit un listitem de la liste employes en slot reel.
+stock Ent_GestEmpSlotFromItem(eid, listitem)
+{
+	new c = 0;
+	for(new e = 0; e < ENT_MAX_EMP; e++)
+	{
+		if(entreprises[eid][entEmpUsed][e] != 1) continue;
+		if(c == listitem) return e;
+		c++;
+	}
+	return -1;
+}
+
+stock Ent_ShowGestEmpActions(playerid)
+{
+	new eid = Ent_FindByOwner(PlayerInfo[playerid][pSQLID]);
+	if(eid == -1) return 0;
+	new slot = ent_GestEmpSlot[playerid];
+	if(slot < 0 || slot >= ENT_MAX_EMP || entreprises[eid][entEmpUsed][slot] != 1)
+		return Ent_ShowGestEmp(playerid);
+
+	new empName[MAX_PLAYER_NAME]; strcat(empName, "hors ligne");
+	new pp = Ent_FindPlayerBySqlid(entreprises[eid][entEmpSqlid][slot]);
+	if(pp != INVALID_PLAYER_ID) GetPlayerName(pp, empName, sizeof(empName));
+	new rkName[24]; Ent_RankName(eid, entreprises[eid][entEmpRank][slot], rkName, sizeof(rkName));
+
+	new body[300], title[80];
+	format(title, sizeof(title), "{42AAFF}%s - %s", empName, rkName);
+	format(body, sizeof(body), "{FFFFFF}Salaire actuel : {FFFFB2}%d$/h{FFFFFF}\n\nChanger le grade\nChanger le salaire\n{FF6666}Virer cet employe",
+		entreprises[eid][entEmpSalary][slot]);
+	return ShowPlayerDialog(playerid, ENT_DLG_GEST_ACT, DIALOG_STYLE_LIST, title, body, "Valider", "Retour");
+}
+
+stock Ent_ShowGestGrade(playerid)
+{
+	new eid = Ent_FindByOwner(PlayerInfo[playerid][pSQLID]);
+	if(eid == -1) return 0;
+	new body[300], tmp[48];
+	for(new r = 1; r <= ENT_RANK_COUNT; r++)
+	{
+		new rkName[24]; Ent_RankName(eid, r, rkName, sizeof(rkName));
+		format(tmp, sizeof(tmp), "%d. %s\n", r, rkName);
+		strcat(body, tmp);
+	}
+	return ShowPlayerDialog(playerid, ENT_DLG_GEST_GRADE, DIALOG_STYLE_LIST,
+		"{42AAFF}Attribuer un grade", body, "Attribuer", "Retour");
+}
+
+stock Ent_ShowGestRename(playerid)
+{
+	new eid = Ent_FindByOwner(PlayerInfo[playerid][pSQLID]);
+	if(eid == -1) return msg_Client(playerid, COLOR_INFO, "{CF9756} Entreprise {FFFFFF} Tu n'es pas patron.");
+	new body[300], tmp[48];
+	for(new r = 1; r <= ENT_RANK_COUNT; r++)
+	{
+		new rkName[24]; Ent_RankName(eid, r, rkName, sizeof(rkName));
+		format(tmp, sizeof(tmp), "%d. %s\n", r, rkName);
+		strcat(body, tmp);
+	}
+	return ShowPlayerDialog(playerid, ENT_DLG_GEST_RENAME, DIALOG_STYLE_LIST,
+		"{42AAFF}Renommer un grade", body, "Renommer", "Retour");
+}
+
 // Dispatcher dialog (a appeler depuis OnDialogResponse)
 stock Ent_OnDialogResponse(playerid, dialogid, response, listitem)
 {
@@ -605,6 +823,160 @@ stock Ent_OnDialogResponse(playerid, dialogid, response, listitem)
 		Ent_SetType(playerid, listitem);
 		return 1;
 	}
+
+	// ---- Menus de gestion ----
+	if(dialogid == ENT_DLG_GEST)
+	{
+		if(!response) return 1;
+		switch(listitem)
+		{
+			case 0: return Ent_ShowGestEmp(playerid);
+			case 1: return Ent_ShowGestVeh(playerid);
+			case 2: return Ent_ShowGestRename(playerid);
+			case 3: return Ent_ShowTypeDialog(playerid);
+			case 4: return Ent_ShowLocalDialog(playerid);
+		}
+		return 1;
+	}
+	if(dialogid == ENT_DLG_GEST_EMP)
+	{
+		if(!response) return Ent_ShowGestion(playerid);
+		new eid = Ent_FindByOwner(PlayerInfo[playerid][pSQLID]);
+		if(eid == -1) return 1;
+		new slot = Ent_GestEmpSlotFromItem(eid, listitem);
+		if(slot == -1) return Ent_ShowGestEmp(playerid);
+		ent_GestEmpSlot[playerid] = slot;
+		return Ent_ShowGestEmpActions(playerid);
+	}
+	if(dialogid == ENT_DLG_GEST_ACT)
+	{
+		if(!response) return Ent_ShowGestEmp(playerid);
+		if(listitem == 0) return Ent_ShowGestGrade(playerid);
+		if(listitem == 1)
+			return ShowPlayerDialog(playerid, ENT_DLG_GEST_SAL, DIALOG_STYLE_INPUT,
+				"{42AAFF}Nouveau salaire", "{FFFFFF}Salaire horaire entre 100$ et 500.000$ :", "Valider", "Retour");
+		if(listitem == 2)
+		{
+			// Virer
+			new eid = Ent_FindByOwner(PlayerInfo[playerid][pSQLID]);
+			if(eid == -1) return 1;
+			new slot = ent_GestEmpSlot[playerid];
+			if(slot < 0 || slot >= ENT_MAX_EMP || entreprises[eid][entEmpUsed][slot] != 1)
+				return Ent_ShowGestEmp(playerid);
+			new pp = Ent_FindPlayerBySqlid(entreprises[eid][entEmpSqlid][slot]);
+			entreprises[eid][entEmpUsed][slot] = 0;
+			Ent_Save();
+			if(pp != INVALID_PLAYER_ID)
+				msg_Client(pp, COLOR_WHITE, "{FF3333} Entreprise {FFFFFF} Tu as ete licencie de ton entreprise.");
+			msg_Client(playerid, COLOR_WHITE, "{42AAFF} Entreprise {FFFFFF} Employe vire.");
+			return Ent_ShowGestEmp(playerid);
+		}
+		return 1;
+	}
+	if(dialogid == ENT_DLG_GEST_GRADE)
+	{
+		if(!response) return Ent_ShowGestEmpActions(playerid);
+		new eid = Ent_FindByOwner(PlayerInfo[playerid][pSQLID]);
+		if(eid == -1) return 1;
+		new slot = ent_GestEmpSlot[playerid];
+		if(slot < 0 || slot >= ENT_MAX_EMP || entreprises[eid][entEmpUsed][slot] != 1)
+			return Ent_ShowGestEmp(playerid);
+		if(listitem < 0 || listitem >= ENT_RANK_COUNT) return 1;
+		entreprises[eid][entEmpRank][slot] = listitem + 1;
+		Ent_Save();
+
+		new rkName[24]; Ent_RankName(eid, listitem + 1, rkName, sizeof(rkName));
+		new pp = Ent_FindPlayerBySqlid(entreprises[eid][entEmpSqlid][slot]);
+		if(pp != INVALID_PLAYER_ID)
+		{
+			new msgEmp[160];
+			format(msgEmp, sizeof(msgEmp), "{42AAFF} Entreprise {FFFFFF} Ton grade est desormais : {FFFFB2}%s{FFFFFF}.", rkName);
+			msg_Client(pp, COLOR_WHITE, msgEmp);
+		}
+		new okStr[160];
+		format(okStr, sizeof(okStr), "{42AAFF} Entreprise {FFFFFF} Grade attribue : {FFFFB2}%s{FFFFFF}.", rkName);
+		msg_Client(playerid, COLOR_WHITE, okStr);
+		return Ent_ShowGestEmp(playerid);
+	}
+	if(dialogid == ENT_DLG_GEST_RENAME)
+	{
+		if(!response) return Ent_ShowGestion(playerid);
+		if(listitem < 0 || listitem >= ENT_RANK_COUNT) return 1;
+		ent_GestRankIdx[playerid] = listitem;
+		return ShowPlayerDialog(playerid, ENT_DLG_GEST_RNAME2, DIALOG_STYLE_INPUT,
+			"{42AAFF}Renommer le grade", "{FFFFFF}Nouveau nom (19 caracteres max) :", "Valider", "Retour");
+	}
+	if(dialogid == ENT_DLG_GEST_VEH)
+	{
+		if(!response) return Ent_ShowGestion(playerid);
+		Ent_DeleteVeh(playerid, listitem);
+		return Ent_ShowGestion(playerid);
+	}
+	return 0;
+}
+
+// Dispatcher des dialogs a saisie texte (inputtext necessaire)
+stock Ent_OnDialogInput(playerid, dialogid, response, const inputtext[])
+{
+	new eid = Ent_FindByOwner(PlayerInfo[playerid][pSQLID]);
+
+	if(dialogid == ENT_DLG_GEST_SAL)
+	{
+		if(!response) return Ent_ShowGestEmpActions(playerid);
+		if(eid == -1) return 1;
+		new slot = ent_GestEmpSlot[playerid];
+		if(slot < 0 || slot >= ENT_MAX_EMP || entreprises[eid][entEmpUsed][slot] != 1)
+			return Ent_ShowGestEmp(playerid);
+		new newSal = strval(inputtext);
+		if(newSal < 100 || newSal > 500000)
+		{
+			msg_Client(playerid, COLOR_INFO, "{CF9756} Entreprise {FFFFFF} Salaire horaire entre 100$ et 500.000$.");
+			return Ent_ShowGestEmpActions(playerid);
+		}
+		entreprises[eid][entEmpSalary][slot] = newSal;
+		Ent_Save();
+		new pp = Ent_FindPlayerBySqlid(entreprises[eid][entEmpSqlid][slot]);
+		if(pp != INVALID_PLAYER_ID)
+		{
+			new msgEmp[160];
+			format(msgEmp, sizeof(msgEmp), "{42AAFF} Entreprise {FFFFFF} Ton salaire est desormais {FFFFB2}%d$/h{FFFFFF}.", newSal);
+			msg_Client(pp, COLOR_WHITE, msgEmp);
+		}
+		new okStr[128];
+		format(okStr, sizeof(okStr), "{42AAFF} Entreprise {FFFFFF} Salaire mis a jour : {FFFFB2}%d$/h{FFFFFF}.", newSal);
+		msg_Client(playerid, COLOR_WHITE, okStr);
+		return Ent_ShowGestEmp(playerid);
+	}
+
+	if(dialogid == ENT_DLG_GEST_RNAME2)
+	{
+		if(!response) return Ent_ShowGestRename(playerid);
+		if(eid == -1) return 1;
+		new r = ent_GestRankIdx[playerid];
+		if(r < 0 || r >= ENT_RANK_COUNT) return Ent_ShowGestRename(playerid);
+		if(strlen(inputtext) < 2)
+		{
+			msg_Client(playerid, COLOR_INFO, "{CF9756} Entreprise {FFFFFF} Nom de grade trop court (2 caracteres minimum).");
+			return Ent_ShowGestRename(playerid);
+		}
+		// La virgule est le separateur du fichier de sauvegarde : on la refuse.
+		for(new k = 0; inputtext[k]; k++)
+		{
+			if(inputtext[k] == ',' || inputtext[k] == '|')
+			{
+				msg_Client(playerid, COLOR_INFO, "{CF9756} Entreprise {FFFFFF} Les caracteres , et | sont interdits.");
+				return Ent_ShowGestRename(playerid);
+			}
+		}
+		new n = 0;
+		while(n < 19 && inputtext[n]) { entRankNames[eid][r][n] = inputtext[n]; n++; }
+		entRankNames[eid][r][n] = 0;
+		Ent_Save();
+		new okStr[128];
+		format(okStr, sizeof(okStr), "{42AAFF} Entreprise {FFFFFF} Grade %d renomme : {FFFFB2}%s{FFFFFF}.", r + 1, entRankNames[eid][r]);
+		msg_Client(playerid, COLOR_WHITE, okStr);
+		return Ent_ShowGestRename(playerid);
+	}
 	return 0;
 }
 
@@ -613,7 +985,8 @@ stock Ent_Cmd(playerid, params[])
 {
 	if(!strlen(params))
 	{
-		msg_Client(playerid, COLOR_WHITE, "{42AAFF} Entreprise {FFFFFF} /entreprise [info|creer|verser|retirer|embauche|virer|salaire|employes|camionnette|supprimer]");
+		msg_Client(playerid, COLOR_WHITE, "{42AAFF} Entreprise {FFFFFF} {FFFFB2}/entreprise gestion{FFFFFF} : tout gerer par menus (employes, grades, camionnettes, local)");
+		msg_Client(playerid, COLOR_WHITE, "{FFFFFF}/entreprise [info|creer|verser|retirer|embauche|virer|salaire|employes|camionnette|supprimer]");
 		msg_Client(playerid, COLOR_WHITE, "{FFFFFF}Identite : /entreprise type (secteur d'activite)");
 		msg_Client(playerid, COLOR_WHITE, "{FFFFFF}Local : /entreprise local (acheter un interieur), entrer, sortir");
 		msg_Client(playerid, COLOR_WHITE, "{FFFFFF}Missions : /cargo (dans une camionnette d'entreprise, pres d'un depot)");
@@ -663,7 +1036,8 @@ stock Ent_Cmd(playerid, params[])
 		entreprises[eid][entEntryX] = 0.0;
 		entreprises[eid][entEntryY] = 0.0;
 		entreprises[eid][entEntryZ] = 0.0;
-		for(new e = 0; e < ENT_MAX_EMP; e++) { entreprises[eid][entEmpUsed][e] = 0; }
+		for(new e = 0; e < ENT_MAX_EMP; e++) { entreprises[eid][entEmpUsed][e] = 0; entreprises[eid][entEmpRank][e] = 1; }
+		Ent_ResetRanks(eid);
 		ent_Count++;
 		Ent_Save();
 		new okStr[220];
@@ -672,6 +1046,11 @@ stock Ent_Cmd(playerid, params[])
 		// Enchaine directement sur le choix du secteur d'activite.
 		return Ent_ShowTypeDialog(playerid);
 	}
+
+	// ===== gestion (menu global patron) =====
+	if(strcmp(sub, "gestion", true) == 0 || strcmp(sub, "gerer", true) == 0
+		|| strcmp(sub, "menu", true) == 0)
+		return Ent_ShowGestion(playerid);
 
 	// ===== type / local / entrer / sortir =====
 	if(strcmp(sub, "type", true) == 0 || strcmp(sub, "secteur", true) == 0
@@ -720,11 +1099,26 @@ stock Ent_Cmd(playerid, params[])
 			strcat(localStr, EntInteriors[entreprises[eid][entIntId]-1][eiName], sizeof(localStr));
 		}
 
+		// Grade personnel (employes uniquement)
+		new roleStr[40];
+		if(asOwner) strcat(roleStr, "PATRON");
+		else
+		{
+			new mySlot;
+			new dummyEid;
+			if(Ent_FindEmployeeSlot(mySqlid, dummyEid, mySlot) && dummyEid == eid)
+			{
+				new rkName[24]; Ent_RankName(eid, entreprises[eid][entEmpRank][mySlot], rkName, sizeof(rkName));
+				format(roleStr, sizeof(roleStr), "EMPLOYE (%s)", rkName);
+			}
+			else strcat(roleStr, "EMPLOYE");
+		}
+
 		new body[500];
 		format(body, sizeof(body),
 			"{FFFFFF}Nom : {FFFFB2}%s{FFFFFF}\nSecteur : {FFFFB2}%s{FFFFFF}\nProprio : %s\nCaisse : {FFFFB2}%d${FFFFFF}\nEmployes : %d / %d\nLocal : %s\nRole : %s",
 			entreprises[eid][entName], typeStr, ownerName, entreprises[eid][entCash], nbEmp, ENT_MAX_EMP,
-			localStr, asOwner ? "PATRON" : "EMPLOYE");
+			localStr, roleStr);
 		return ShowPlayerDialog(playerid, 9997, DIALOG_STYLE_MSGBOX, "Entreprise", body, "OK", "");
 	}
 
@@ -797,6 +1191,7 @@ stock Ent_Cmd(playerid, params[])
 			return msg_Client(playerid, COLOR_INFO, "{CF9756} Entreprise {FFFFFF} Plus de place dans l'entreprise.");
 		entreprises[eid][entEmpSqlid][slot]      = tSqlid;
 		entreprises[eid][entEmpSalary][slot]     = salaire;
+		entreprises[eid][entEmpRank][slot]       = 1;   // premier grade
 		entreprises[eid][entEmpUsed][slot]       = 1;
 		entreprises[eid][entEmpPendingMin][slot] = 0;
 		Ent_Save();
