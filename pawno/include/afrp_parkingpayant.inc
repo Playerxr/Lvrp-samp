@@ -128,11 +128,7 @@ stock ParkingPay_ApplyPayment(playerid, carSqlid, pid, vidx)
 			PPTicket[tid][ppLabel] = Text3D:INVALID_3DTEXT_ID;
 		}
 		PPTicket[tid][ppParkingId] = pid;
-		new keepStr[96];
-		format(keepStr, sizeof(keepStr), "{42AAFF}PARKING PAYE");
-		PPTicket[tid][ppLabel] = Create3DTextLabel(keepStr, 0x42AAFFFF, 0.0, 0.0, 0.0, 20.0, 0, 0);
-		Attach3DTextLabelToVehicle(PPTicket[tid][ppLabel], vidx, 0.0, 0.0, 0.7);
-		ParkingPay_UpdateLabel(tid);
+		ParkingPay_RefreshLabel(tid);   // n'affiche le label que vehicule vide
 
 		new keepMinutes = (PPTicket[tid][ppExpireTs] - gettime()) / 60;
 		new keepMsg[160];
@@ -163,10 +159,7 @@ stock ParkingPay_ApplyPayment(playerid, carSqlid, pid, vidx)
 	PPTicket[tid][ppParkingId]  = pid;
 	PPTicket[tid][ppWarned]     = 0;
 
-	new labelStr[96];
-	format(labelStr, sizeof(labelStr), "{42AAFF}PARKING PAYE\n{FFFFFF}30 min restantes");
-	PPTicket[tid][ppLabel] = Create3DTextLabel(labelStr, 0x42AAFFFF, 0.0, 0.0, 0.0, 20.0, 0, 0);
-	Attach3DTextLabelToVehicle(PPTicket[tid][ppLabel], vidx, 0.0, 0.0, 0.7);
+	ParkingPay_RefreshLabel(tid);   // n'affiche le label que vehicule vide
 
 	new msg[160];
 	if(wasImpounded)
@@ -175,6 +168,84 @@ stock ParkingPay_ApplyPayment(playerid, carSqlid, pid, vidx)
 		format(msg, sizeof(msg), "{42AAFF} Parking {FFFFFF} Parking paye 30 min ({FFFFB2}-%d${FFFFFF}). Prolonge avec {FFFFB2}/parking payer{FFFFFF}.", required);
 	msg_Client(playerid, COLOR_WHITE, msg);
 	return 1;
+}
+
+// Y a-t-il quelqu'un a bord de ce vehicule ?
+stock ParkingPay_VehicleOccupied(vidx)
+{
+	if(vidx == INVALID_VEHICLE_ID || vidx < 1) return 0;
+	for(new p = 0; p < MAX_PLAYERS_CURRENT + 1; p++)
+	{
+		if(!IsPlayerConnected(p) || IsPlayerNPC(p)) continue;
+		if(GetPlayerVehicleID(p) == vidx) return 1;
+	}
+	return 0;
+}
+
+// [FIX VISIBILITE] Un label 3D attache a un vehicule se dessine aussi pour ceux
+// qui sont DEDANS : au volant il se retrouve en plein milieu de l'ecran et gene
+// la conduite. On ne l'affiche donc que vehicule vide (= reellement gare, seul
+// moment ou l'info sert). Le label est detruit a l'embarquement et recree a la
+// descente. SA-MP n'a pas de "masquer un label", d'ou destruction/recreation.
+stock ParkingPay_RefreshLabel(tid)
+{
+	if(tid < 0 || tid >= PP_MAX_TICKETS) return 0;
+	if(PPTicket[tid][ppUsed] != 1)
+	{
+		if(_:PPTicket[tid][ppLabel] != _:INVALID_3DTEXT_ID)
+		{
+			Delete3DTextLabel(PPTicket[tid][ppLabel]);
+			PPTicket[tid][ppLabel] = Text3D:INVALID_3DTEXT_ID;
+		}
+		return 0;
+	}
+
+	new vidx = vehicle_GetId(PPTicket[tid][ppCarSqlid]);
+	new bool:occupe = (vidx != -1 && ParkingPay_VehicleOccupied(vidx) == 1);
+
+	if(occupe || vidx == -1)
+	{
+		if(_:PPTicket[tid][ppLabel] != _:INVALID_3DTEXT_ID)
+		{
+			Delete3DTextLabel(PPTicket[tid][ppLabel]);
+			PPTicket[tid][ppLabel] = Text3D:INVALID_3DTEXT_ID;
+		}
+		return 0;
+	}
+
+	// Vehicule gare et vide : (re)cree le label s'il manque, puis met a jour.
+	if(_:PPTicket[tid][ppLabel] == _:INVALID_3DTEXT_ID)
+	{
+		PPTicket[tid][ppLabel] = Create3DTextLabel("{42AAFF}PARKING PAYE", 0x42AAFFFF, 0.0, 0.0, 0.0, 20.0, 0, 0);
+		Attach3DTextLabelToVehicle(PPTicket[tid][ppLabel], vidx, 0.0, 0.0, 0.9);
+	}
+	ParkingPay_UpdateLabel(tid);
+	return 1;
+}
+
+// Rafraichit tous les labels. Utilise quand un joueur descend d'un vehicule :
+// SA-MP ne fournit plus l'id du vehicule quitte dans OnPlayerStateChange, donc
+// on repasse sur les tickets actifs (evenement rare, boucle bornee et filtree).
+stock ParkingPay_RefreshAll()
+{
+	for(new i = 0; i < PP_MAX_TICKETS; i++)
+	{
+		if(PPTicket[i][ppUsed] != 1) continue;
+		ParkingPay_RefreshLabel(i);
+	}
+	return 1;
+}
+
+// Appelee depuis OnPlayerStateChange quand un joueur monte dans un vehicule :
+// masque immediatement le label de CE vehicule.
+stock ParkingPay_OnStateChange(vidx)
+{
+	if(vidx == INVALID_VEHICLE_ID || vidx < 1 || vidx >= MAX_CAR) return 0;
+	new carSqlid = vehicle[vidx][SQLID];
+	if(carSqlid <= 0) return 0;
+	new tid = ParkingPay_FindByCar(carSqlid);
+	if(tid == -1) return 0;
+	return ParkingPay_RefreshLabel(tid);
 }
 
 // Appelee quand un joueur despawn manuellement son vehicule (pas d'amende).
@@ -292,7 +363,9 @@ public ParkingPay_Tick()
 				msg_Client(p, COLOR_INFO, "{FFAA00} Parking {FFFFFF} Ton vehicule expire dans moins de 5 min. Tape {FFFFB2}/parking payer{FFFFFF} pour prolonger 30 min.");
 			}
 		}
-		ParkingPay_UpdateLabel(i);
+		// RefreshLabel (et non UpdateLabel) : reaffiche/masque le label selon que
+		// le vehicule est vide ou occupe, en plus de rafraichir le temps restant.
+		ParkingPay_RefreshLabel(i);
 	}
 	return 1;
 }

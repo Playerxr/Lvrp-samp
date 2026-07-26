@@ -26557,6 +26557,16 @@ public OnPlayerStateChange(playerid, newstate, oldstate)
 
 	new string[128],
 	 	carid = GetPlayerVehicleID(playerid);
+
+	// [PARKING] Le label du temps restant genait la conduite : on ne l'affiche
+	// que vehicule vide. A l'embarquement on masque celui du vehicule concerne,
+	// a la descente on repasse sur les tickets (l'id du vehicule quitte n'est
+	// plus disponible ici).
+	if(newstate == PLAYER_STATE_ONFOOT)
+		{ParkingPay_RefreshAll();}
+	else if(newstate == PLAYER_STATE_DRIVER || newstate == PLAYER_STATE_PASSENGER)
+		{ParkingPay_OnStateChange(carid);}
+
 	if(newstate == PLAYER_STATE_ONFOOT)
 	{
 	    for(new i=0; i<MAX_PLAYERS_CURRENT; i++)
