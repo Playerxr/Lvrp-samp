@@ -5208,6 +5208,7 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 #include <afrp_meublesdehors>
 #include <afrp_cargomission>
 #include <afrp_entcommerce>
+#include <afrp_entmarket>
 #include <afrp_portarme>
 #include <afrp_gangcreation>
 
@@ -29914,6 +29915,8 @@ public OnGameModeInit()
     Ent_Init();
     // Init missions cargo (depots + camions d'entreprise)
     Cargo_Init();
+    // [ANNUAIRE/CONTRATS] charge scriptfiles/contrats.cfg (apres Ent_Init et Cargo_Init)
+    EM_Init();
     // Init port d'arme (guerites + detenteurs du permis)
     PortArme_Init();
     // Init bonus de premiere apparition (liste des comptes deja bonusses)
@@ -31001,6 +31004,12 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     if(dialogid >= 9965 && dialogid <= 9968)
     {
         return EC_OnDialogResponse(playerid, dialogid, response, listitem, inputtext);
+    }
+
+    // [ANNUAIRE / CONTRATS] Dispatch : 9969, 9964 et 9955-9958
+    if(dialogid == 9969 || dialogid == 9964 || (dialogid >= 9955 && dialogid <= 9958))
+    {
+        return EM_OnDialogResponse(playerid, dialogid, response, listitem, inputtext);
     }
 
     // [MEUBLES DEHORS] Dispatch des dialogs 9970-9973
@@ -52998,6 +53007,18 @@ public OnPlayerCommandText(playerid, cmdtext[])
 	    while(ep < elp && epi < 143) { entParams[epi++] = cmdtext[ep++]; }
 	    entParams[epi] = 0;
 	    return Ent_Cmd(playerid, entParams);
+	}
+	else if(strcmp(cmd, "/entreprises", true) == 0 || strcmp(cmd, "/annuaire", true) == 0)
+	{
+	    return EM_ShowDirectory(playerid);
+	}
+	else if(strcmp(cmd, "/contrats", true) == 0)
+	{
+	    return EM_ShowContracts(playerid);
+	}
+	else if(strcmp(cmd, "/contrat", true) == 0)
+	{
+	    return EM_CmdNewContract(playerid);
 	}
 	else if(strcmp(cmd, "/cargo", true) == 0)
 	{

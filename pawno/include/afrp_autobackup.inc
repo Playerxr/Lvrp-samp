@@ -17,11 +17,18 @@
 
 #define AUTOBACKUP_INTERVAL_MS  (4*60*60*1000)  // toutes les 4h
 #define AUTOBACKUP_DIR          "backups/"
-#define AUTOBACKUP_FILE_COUNT   2
+#define AUTOBACKUP_FILE_COUNT   5
 
-new const AutoBackup_Files[AUTOBACKUP_FILE_COUNT][16] = {
+// entreprises.cfg vaut cher : 150M la creation, plus la caisse, le stock, les
+// employes et les grades. On sauvegarde aussi les contrats, les camionnettes
+// et les meubles exterieurs, tous stockes en fichier plat comme les parkings
+// qui avaient deja ete perdus une fois.
+new const AutoBackup_Files[AUTOBACKUP_FILE_COUNT][24] = {
 	"parkings.cfg",
-	"casinos.cfg"
+	"casinos.cfg",
+	"entreprises.cfg",
+	"contrats.cfg",
+	"entreprise_camions.cfg"
 };
 
 forward AutoBackup_Tick();
