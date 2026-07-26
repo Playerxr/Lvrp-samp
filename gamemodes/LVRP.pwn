@@ -5210,6 +5210,9 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 #include <afrp_entcommerce>
 #include <afrp_entmarket>
 #include <afrp_justice>
+// [DIAGNOSTIC] volontairement en dernier : il lit les compteurs de tous les
+// autres modules pour verifier que chacun a bien charge ses donnees.
+#include <afrp_diagnostic>
 #include <afrp_portarme>
 #include <afrp_gangcreation>
 
@@ -29924,6 +29927,9 @@ public OnGameModeInit()
     EM_Init();
     // [JUSTICE] Init des dossiers de proces
     Justice_Init();
+    // [DIAGNOSTIC] Rapport differe de 20s : les maisons/biz/vehicules arrivent
+    // par des requetes MySQL asynchrones, les compter maintenant donnerait 0.
+    Diag_ScheduleStartup();
     // Init port d'arme (guerites + detenteurs du permis)
     PortArme_Init();
     // Init bonus de premiere apparition (liste des comptes deja bonusses)
@@ -53033,6 +53039,11 @@ public OnPlayerCommandText(playerid, cmdtext[])
 	else if(strcmp(cmd, "/proces", true) == 0)
 	{
 	    return Justice_ShowCases(playerid);
+	}
+	// [DIAGNOSTIC] Etat de sante du serveur (staff)
+	else if(strcmp(cmd, "/verif", true) == 0 || strcmp(cmd, "/diag", true) == 0)
+	{
+	    return Diag_ShowDialog(playerid);
 	}
 	else if(strcmp(cmd, "/defendre", true) == 0)
 	{
