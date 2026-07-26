@@ -522,9 +522,9 @@ stock Ent_Cmd(playerid, params[])
 {
 	if(!strlen(params))
 	{
-		msg_Client(playerid, COLOR_WHITE, "{42AAFF} Entreprise {FFFFFF} /entreprise [info|creer|verser|retirer|embauche|virer|salaire|employes|camion|supprimer]");
+		msg_Client(playerid, COLOR_WHITE, "{42AAFF} Entreprise {FFFFFF} /entreprise [info|creer|verser|retirer|embauche|virer|salaire|employes|camionnette|supprimer]");
 		msg_Client(playerid, COLOR_WHITE, "{FFFFFF}Local : /entreprise local (acheter un interieur), entrer, sortir");
-		msg_Client(playerid, COLOR_WHITE, "{FFFFFF}Missions : /cargo (dans un camion d'entreprise, pres d'un depot)");
+		msg_Client(playerid, COLOR_WHITE, "{FFFFFF}Missions : /cargo (dans une camionnette d'entreprise, pres d'un depot)");
 		if(PlayerInfo[playerid][pAdmin] >= 3)
 			msg_Client(playerid, COLOR_WHITE, "{FFFFFF}Admin : /entreprise lister/transferer, /cargo creer/supprimer/lister");
 		return 1;
@@ -586,8 +586,8 @@ stock Ent_Cmd(playerid, params[])
 	if(strcmp(sub, "sortir", true) == 0)
 		return Ent_Cmd_Sortir(playerid);
 
-	// ===== camion (achat camion cargo) =====
-	if(strcmp(sub, "camion", true) == 0)
+	// ===== camionnette (achat vehicule cargo) - "camion" garde en alias =====
+	if(strcmp(sub, "camionnette", true) == 0 || strcmp(sub, "camion", true) == 0)
 	{
 		return Cargo_BuyTruck(playerid);
 	}

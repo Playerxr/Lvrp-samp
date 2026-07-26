@@ -1,9 +1,9 @@
 /*
 	afrp_cargomission.inc - Missions cargo d'entreprise
 
-	Le patron achete des camions d'entreprise (/entreprise camion), un admin
-	place des depots (/cargo creer). Le patron ou ses employes prennent un
-	camion d'entreprise, chargent du cargo a un depot (/cargo), roulent vers
+	Le patron achete des camionnettes d'entreprise (/entreprise camionnette),
+	un admin place des depots (/cargo creer). Le patron ou ses employes prennent
+	une camionnette, chargent du cargo a un depot (/cargo), roulent vers
 	le depot de destination (choisi aleatoirement) et livrent (/cargo). Le
 	paiement, calcule selon la distance parcourue, est verse dans la CAISSE
 	de l'entreprise.
@@ -26,7 +26,7 @@
 #define CG_MAX_TRUCK        60
 #define CG_MAX_PER_ENT      3            // camions max par entreprise
 #define CG_TRUCK_COST       2000000      // 2M depuis la caisse
-#define CG_TRUCK_MODEL      515          // Roadtrain
+#define CG_TRUCK_MODEL      414          // Mule (camionnette de livraison)
 #define CG_PAY_PER_UNIT     30           // $ par unite de distance (1 unite ~ 1m)
 #define CG_DEPOT_RADIUS     8.0
 #define CG_DEPOT_FILE       "cargo_depots.cfg"
@@ -103,7 +103,7 @@ stock Cargo_CreateDepotVisuals(id)
 	if(_:cargoDepot_Label[id] == _:INVALID_3DTEXT_ID)
 	{
 		new labelStr[128];
-		format(labelStr, sizeof(labelStr), "{FF8C00}DEPOT CARGO\n{FFFFFF}%s\n{CCCCCC}/cargo (dans un camion d'entreprise)", cargoDepot[id][cdName]);
+		format(labelStr, sizeof(labelStr), "{FF8C00}DEPOT CARGO\n{FFFFFF}%s\n{CCCCCC}/cargo (dans une camionnette d'entreprise)", cargoDepot[id][cdName]);
 		cargoDepot_Label[id] = Create3DTextLabel(labelStr, 0xFFFFFFFF, cargoDepot[id][cdX], cargoDepot[id][cdY], cargoDepot[id][cdZ] + 0.8, 25.0, 0, 0);
 	}
 	return 1;
@@ -267,19 +267,19 @@ stock Cargo_BuyTruck(playerid)
 	if(Cargo_CountTrucksForEnt(entreprises[eid][entName]) >= CG_MAX_PER_ENT)
 	{
 		new msg[128];
-		format(msg, sizeof(msg), "{CF9756} Entreprise {FFFFFF} Limite de %d camions atteinte.", CG_MAX_PER_ENT);
+		format(msg, sizeof(msg), "{CF9756} Entreprise {FFFFFF} Limite de %d camionnettes atteinte.", CG_MAX_PER_ENT);
 		return msg_Client(playerid, COLOR_INFO, msg);
 	}
 	if(entreprises[eid][entCash] < CG_TRUCK_COST)
 	{
 		new msg[128];
-		format(msg, sizeof(msg), "{CF9756} Entreprise {FFFFFF} Caisse insuffisante : un camion coute %d$.", CG_TRUCK_COST);
+		format(msg, sizeof(msg), "{CF9756} Entreprise {FFFFFF} Caisse insuffisante : une camionnette coute %d$.", CG_TRUCK_COST);
 		return msg_Client(playerid, COLOR_INFO, msg);
 	}
 	new slot = -1;
 	for(new i = 0; i < CG_MAX_TRUCK; i++) { if(cargoTruck[i][ctUsed] == 0) { slot = i; break; } }
 	if(slot == -1)
-		return msg_Client(playerid, COLOR_INFO, "{CF9756} Entreprise {FFFFFF} Limite serveur de camions atteinte.");
+		return msg_Client(playerid, COLOR_INFO, "{CF9756} Entreprise {FFFFFF} Limite serveur de camionnettes atteinte.");
 
 	entreprises[eid][entCash] -= CG_TRUCK_COST;
 	Ent_Save();
@@ -300,7 +300,7 @@ stock Cargo_BuyTruck(playerid)
 	Cargo_SaveTrucks();
 
 	new okStr[190];
-	format(okStr, sizeof(okStr), "{42AAFF} Entreprise {FFFFFF} Camion cargo achete (-%d$ de la caisse). Il spawne ici. Utilise-le pour les missions /cargo.", CG_TRUCK_COST);
+	format(okStr, sizeof(okStr), "{42AAFF} Entreprise {FFFFFF} Camionnette cargo achetee (-%d$ de la caisse). Elle spawne ici. Utilise-la pour les missions /cargo.", CG_TRUCK_COST);
 	return msg_Client(playerid, COLOR_WHITE, okStr);
 }
 
@@ -453,12 +453,12 @@ stock Cargo_Cmd(playerid, params[])
 
 	// -------- joueur : /cargo (sans arg) charge ou livre selon le contexte --------
 	if(!IsPlayerInAnyVehicle(playerid))
-		return msg_Client(playerid, COLOR_INFO, "{CF9756} Cargo {FFFFFF} Monte dans un camion de ton entreprise, pres d'un depot.");
+		return msg_Client(playerid, COLOR_INFO, "{CF9756} Cargo {FFFFFF} Monte dans une camionnette de ton entreprise, pres d'un depot.");
 
 	new veh = GetPlayerVehicleID(playerid);
 	new entName2[64];
 	if(!Cargo_TruckEntName(veh, entName2, sizeof(entName2)))
-		return msg_Client(playerid, COLOR_INFO, "{CF9756} Cargo {FFFFFF} Ce vehicule n'est pas un camion d'entreprise.");
+		return msg_Client(playerid, COLOR_INFO, "{CF9756} Cargo {FFFFFF} Ce vehicule n'est pas une camionnette d'entreprise.");
 	if(!Cargo_PlayerCanUse(playerid, entName2))
 		return msg_Client(playerid, COLOR_INFO, "{CF9756} Cargo {FFFFFF} Tu n'es ni patron ni employe de cette entreprise.");
 
