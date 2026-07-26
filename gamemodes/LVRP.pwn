@@ -53056,10 +53056,14 @@ public OnPlayerCommandText(playerid, cmdtext[])
 	{
 	    return Diag_ShowDialog(playerid);
 	}
-	// [OBJECTIFS] Objectifs quotidiens
+	// [OBJECTIFS] Objectifs quotidiens. Sans argument : le detail en dialog.
+	// "hud" : affiche/cache le panneau permanent a l'ecran.
 	else if(strcmp(cmd, "/objectifs", true) == 0 || strcmp(cmd, "/objectif", true) == 0
 	        || strcmp(cmd, "/quotidien", true) == 0)
 	{
+	    tmp = strtok(cmdtext, idx);
+	    if(strlen(tmp) > 0 && (strcmp(tmp, "hud", true) == 0 || strcmp(tmp, "panneau", true) == 0))
+	        {return Obj_TdToggle(playerid);}
 	    return Obj_ShowDialog(playerid);
 	}
 	else if(strcmp(cmd, "/defendre", true) == 0)

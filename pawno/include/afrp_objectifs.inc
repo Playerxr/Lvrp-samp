@@ -56,6 +56,19 @@ static const ObjCatalog[OBJ_TYPE_COUNT][e_ObjDef] = {
 	{"Parcourir 8 km en vehicule",        8000,    70000}
 };
 
+// --- Panneau textdraw ---
+// Place sous le HUD vie/armure (x 548, y 60-100 dans afrp_hud.inc) pour
+// regrouper les informations du joueur du meme cote de l'ecran.
+#define OBJ_TD_X          496.0
+#define OBJ_TD_Y          125.0
+#define OBJ_TD_LINE_H     10.0
+
+new PlayerText:objTdBox[MAX_PLAYERS];
+new PlayerText:objTdTitle[MAX_PLAYERS];
+new PlayerText:objTdLine[MAX_PLAYERS][OBJ_PER_DAY];
+new obj_TdVisible[MAX_PLAYERS];
+new obj_TdCreated[MAX_PLAYERS];
+
 // Etat en memoire du joueur connecte
 new obj_Type[MAX_PLAYERS][OBJ_PER_DAY];
 new obj_Prog[MAX_PLAYERS][OBJ_PER_DAY];
@@ -209,6 +222,8 @@ stock Obj_Load(playerid)
 
 stock Obj_OnPlayerConnect(playerid)
 {
+	obj_TdCreated[playerid] = 0;
+	obj_TdVisible[playerid] = 0;
 	obj_Loaded[playerid] = 0;
 	obj_BonusPris[playerid] = 0;
 	obj_Day[playerid] = 0;
@@ -234,12 +249,16 @@ stock Obj_OnPlayerLogin(playerid)
 		format(msg, sizeof(msg), "{FFD700} Objectifs {FFFFFF} Tu as {FFFFB2}%d{FFFFFF} objectif(s) a accomplir aujourd'hui. Tape {FFFFB2}/objectifs{FFFFFF}.", nbRestants);
 		msg_Client(playerid, COLOR_WHITE, msg);
 	}
+	// Panneau affiche d'office : son interet est justement d'etre vu sans
+	// que le joueur ait a demander. /objectifs hud le cache s'il gene.
+	Obj_TdShow(playerid);
 	return 1;
 }
 
 stock Obj_OnPlayerDisconnect(playerid)
 {
 	if(obj_Loaded[playerid] == 1) Obj_Save(playerid);
+	Obj_TdDestroy(playerid);
 	obj_Loaded[playerid] = 0;
 	return 1;
 }
@@ -255,6 +274,7 @@ stock Obj_Progress(playerid, objType, montant)
 	if(obj_Day[playerid] != Obj_Today())
 	{
 		Obj_Generate(playerid);
+		Obj_TdRefresh(playerid);
 		msg_Client(playerid, COLOR_WHITE, "{FFD700} Objectifs {FFFFFF} Nouvelle journee : tes objectifs ont ete renouveles ({FFFFB2}/objectifs{FFFFFF}).");
 	}
 
@@ -278,6 +298,7 @@ stock Obj_Progress(playerid, objType, montant)
 					ObjCatalog[objType][odName], obj_Prog[playerid][s], cible);
 				msg_Client(playerid, COLOR_WHITE, mid);
 			}
+			Obj_TdRefresh(playerid);   // le panneau suit la progression en direct
 			return 1;
 		}
 
@@ -306,6 +327,7 @@ stock Obj_Progress(playerid, objType, montant)
 			msg_Client(playerid, COLOR_WHITE, bonusStr);
 		}
 		Obj_Save(playerid);
+		Obj_TdRefresh(playerid);
 		return 1;
 	}
 	return 0;
@@ -353,6 +375,123 @@ stock Obj_Init()
 	}
 	SetTimer("Obj_Tick", 60000, 1);
 	return 1;
+}
+
+// ============================================================================
+// PANNEAU TEXTDRAW
+// ============================================================================
+stock Obj_TdCreate(playerid)
+{
+	if(obj_TdCreated[playerid] == 1) return 1;
+
+	// Fond : un textdraw "box" transparent qui sert de cadre aux lignes.
+	objTdBox[playerid] = CreatePlayerTextDraw(playerid, OBJ_TD_X - 4.0, OBJ_TD_Y - 3.0, "_");
+	PlayerTextDrawUseBox(playerid, objTdBox[playerid], 1);
+	PlayerTextDrawBoxColor(playerid, objTdBox[playerid], 0x00000066);
+	PlayerTextDrawTextSize(playerid, objTdBox[playerid], 636.0, 0.0);
+	PlayerTextDrawLetterSize(playerid, objTdBox[playerid], 0.0, 5.4);
+	PlayerTextDrawColor(playerid, objTdBox[playerid], 0x00000000);
+	PlayerTextDrawSetOutline(playerid, objTdBox[playerid], 0);
+	PlayerTextDrawSetShadow(playerid, objTdBox[playerid], 0);
+	PlayerTextDrawFont(playerid, objTdBox[playerid], 1);
+
+	objTdTitle[playerid] = CreatePlayerTextDraw(playerid, OBJ_TD_X, OBJ_TD_Y, "OBJECTIFS DU JOUR");
+	PlayerTextDrawFont(playerid, objTdTitle[playerid], 2);
+	PlayerTextDrawLetterSize(playerid, objTdTitle[playerid], 0.16, 0.9);
+	PlayerTextDrawColor(playerid, objTdTitle[playerid], 0xFFD700FF);
+	PlayerTextDrawSetOutline(playerid, objTdTitle[playerid], 1);
+	PlayerTextDrawSetShadow(playerid, objTdTitle[playerid], 0);
+
+	for(new s = 0; s < OBJ_PER_DAY; s++)
+	{
+		objTdLine[playerid][s] = CreatePlayerTextDraw(playerid,
+			OBJ_TD_X, OBJ_TD_Y + 11.0 + (float(s) * OBJ_TD_LINE_H), "-");
+		PlayerTextDrawFont(playerid, objTdLine[playerid][s], 1);
+		PlayerTextDrawLetterSize(playerid, objTdLine[playerid][s], 0.19, 0.9);
+		PlayerTextDrawColor(playerid, objTdLine[playerid][s], 0xFFFFFFFF);
+		PlayerTextDrawSetOutline(playerid, objTdLine[playerid][s], 1);
+		PlayerTextDrawSetShadow(playerid, objTdLine[playerid][s], 0);
+	}
+	obj_TdCreated[playerid] = 1;
+	return 1;
+}
+
+stock Obj_TdDestroy(playerid)
+{
+	if(obj_TdCreated[playerid] != 1) return 0;
+	PlayerTextDrawDestroy(playerid, objTdBox[playerid]);
+	PlayerTextDrawDestroy(playerid, objTdTitle[playerid]);
+	for(new s = 0; s < OBJ_PER_DAY; s++)
+		PlayerTextDrawDestroy(playerid, objTdLine[playerid][s]);
+	obj_TdCreated[playerid] = 0;
+	obj_TdVisible[playerid] = 0;
+	return 1;
+}
+
+// Recalcule le texte des lignes et, si le panneau est visible, l'affiche.
+stock Obj_TdRefresh(playerid)
+{
+	if(obj_TdCreated[playerid] != 1) return 0;
+	if(obj_Loaded[playerid] != 1) return 0;
+
+	new ligne[80];
+	for(new s = 0; s < OBJ_PER_DAY; s++)
+	{
+		new t = obj_Type[playerid][s];
+		if(t < 0 || t >= OBJ_TYPE_COUNT) t = 0;
+		new cible = ObjCatalog[t][odCible];
+		new prog = obj_Prog[playerid][s];
+		if(prog > cible) prog = cible;
+
+		if(obj_Done[playerid][s] == 1)
+		{
+			format(ligne, sizeof(ligne), "~g~%s", ObjCatalog[t][odName]);
+			PlayerTextDrawColor(playerid, objTdLine[playerid][s], 0x66FF99FF);
+		}
+		else
+		{
+			format(ligne, sizeof(ligne), "%s  ~y~%d~w~/%d", ObjCatalog[t][odName], prog, cible);
+			PlayerTextDrawColor(playerid, objTdLine[playerid][s], 0xFFFFFFFF);
+		}
+		PlayerTextDrawSetString(playerid, objTdLine[playerid][s], ligne);
+	}
+	if(obj_TdVisible[playerid] == 1)
+	{
+		PlayerTextDrawShow(playerid, objTdBox[playerid]);
+		PlayerTextDrawShow(playerid, objTdTitle[playerid]);
+		for(new s = 0; s < OBJ_PER_DAY; s++)
+			PlayerTextDrawShow(playerid, objTdLine[playerid][s]);
+	}
+	return 1;
+}
+
+stock Obj_TdShow(playerid)
+{
+	Obj_TdCreate(playerid);
+	obj_TdVisible[playerid] = 1;
+	return Obj_TdRefresh(playerid);
+}
+
+stock Obj_TdHide(playerid)
+{
+	if(obj_TdCreated[playerid] != 1) return 0;
+	obj_TdVisible[playerid] = 0;
+	PlayerTextDrawHide(playerid, objTdBox[playerid]);
+	PlayerTextDrawHide(playerid, objTdTitle[playerid]);
+	for(new s = 0; s < OBJ_PER_DAY; s++)
+		PlayerTextDrawHide(playerid, objTdLine[playerid][s]);
+	return 1;
+}
+
+stock Obj_TdToggle(playerid)
+{
+	if(obj_TdVisible[playerid] == 1)
+	{
+		Obj_TdHide(playerid);
+		return msg_Client(playerid, COLOR_WHITE, "{FFD700} Objectifs {FFFFFF} Panneau cache. {FFFFB2}/objectifs hud{FFFFFF} pour le reafficher.");
+	}
+	Obj_TdShow(playerid);
+	return msg_Client(playerid, COLOR_WHITE, "{FFD700} Objectifs {FFFFFF} Panneau affiche.");
 }
 
 stock Obj_ShowDialog(playerid)

@@ -93,6 +93,9 @@ static const fmEntries[][e_fmEntry] = {
 	{FMG_CIA,     "Voir toutes mes commandes",  "/cia",          FM_PLAIN},
 
 	// ---- JUSTICE / COUR (pMember 14) ----
+	{FMG_JUSTICE, "Prendre/Quitter le service", "/j duty",       FM_PLAIN},
+	{FMG_JUSTICE, "Examiner les recours",       "/proces",       FM_PLAIN},
+	{FMG_JUSTICE, "Defendre un detenu",         "/defendre",     FM_TARGET},
 	{FMG_JUSTICE, "Voir toutes mes commandes",  "/justice",      FM_PLAIN}
 };
 
