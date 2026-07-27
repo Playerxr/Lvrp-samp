@@ -5217,6 +5217,8 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 #include <afrp_entcommerce>
 #include <afrp_entmarket>
 #include <afrp_justice>
+// [EVENTS ADMIN] Systeme generique d'evenements (course, DM, derby...)
+#include <afrp_event>
 // [DIAGNOSTIC] volontairement en dernier : il lit les compteurs de tous les
 // autres modules pour verifier que chacun a bien charge ses donnees.
 #include <afrp_diagnostic>
@@ -23982,6 +23984,7 @@ public OnPlayerDisconnect(playerid, reason)
     AntiSpam_OnDisconnect(playerid); // [MOD TOOLS] reset spam history
     Calm_OnDisconnect(playerid); // [MOD TOOLS] cleanup calm TextDraw + unfreeze
     HUD_OnDisconnect(playerid); // [HUD] cleanup HP/AR/Ping textdraws
+    Ev_OnDisconnect(playerid); // [EVENTS ADMIN] desinscrit de l'event en cours
     GenMiracle_OnDisconnect(playerid); // [GEN MIRACLE] reset cooldown
     OddJob_OnDisconnect(playerid); // [ECONOMIE] reset cooldown petit boulot
     SafeZone_OnDisconnect(playerid); // [SAFEZONE] reset flag avertissement
@@ -25372,6 +25375,8 @@ public OnPlayerDeath(playerid, killerid, reason)
     Bounty_OnPlayerDeath(playerid, killerid);
     // [JOBS] La mort casse la serie de job en cours
     Jobs_ResetStreak(playerid);
+    // [EVENTS ADMIN] elimine le joueur si le type d'event est a elimination
+    Ev_OnDeath(playerid);
 
     new string[128],weapon[46];
     new Float:x,Float:y,Float:z;
@@ -26329,6 +26334,8 @@ stock uniquebizz_Reset(bizid)
 
 public OnPlayerEnterRaceCheckpoint(playerid)
 {
+	// [EVENTS ADMIN] progression sur le parcours de course
+	Ev_OnEnterRaceCP(playerid);
 	return 1;
 }
 
@@ -29952,6 +29959,8 @@ public OnGameModeInit()
     EM_Init();
     // [JUSTICE] Init des dossiers de proces
     Justice_Init();
+    // [EVENTS ADMIN] charge scriptfiles/events_parcours.cfg
+    Ev_Init();
     // [OBJECTIFS] Init + timer 60s (temps de jeu, distance parcourue)
     Obj_Init();
     // [DIAGNOSTIC] Rapport differe de 20s : les maisons/biz/vehicules arrivent
@@ -46916,6 +46925,9 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 	    }
 	    return 1;
 	}
+	// [EVENTS ADMIN] menus d'organisation d'evenement (9610-9618)
+	if(Ev_OnDialog(playerid, dialogid, response, listitem, inputtext)) return 1;
+
 	// [DIAGNOSTIC] Si on arrive ici, aucun handler n'a traite ce dialogue :
 	// le joueur a clique dans le vide. On le signale une fois par ID.
 	Diag_UnhandledDialog(dialogid);
@@ -70353,6 +70365,13 @@ public OnPlayerCommandText(playerid, cmdtext[])
     if(strcmp(cmd, "/event", true) == 0 || strcmp(cmd, "/events", true) == 0)
     {
         return Events_CmdInfo(playerid);
+    }
+
+    // [EVENTS ADMIN] /ev : organisation d'evenements (course, DM, derby...)
+    // Note : /event est deja pris par les evenements aleatoires du monde.
+    if(strcmp(cmd, "/ev", true) == 0 || strcmp(cmd, "/evenement", true) == 0)
+    {
+        return Ev_Command(playerid, cmdtext);
     }
 
     // [EVENTS] /eventtrigger <type> : declenche manuellement (admin)
