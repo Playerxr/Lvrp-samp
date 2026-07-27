@@ -34,7 +34,112 @@
 // valeur plus ancienne que le dernier commit, c'est que l'.amx charge n'est
 // pas le bon (le compilateur Pawn de SA-MP ne fournit pas __DATE__, on ne
 // peut donc pas le deduire automatiquement).
-#define DIAG_BUILD        "2026-07-26 justice"
+#define DIAG_BUILD        "2026-07-27 dialogues"
+
+// ============================================================================
+// DIALOGUES : collisions d'ID + dialogues sans handler
+// ============================================================================
+//
+// Deux controles complementaires, parce qu'aucun ne suffit seul :
+//
+//  1. REGISTRE (statique) - la liste ci-dessous declare quel module possede
+//     quel ID. Le controle signale tout ID declare deux fois. C'est ce qui a
+//     permis de trouver les 7 collisions ou cliquer "OK" sur un dialogue de
+//     module declenchait le handler du telephone ou d'un peage. Limite
+//     assumee : un ID ajoute sans etre inscrit ici echappe au controle.
+//
+//  2. DIALOGUES ORPHELINS (automatique) - OnDialogResponse signale tout
+//     dialogue dont la reponse n'est traitee par aucun handler. Celui-la
+//     n'a rien a maintenir et attrape aussi les ajouts futurs : un dialogue
+//     qui s'ouvre et ne fait rien au clic est detecte des le premier usage.
+
+#define DIAG_MAX_ORPHAN     12    // derniers dialogues orphelins memorises
+
+enum e_DiagDlg
+{
+	ddId,
+	ddOwner[28]
+};
+// Dialogues des modules (.inc). Ceux du gamemode historique ne sont pas
+// listes un par un : ils sont trop nombreux, et ce sont les modules ajoutes
+// apres coup qui creent les collisions.
+static const DiagDialogs[][e_DiagDlg] = {
+	{9600, "portarme"},          {9601, "cargomission"},
+	{9602, "venuepriv"},         {9603, "entreprise"},
+	{9604, "entreprise"},        {9605, "entreprise"},
+	{9606, "venuepriv"},
+	{9800, "factionmenu"},       {9801, "factionmenu"},
+	{9802, "factionmenu"},       {9803, "factionmenu"},
+	{9940, "justice"},           {9941, "justice"},
+	{9942, "justice"},           {9943, "justice"},
+	{9944, "diagnostic"},        {9945, "objectifs"},
+	{9955, "entmarket"},         {9956, "entmarket"},
+	{9957, "entmarket"},         {9958, "entmarket"},
+	{9964, "entmarket"},         {9965, "entcommerce"},
+	{9966, "entcommerce"},       {9967, "entcommerce"},
+	{9968, "entcommerce"},       {9969, "entmarket"},
+	{9970, "meublesdehors"},     {9971, "meublesdehors"},
+	{9972, "meublesdehors"},     {9973, "meublesdehors"},
+	{9975, "entreprise"},        {9976, "entreprise"},
+	{9977, "entreprise"},        {9978, "entreprise"},
+	{9979, "entreprise"},        {9984, "entreprise"},
+	{9985, "cargomission"},      {9986, "entreprise"},
+	{9987, "entreprise"},        {9988, "entreprise"},
+	{9989, "entreprise"},
+	{9721, "genmiracle"},        {9750, "jobrank"},
+	{9760, "bounty"},            {9770, "jobs"},
+	{9780, "medical"},           {9946, "fidelite"},
+	{9960, "venuepriv"},         {9961, "venuepriv"},
+	{9962, "venuepriv"},         {9963, "venuepriv"}
+	// 9999 et 12346 volontairement absents : 9999 est l'ID "message
+	// d'information" generique, partage sans handler par plusieurs modules et
+	// par le gamemode ; 12346 est le dialogue de connexion du gamemode, que
+	// afrp_loginsound.inc ne fait que citer dans un commentaire. Les inscrire
+	// produirait de fausses alertes.
+};
+
+// Derniers dialogues orphelins vus (id + nombre de fois).
+new diagOrphanId[DIAG_MAX_ORPHAN];
+new diagOrphanHits[DIAG_MAX_ORPHAN];
+new diagOrphanCount = 0;
+
+// Appelee tout en bas de OnDialogResponse : si on arrive la, aucun handler
+// n'a traite ce dialogue. Le joueur a donc clique dans le vide.
+stock Diag_UnhandledDialog(dialogid)
+{
+	if(dialogid < 0) return 0;
+	for(new i = 0; i < diagOrphanCount; i++)
+	{
+		if(diagOrphanId[i] == dialogid) { diagOrphanHits[i]++; return 1; }
+	}
+	if(diagOrphanCount >= DIAG_MAX_ORPHAN) return 0;
+	diagOrphanId[diagOrphanCount]   = dialogid;
+	diagOrphanHits[diagOrphanCount] = 1;
+	diagOrphanCount++;
+	printf("[DIAGNOSTIC] ! Dialogue %d : reponse recue mais aucun handler ne la traite (clic sans effet).", dialogid);
+	return 1;
+}
+
+// Cherche les ID declares plusieurs fois dans le registre.
+// Retourne le nombre de doublons et remplit dest.
+stock Diag_CheckDialogs(dest[], destSize)
+{
+	dest[0] = 0;
+	new doublons = 0, tmp[160];
+	new nb = sizeof(DiagDialogs);
+	for(new i = 0; i < nb; i++)
+	{
+		for(new j = i + 1; j < nb; j++)
+		{
+			if(DiagDialogs[i][ddId] != DiagDialogs[j][ddId]) continue;
+			format(tmp, sizeof(tmp), "{FF6666}- Dialogue %d declare par %s ET %s.{FFFFFF}\n",
+				DiagDialogs[i][ddId], DiagDialogs[i][ddOwner], DiagDialogs[j][ddOwner]);
+			strcat(dest, tmp, destSize);
+			doublons++;
+		}
+	}
+	return doublons;
+}
 
 // Compte les elements actifs d'un module dont le compteur global n'existe pas.
 stock Diag_CountContracts()
@@ -103,6 +208,27 @@ stock Diag_Build(dest[], destSize, &anomalies)
 	{
 		strcat(dest, "{FFAA00}- Des entreprises existent mais aucune n'a de local : elles sont introuvables sur la map (/entreprise local).{FFFFFF}\n", destSize);
 	}
+
+	// Collisions d'ID de dialogue entre modules.
+	new dlgTxt[400];
+	new doublons = Diag_CheckDialogs(dlgTxt, sizeof(dlgTxt));
+	if(doublons > 0)
+	{
+		strcat(dest, dlgTxt, destSize);
+		anomalies += doublons;
+	}
+
+	// Dialogues dont la reponse n'est traitee par personne.
+	if(diagOrphanCount > 0)
+	{
+		for(new i = 0; i < diagOrphanCount; i++)
+		{
+			format(tmp, sizeof(tmp), "{FFAA00}- Dialogue %d : clic sans effet, aucun handler (%d fois).{FFFFFF}\n",
+				diagOrphanId[i], diagOrphanHits[i]);
+			strcat(dest, tmp, destSize);
+		}
+	}
+
 	if(anomalies == 0)
 		strcat(dest, "{00FF7F}- Aucun probleme bloquant detecte.{FFFFFF}\n", destSize);
 
@@ -151,6 +277,15 @@ stock Diag_RunStartup()
 		print("[DIAGNOSTIC] !! Aucun interieur charge : les entrees de batiments ne marcheront pas.");
 	if(ent_Count > 0 && Diag_CountEntLocals() == 0)
 		print("[DIAGNOSTIC] ! Des entreprises existent mais aucune n'a de local : introuvables sur la map.");
+
+	// Collisions d'ID de dialogue : deux modules qui partagent un ID, c'est un
+	// clic sur l'un qui declenche l'action de l'autre. Silencieux en jeu.
+	new dlgTxt[400];
+	new doublons = Diag_CheckDialogs(dlgTxt, sizeof(dlgTxt));
+	if(doublons > 0)
+		printf("[DIAGNOSTIC] !! %d collision(s) d'ID de dialogue entre modules - voir /verif.", doublons);
+	else
+		print("[DIAGNOSTIC] Aucune collision d'ID de dialogue entre modules.");
 
 	if(anomalies == 0) print("[DIAGNOSTIC] Aucun probleme bloquant detecte.");
 	else               printf("[DIAGNOSTIC] %d probleme(s) bloquant(s) - voir ci-dessus.", anomalies);

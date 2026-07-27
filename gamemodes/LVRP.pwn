@@ -46900,6 +46900,9 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 	    }
 	    return 1;
 	}
+	// [DIAGNOSTIC] Si on arrive ici, aucun handler n'a traite ce dialogue :
+	// le joueur a clique dans le vide. On le signale une fois par ID.
+	Diag_UnhandledDialog(dialogid);
 	return 1;
 }
 
