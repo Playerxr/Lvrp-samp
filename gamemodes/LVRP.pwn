@@ -822,7 +822,13 @@ new permis_City[MAX_PLAYERS];
 
 
 //Mdecin                                             
-new medic_PlayerNeedMedic[MAX_PLAYERS];                                         // Statue du joueur blaiss
+new medic_PlayerNeedMedic[MAX_PLAYERS];
+// [AGONIE] Systeme de BLESSURE desactive a la demande : sous 13 HP le joueur
+// s'ecroulait au sol, gele, en attendant une ambulance pendant 3 minutes.
+// C'est l'etat 1 ("blesse"), declenche alors que le joueur est encore VIVANT.
+// Le coma a la mort (etat 2, OnPlayerDeath) n'est PAS concerne et fonctionne
+// toujours. Repasser cette variable a true pour reactiver la blessure.
+new bool:medic_BlessureActive = false;                                         // Statue du joueur blaiss
 new medic_PlayerMedicTime[MAX_PLAYERS];                                         // Temps d'attente
 new medic_PlayerCity[MAX_PLAYERS];
 
@@ -4092,7 +4098,7 @@ stock UpdateStatsTextsPlayers(i,id)
 	    format(string,sizeof(string),"Vie:%0.0f",PlayerInfo[i][pHealth]);
 		PlayerTextDrawSetString(i,TextVie[i],string);
 		
-		if(PlayerInfo[i][pHealth] < 13 && medic_PlayerNeedMedic[i] == 0 && gPlayerSpawn[i] != 1) // Bless
+		if(medic_BlessureActive && PlayerInfo[i][pHealth] < 13 && medic_PlayerNeedMedic[i] == 0 && gPlayerSpawn[i] != 1) // Bless
 		{
 		    
 		    TogglePlayerControllable(i,false);
@@ -12503,6 +12509,16 @@ stock timer_Decrement(i)
 			}
 			else
 				{player_CuffedTime[i] -= 2;}
+		}
+		// [AGONIE] Si la blessure est desactivee, on libere tout de suite un joueur
+		// encore a l'etat 1 (partie en cours au moment du redemarrage) : sans ca il
+		// resterait gele au sol sans que rien ne vienne le relever.
+		if(!medic_BlessureActive && medic_PlayerNeedMedic[i] == 1)
+		{
+		    medic_PlayerNeedMedic[i] = 0;
+		    medic_PlayerMedicTime[i] = 0;
+		    ClearAnimations(i);
+		    TogglePlayerControllable(i, true);
 		}
 		if(medic_PlayerNeedMedic[i] > 0)
 		{
