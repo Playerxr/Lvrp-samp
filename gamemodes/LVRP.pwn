@@ -5255,6 +5255,7 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 #include <afrp_entcommerce>
 #include <afrp_entmarket>
 #include <afrp_justice>
+#include <afrp_armeebase>
 // [EVENTS ADMIN] Systeme generique d'evenements (course, DM, derby...)
 #include <afrp_event>
 // [DIAGNOSTIC] volontairement en dernier : il lit les compteurs de tous les
@@ -12643,13 +12644,18 @@ stock armee_Save(id)
     mysql_escape_string(ArmeeInfo[id][ar_rank4], er4, sizeof(er4), MYSQL);
     mysql_escape_string(ArmeeInfo[id][ar_rank5], er5, sizeof(er5), MYSQL);
     mysql_escape_string(ArmeeInfo[id][ar_rank6], er6, sizeof(er6), MYSQL);
-    format(sql,sizeof(sql),"UPDATE lvrp_factions_armee SET rank1='%s',rank2='%s',rank3='%s',rank4='%s',rank5='%s',rank6='%s',skin1=%d,skin2=%d,skin3=%d,skin4=%d,skin5=%d,skin6=%d,Interior=%d,Spawn_x=%f,Spawn_y=%f,Spawn_z=%f,Spawn_a=%f WHERE id=%d",
+    format(sql,sizeof(sql),"UPDATE lvrp_factions_armee SET rank1='%s',rank2='%s',rank3='%s',rank4='%s',rank5='%s',rank6='%s',skin1=%d,skin2=%d,skin3=%d,skin4=%d,skin5=%d,skin6=%d,Interior=%d,Spawn_x=%f,Spawn_y=%f,Spawn_z=%f,Spawn_a=%f,Exit_x=%f,Exit_y=%f,Exit_z=%f,Exit_a=%f WHERE id=%d",
         er1, er2, er3, er4, er5, er6,
         ArmeeInfo[id][ar_skin][0],ArmeeInfo[id][ar_skin][1],ArmeeInfo[id][ar_skin][2],
         ArmeeInfo[id][ar_skin][3],ArmeeInfo[id][ar_skin][4],ArmeeInfo[id][ar_skin][5],
         ArmeeInfo[id][ar_Interior],
         ArmeeInfo[id][ar_Spawn][0],ArmeeInfo[id][ar_Spawn][1],
         ArmeeInfo[id][ar_Spawn][2],ArmeeInfo[id][ar_Spawn][3],
+        // [ARMEE BASE] ar_Exit doit suivre l'interieur, sinon apres un
+        // redemarrage /armee qg ressortirait aux coordonnees de l'ANCIENNE
+        // caserne et les soldats se retrouveraient hors du decor.
+        ArmeeInfo[id][ar_Exit][0],ArmeeInfo[id][ar_Exit][1],
+        ArmeeInfo[id][ar_Exit][2],ArmeeInfo[id][ar_Exit][3],
         id+1);
     mysql_pquery(MYSQL, sql);
     return 1;
@@ -30593,6 +30599,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     // handler place avant eux ne puisse les avaler.
     if(Ev_OnDialog(playerid, dialogid, response, listitem, inputtext)) return 1;
     if(TopJour_OnDialog(playerid, dialogid, response, listitem)) return 1;
+    if(ArmBase_OnDialog(playerid, dialogid, response, listitem)) return 1;
 
     // [MOBILE INLINE] Dispatch vers mobile_system pour ses dialogs (MARKET, SETTINGS)
     if(dialogid == MARKET_DIALOG || dialogid == SETTINGS_DIALOG)
@@ -68644,8 +68651,13 @@ public OnPlayerCommandText(playerid, cmdtext[])
 	        msg_Client(playerid, COLOR_USAGE, "{A98500}Rang 4+{FFFFB2}: ann");
 	        if(PlayerInfo[playerid][pRank] >= 5)
 	            msg_Client(playerid, COLOR_USAGE, "{A98500}Rang 5+{FFFFB2}: inviter - virer - grade - vrang - gestion - retirer");
+	        if(PlayerInfo[playerid][pRank] >= 6)
+	            msg_Client(playerid, COLOR_USAGE, "{A98500}Rang 6{FFFFB2}: base (choisir la caserne)");
 	        return 1;
 	    }
+	    // [ARMEE BASE] Choix de l'interieur du QG (rang 6 ou admin)
+	    if(strcmp(tmp,"base",true) == 0 || strcmp(tmp,"interieur",true) == 0)
+	        {return ArmBase_Cmd(playerid);}
 	    if(strcmp(tmp,"service",true) == 0 || strcmp(tmp,"duty",true) == 0)
 	    {
 	        if(armee_Duty[playerid] == 0)
