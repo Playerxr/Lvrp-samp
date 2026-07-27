@@ -1441,6 +1441,7 @@ new actorChatTimer[MAX_ACTORS];
 //-------------------------Gestion stats joueur --------------------------------
 new PlayerText:TextVie[MAX_PLAYERS];
 new PlayerText:TextArmure[MAX_PLAYERS];
+new Text:DisigStatsBg;
 new Text:DisigFaim1;
 new Text:DisigFaim2;
 new PlayerText:BarUpdateFaim[MAX_PLAYERS];
@@ -4019,7 +4020,7 @@ stock UpdateStatsTextsPlayers(i,id)
 		PlayerTextDrawSetString(i,TextFaim[i],string);
 		totofaim[i] = 0.58*PlayerInfo[i][pFaim];
 		
-		BarUpdateFaim[i] = CreatePlayerTextDraw(i,(550+totofaim[i]), 37.000000, "~n~");
+		BarUpdateFaim[i] = CreatePlayerTextDraw(i,(178+totofaim[i]), 413.000000, "~n~");
 		PlayerTextDrawBackgroundColor(i,BarUpdateFaim[i], 255);
 		PlayerTextDrawFont(i,BarUpdateFaim[i], 1);
 		PlayerTextDrawLetterSize(i,BarUpdateFaim[i], 0.469998, 0.199999);
@@ -4029,7 +4030,7 @@ stock UpdateStatsTextsPlayers(i,id)
 		PlayerTextDrawSetShadow(i,BarUpdateFaim[i], 1);
 		PlayerTextDrawUseBox(i,BarUpdateFaim[i], 1);
 		PlayerTextDrawBoxColor(i,BarUpdateFaim[i], 0x009000FF);
-		PlayerTextDrawTextSize(i,BarUpdateFaim[i], 546.000000, 0.000000);
+		PlayerTextDrawTextSize(i,BarUpdateFaim[i], 174.000000, 0.000000);
 		PlayerTextDrawShow(i,BarUpdateFaim[i]);
 		return 1;
 	}
@@ -4047,7 +4048,7 @@ stock UpdateStatsTextsPlayers(i,id)
 		PlayerTextDrawSetString(i,TextSoif[i],string);
 		totosoif[i] = 0.58*PlayerInfo[i][pSoif];
 		
-		BarUpdateSoif[i] = CreatePlayerTextDraw(i,(550+totosoif[i]), 25.000000, "~n~");
+		BarUpdateSoif[i] = CreatePlayerTextDraw(i,(178+totosoif[i]), 401.000000, "~n~");
 		PlayerTextDrawBackgroundColor(i,BarUpdateSoif[i], 255);
 		PlayerTextDrawFont(i,BarUpdateSoif[i], 1);
 		PlayerTextDrawLetterSize(i,BarUpdateSoif[i], 0.469998, 0.199999);
@@ -4057,7 +4058,7 @@ stock UpdateStatsTextsPlayers(i,id)
 		PlayerTextDrawSetShadow(i,BarUpdateSoif[i], 1);
 		PlayerTextDrawUseBox(i,BarUpdateSoif[i], 1);
 		PlayerTextDrawBoxColor(i,BarUpdateSoif[i], 0x0000D1FF);
-		PlayerTextDrawTextSize(i,BarUpdateSoif[i], 546.000000, 58.000000);
+		PlayerTextDrawTextSize(i,BarUpdateSoif[i], 174.000000, 58.000000);
 		PlayerTextDrawShow(i,BarUpdateSoif[i]);
 		return 1;
 	}
@@ -7945,6 +7946,7 @@ stock server_HideIntroTexts(playerid)
 
 stock stats_Show(playerid)
 {
+    TextDrawShowForPlayer(playerid, DisigStatsBg);
     PlayerTextDrawShow(playerid, TextVie[playerid]);
 	TextDrawShowForPlayer(playerid, DisigFaim1);
 	TextDrawShowForPlayer(playerid, DisigFaim2);
@@ -14868,8 +14870,22 @@ stock init_Texts()
 		TextDrawBoxColor(speedo_BarGas[1], 1900799);
 		TextDrawTextSize(speedo_BarGas[1], 592.000000, 0.000000);
 		
+		// [HUD BAS-GAUCHE] fond semi-transparent derriere le bloc vie/armure/soif/faim
+		// cree en premier pour etre dessine SOUS les barres
+		DisigStatsBg = TextDrawCreate(146.000000, 364.000000, "~n~");
+		TextDrawBackgroundColor(DisigStatsBg, 255);
+		TextDrawFont(DisigStatsBg, 1);
+		TextDrawLetterSize(DisigStatsBg, 0.500000, 5.900000);
+		TextDrawColor(DisigStatsBg, -1);
+		TextDrawSetOutline(DisigStatsBg, 0);
+		TextDrawSetProportional(DisigStatsBg, 1);
+		TextDrawSetShadow(DisigStatsBg, 0);
+		TextDrawUseBox(DisigStatsBg, 1);
+		TextDrawBoxColor(DisigStatsBg, 0x00000055);
+		TextDrawTextSize(DisigStatsBg, 244.000000, 0.000000);
+
 		// Systeme de Faim
-		DisigFaim1 = TextDrawCreate(610.000000, 35.000000, "~n~");
+		DisigFaim1 = TextDrawCreate(238.000000, 411.000000, "~n~");
 		TextDrawBackgroundColor(DisigFaim1, 255);
 		TextDrawFont(DisigFaim1, 1);
 		TextDrawLetterSize(DisigFaim1, 0.469998, 0.599999);
@@ -14879,9 +14895,9 @@ stock init_Texts()
 		TextDrawSetShadow(DisigFaim1, 1);
 		TextDrawUseBox(DisigFaim1, 1);
 		TextDrawBoxColor(DisigFaim1, 255);
-		TextDrawTextSize(DisigFaim1, 544.000000, 0.000000);
+		TextDrawTextSize(DisigFaim1, 172.000000, 0.000000);
 
-		DisigFaim2 = TextDrawCreate(608.000000, 37.000000, "~n~");
+		DisigFaim2 = TextDrawCreate(236.000000, 413.000000, "~n~");
 		TextDrawBackgroundColor(DisigFaim2, 255);
 		TextDrawFont(DisigFaim2, 1);
 		TextDrawLetterSize(DisigFaim2, 0.469998, 0.199999);
@@ -14891,10 +14907,10 @@ stock init_Texts()
 		TextDrawSetShadow(DisigFaim2, 1);
 		TextDrawUseBox(DisigFaim2, 1);
 		TextDrawBoxColor(DisigFaim2, 0x004A00FF);
-		TextDrawTextSize(DisigFaim2, 546.000000, 0.000000);
+		TextDrawTextSize(DisigFaim2, 174.000000, 0.000000);
 
 		// Systme de soif
-		DisigSoif1 = TextDrawCreate(610.000000, 23.000000, "~n~");
+		DisigSoif1 = TextDrawCreate(238.000000, 399.000000, "~n~");
 		TextDrawBackgroundColor(DisigSoif1, 255);
 		TextDrawFont(DisigSoif1, 1);
 		TextDrawLetterSize(DisigSoif1, 0.469998, 0.599999);
@@ -14904,9 +14920,9 @@ stock init_Texts()
 		TextDrawSetShadow(DisigSoif1, 1);
 		TextDrawUseBox(DisigSoif1, 1);
 		TextDrawBoxColor(DisigSoif1, 255);
-		TextDrawTextSize(DisigSoif1, 544.000000, 25.000000);
+		TextDrawTextSize(DisigSoif1, 172.000000, 25.000000);
 
-		DisigSoif2 = TextDrawCreate(608.000000, 25.000000, "~n~");
+		DisigSoif2 = TextDrawCreate(236.000000, 401.000000, "~n~");
 		TextDrawBackgroundColor(DisigSoif2, 255);
 		TextDrawFont(DisigSoif2, 1);
 		TextDrawLetterSize(DisigSoif2, 0.469998, 0.199999);
@@ -14916,7 +14932,7 @@ stock init_Texts()
 		TextDrawSetShadow(DisigSoif2, 1);
 		TextDrawUseBox(DisigSoif2, 1);
 		TextDrawBoxColor(DisigSoif2, 0x00006EFF);
-		TextDrawTextSize(DisigSoif2, 546.000000, 25.000000);
+		TextDrawTextSize(DisigSoif2, 174.000000, 25.000000);
 
 		// Syeteme d'endurance
 		DisigEndurance1 = TextDrawCreate(610.000000, 12.000000, "~n~");
@@ -15110,7 +15126,7 @@ stock init_PlayerTexts(i)
 	PlayerTextDrawSetProportional(i,pay_TextPrice[i], 1);
 	PlayerTextDrawSetShadow(i,pay_TextPrice[i], 1);
 	
-	BarUpdateFaim[i] = CreatePlayerTextDraw(i,608.000000, 37.000000, "~n~");
+	BarUpdateFaim[i] = CreatePlayerTextDraw(i,236.000000, 413.000000, "~n~");
 	PlayerTextDrawBackgroundColor(i,BarUpdateFaim[i], 255);
 	PlayerTextDrawFont(i,BarUpdateFaim[i], 1);
 	PlayerTextDrawLetterSize(i,BarUpdateFaim[i], 0.469998, 0.199999);
@@ -15120,9 +15136,9 @@ stock init_PlayerTexts(i)
 	PlayerTextDrawSetShadow(i,BarUpdateFaim[i], 1);
 	PlayerTextDrawUseBox(i,BarUpdateFaim[i], 1);
 	PlayerTextDrawBoxColor(i,BarUpdateFaim[i], 0x009000FF);
-	PlayerTextDrawTextSize(i,BarUpdateFaim[i], 546.000000, 0.000000);
+	PlayerTextDrawTextSize(i,BarUpdateFaim[i], 174.000000, 0.000000);
 
-	TextFaim[i] = CreatePlayerTextDraw(i,542.000000, 29.000000, "Chargement...");
+	TextFaim[i] = CreatePlayerTextDraw(i,170.000000, 405.000000, "Chargement...");
 	PlayerTextDrawBackgroundColor(i,TextFaim[i], 255);
 	PlayerTextDrawFont(i,TextFaim[i], 1);
 	PlayerTextDrawLetterSize(i,TextFaim[i], 0.220000, 0.799998);
@@ -15131,7 +15147,7 @@ stock init_PlayerTexts(i)
 	PlayerTextDrawSetProportional(i,TextFaim[i], 1);
 	PlayerTextDrawSetShadow(i,TextFaim[i], 1);
 
-	BarUpdateSoif[i] = CreatePlayerTextDraw(i,608.000000, 25.000000, "~n~");
+	BarUpdateSoif[i] = CreatePlayerTextDraw(i,236.000000, 401.000000, "~n~");
 	PlayerTextDrawBackgroundColor(i,BarUpdateSoif[i], 255);
 	PlayerTextDrawFont(i,BarUpdateSoif[i], 1);
 	PlayerTextDrawLetterSize(i,BarUpdateSoif[i], 0.469998, 0.199999);
@@ -15141,9 +15157,9 @@ stock init_PlayerTexts(i)
 	PlayerTextDrawSetShadow(i,BarUpdateSoif[i], 1);
 	PlayerTextDrawUseBox(i,BarUpdateSoif[i], 1);
 	PlayerTextDrawBoxColor(i,BarUpdateSoif[i], 0x0000D1FF);
-	PlayerTextDrawTextSize(i,BarUpdateSoif[i], 546.000000, 58.000000);
+	PlayerTextDrawTextSize(i,BarUpdateSoif[i], 174.000000, 58.000000);
 
-	TextSoif[i] = CreatePlayerTextDraw(i,542.000000, 18.000000, "Chargement...");
+	TextSoif[i] = CreatePlayerTextDraw(i,170.000000, 394.000000, "Chargement...");
 	PlayerTextDrawBackgroundColor(i,TextSoif[i], 255);
 	PlayerTextDrawFont(i,TextSoif[i], 1);
 	PlayerTextDrawLetterSize(i,TextSoif[i], 0.220000, 0.699998);
@@ -15187,7 +15203,7 @@ stock init_PlayerTexts(i)
 	PlayerTextDrawTextSize(i,TextMaladie[i], -5.000000, 38.000000);
 
 	// Vie
-	TextVie[i] = CreatePlayerTextDraw(i,542.000000, 64.000000, "Chargement...");
+	TextVie[i] = CreatePlayerTextDraw(i,170.000000, 368.000000, "Chargement...");
 	PlayerTextDrawBackgroundColor(i,TextVie[i], 255);
 	PlayerTextDrawFont(i,TextVie[i], 1);
 	PlayerTextDrawLetterSize(i,TextVie[i], 0.220000, 0.699998);
@@ -15197,7 +15213,7 @@ stock init_PlayerTexts(i)
 	PlayerTextDrawSetShadow(i,TextVie[i], 1);
 
 	// Armure
-	TextArmure[i] = CreatePlayerTextDraw(i,542.000000, 41.000000, "Chargement...");
+	TextArmure[i] = CreatePlayerTextDraw(i,170.000000, 380.000000, "Chargement...");
 	PlayerTextDrawBackgroundColor(i,TextArmure[i], 255);
 	PlayerTextDrawFont(i,TextArmure[i], 1);
 	PlayerTextDrawLetterSize(i,TextArmure[i], 0.220000, 0.699998);
@@ -54481,6 +54497,7 @@ public OnPlayerCommandText(playerid, cmdtext[])
 	        payday_HideTexts(playerid);
 			job_HideTexts(playerid);
 			speedometer_Hide(playerid);
+			TextDrawHideForPlayer(playerid, DisigStatsBg);
 			PlayerTextDrawHide(playerid, TextVie[playerid]);
 			PlayerTextDrawHide(playerid, TextArmure[playerid]);
 			TextDrawHideForPlayer(playerid, DisigFaim1);
