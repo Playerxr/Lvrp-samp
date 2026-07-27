@@ -17,7 +17,7 @@
 
 #define AUTOBACKUP_INTERVAL_MS  (4*60*60*1000)  // toutes les 4h
 #define AUTOBACKUP_DIR          "backups/"
-#define AUTOBACKUP_FILE_COUNT   7
+#define AUTOBACKUP_FILE_COUNT   8
 
 // entreprises.cfg vaut cher : 150M la creation, plus la caisse, le stock, les
 // employes et les grades. On sauvegarde aussi les contrats, les camionnettes
@@ -30,7 +30,8 @@ new const AutoBackup_Files[AUTOBACKUP_FILE_COUNT][24] = {
 	"contrats.cfg",
 	"entreprise_camions.cfg",
 	"objectifs.cfg",
-	"events_parcours.cfg"
+	"events_parcours.cfg",
+	"topjour.cfg"
 };
 
 forward AutoBackup_Tick();

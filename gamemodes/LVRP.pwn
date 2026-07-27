@@ -3355,6 +3355,9 @@ new PlayerInfo[MAX_PLAYERS][e_Player];
 // [OBJECTIFS] Place ici, tot : ses constantes OBJ_* sont utilisees par des
 // hooks disperses dans le gamemode (paie horaire ligne ~4900, arrestations,
 // cargo, commerce). Un enum Pawn doit etre defini AVANT toute utilisation.
+// [TOP DU JOUR] doit venir AVANT afrp_objectifs : ce dernier utilise la
+// constante TJ_PTS_OBJECTIF, et en Pawn un #define doit exister avant usage.
+#include <afrp_topjour>
 #include <afrp_objectifs>
 
 enum e_Accessory
@@ -10730,6 +10733,7 @@ public OnPlayerLogin(playerid,pass[])
 	// [DAILY BONUS] Verifie/donne le bonus de connexion quotidien (5000$ + item)
 	DailyBonus_CheckOnLogin(playerid);
 	Obj_OnPlayerLogin(playerid); // [OBJECTIFS] charge les objectifs du jour
+	TopJour_OnLogin(playerid); // [TOP DU JOUR] panneau + gains en attente
 
 	// [BIENVENUE] Bonus de premiere apparition (une seule fois par compte)
 	Bienvenue_CheckOnLogin(playerid);
@@ -23416,6 +23420,7 @@ public OnPlayerConnect(playerid)
     GangTag_OnConnect(playerid); // [GANG TAG] init slot label
     LegalTag_OnConnect(playerid); // [LEGAL TAG] init slot label
     Obj_OnPlayerConnect(playerid); // [OBJECTIFS] reset de l'etat avant login
+    TopJour_OnConnect(playerid); // [TOP DU JOUR] reset des compteurs anti-AFK
     Ent_OnPlayerConnect(playerid); // [ENTREPRISE] reset compteur minutes accumulees
     Jobs_OnConnect(playerid); // [JOBS] reset streak
     FAQ_OnConnect(playerid); // [FAQ] reset cooldown aide auto
@@ -24039,6 +24044,7 @@ public OnPlayerDisconnect(playerid, reason)
     GangTag_OnDisconnect(playerid); // [GANG TAG] detruit le label du gang
     Justice_OnPlayerFree(playerid); // [JUSTICE] retire son dossier de proces s'il en avait un
     Obj_OnPlayerDisconnect(playerid); // [OBJECTIFS] sauvegarde la progression
+    TopJour_OnDisconnect(playerid); // [TOP DU JOUR] detruit le panneau
     LegalTag_OnDisconnect(playerid); // [LEGAL TAG] detruit le label de faction
     Cuff_OnDisconnect(playerid); // [CUFFS] anti combat-log : auto-jail si menotte
     Phone_DestroyUI(playerid); // AFRP cleanup ancien telephone (sera vir� en P4)
@@ -30022,6 +30028,8 @@ public OnGameModeInit()
     Ev_Init();
     // [OBJECTIFS] Init + timer 60s (temps de jeu, distance parcourue)
     Obj_Init();
+    // [TOP DU JOUR] charge topjour.cfg + timer 60s
+    TopJour_Init();
     // [DIAGNOSTIC] Rapport differe de 20s : les maisons/biz/vehicules arrivent
     // par des requetes MySQL asynchrones, les compter maintenant donnerait 0.
     Diag_ScheduleStartup();
@@ -30112,6 +30120,9 @@ stock GetClosestPlayer(p1)
 
 public OnPlayerUpdate(playerid)
 {
+    // [TOP DU JOUR] horodate le dernier paquet du client : un joueur en pause
+    // ou alt-tab n'appelle plus OnPlayerUpdate et cesse donc de marquer.
+    TopJour_OnUpdate(playerid);
     new string[128];
     if(afk_time[playerid] > 10)
 		{afk_time[playerid]=0;}
@@ -46987,6 +46998,9 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 	// [EVENTS ADMIN] menus d'organisation d'evenement (9610-9618)
 	if(Ev_OnDialog(playerid, dialogid, response, listitem, inputtext)) return 1;
 
+	// [TOP DU JOUR] dialogue 9620
+	if(TopJour_OnDialog(playerid, dialogid, response, listitem)) return 1;
+
 	// [DIAGNOSTIC] Si on arrive ici, aucun handler n'a traite ce dialogue :
 	// le joueur a clique dans le vide. On le signale une fois par ID.
 	Diag_UnhandledDialog(dialogid);
@@ -47003,6 +47017,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 
 public OnPlayerText(playerid, text[])
 {
+	TopJour_OnAction(playerid); // [TOP DU JOUR] parler compte comme une activite
 	new string[256],idx,tmp[256];
 
 	if(gPlayerMuteIC[playerid] > 0)
@@ -70424,6 +70439,20 @@ public OnPlayerCommandText(playerid, cmdtext[])
     if(strcmp(cmd, "/event", true) == 0 || strcmp(cmd, "/events", true) == 0)
     {
         return Events_CmdInfo(playerid);
+    }
+
+    // [TOP DU JOUR] classement des meilleurs joueurs de la journee
+    if(strcmp(cmd, "/top", true) == 0)
+    {
+        TopJour_OnAction(playerid);
+        new tmp_top[64];
+        tmp_top = strtok(cmdtext, idx);
+        if(strcmp(tmp_top, "forcer", true) == 0) return TopJour_CmdForce(playerid);
+        return TopJour_ShowDialog(playerid);
+    }
+    if(strcmp(cmd, "/toptd", true) == 0)
+    {
+        return TopJour_TdToggle(playerid);
     }
 
     // [EVENTS ADMIN] /tpall : rassemble tout le serveur au spawn de Los Santos

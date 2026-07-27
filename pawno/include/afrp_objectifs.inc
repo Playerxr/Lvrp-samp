@@ -313,6 +313,9 @@ stock Obj_Progress(playerid, objType, montant)
 			ObjCatalog[objType][odName], gain);
 		msg_Client(playerid, COLOR_WHITE, okStr);
 		PlayerPlaySound(playerid, 1057, 0.0, 0.0, 0.0);
+		// [TOP DU JOUR] un objectif accompli vaut plus que 25 minutes de presence :
+		// c'est ce qui empeche le classement de recompenser la seule anciennete.
+		TopJour_AddPoints(playerid, TJ_PTS_OBJECTIF);
 
 		// Prime si les trois sont faits
 		new tousFaits = 1;
