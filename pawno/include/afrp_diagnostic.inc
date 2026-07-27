@@ -34,7 +34,7 @@
 // valeur plus ancienne que le dernier commit, c'est que l'.amx charge n'est
 // pas le bon (le compilateur Pawn de SA-MP ne fournit pas __DATE__, on ne
 // peut donc pas le deduire automatiquement).
-#define DIAG_BUILD        "2026-07-27 dialogues"
+#define DIAG_BUILD        "2026-07-27 essence+event+armee"
 
 // ============================================================================
 // DIALOGUES : collisions d'ID + dialogues sans handler

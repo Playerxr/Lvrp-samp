@@ -143,6 +143,16 @@ stock Ev_Msg(playerid, const text[])
 	return 1;
 }
 
+// Refus d'acces : on affiche le niveau requis ET le niveau du joueur. Sans ca,
+// un "reserve aux admins" ne dit pas si le probleme vient du grade ou d'ailleurs.
+stock Ev_MsgAdmin(playerid)
+{
+	new str[144];
+	format(str, sizeof(str), "{FF4444}Reserve aux administrateurs (niveau %d requis, tu es niveau %d).",
+		EV_ADMIN_LEVEL, PlayerInfo[playerid][pAdmin]);
+	return Ev_Msg(playerid, str);
+}
+
 stock Ev_Announce(const text[])
 {
 	SendClientMessageToAll(0xFFCC00FF, text);
@@ -263,10 +273,31 @@ stock Ev_TpAllRun(playerid)
 	return 1;
 }
 
+// SORTIE DE SECOURS. Ev_FreezeAll(0) ne touche QUE les inscrits : si l'event a
+// ete termine ou annule, evIn est vide et un joueur reste gele n'a plus aucun
+// moyen d'etre libere. Cette commande degele tout le monde, event ou pas.
+stock Ev_CmdUnfreezeAll(playerid)
+{
+	if(!Ev_IsAdmin(playerid)) return Ev_MsgAdmin(playerid);
+
+	new n = 0;
+	for(new i = 0; i < MAX_PLAYERS; i++)
+	{
+		if(!IsPlayerConnected(i) || IsPlayerNPC(i)) continue;
+		TogglePlayerControllable(i, true);
+		n++;
+	}
+	// On sort aussi de l'etat "sur la grille", sinon chargement() re-bloquerait.
+	if(evState == EV_ATTENTE) evState = EV_ENCOURS;
+
+	new str[128];
+	format(str, sizeof(str), "{00FF00}%d joueur(s) degele(s). Plus personne n'est bloque.", n);
+	return Ev_Msg(playerid, str);
+}
+
 stock Ev_CmdTpAll(playerid)
 {
-	if(!Ev_IsAdmin(playerid))
-		return Ev_Msg(playerid, "{FF4444}Reserve aux administrateurs.");
+	if(!Ev_IsAdmin(playerid)) return Ev_MsgAdmin(playerid);
 
 	new n = 0;
 	for(new i = 0; i < MAX_PLAYERS; i++)
@@ -1115,7 +1146,10 @@ stock Ev_Command(playerid, const cmdline[])
 
 	// --- reserve aux admins ---
 	if(!Ev_IsAdmin(playerid))
-		return Ev_Msg(playerid, "{FF4444}Reserve aux administrateurs. Utilise /ev pour voir l'event en cours.");
+	{
+		Ev_MsgAdmin(playerid);
+		return Ev_Msg(playerid, "{AAAAAA}Utilise /ev sans argument pour voir l'event en cours.");
+	}
 
 	if(strcmp(sub, "aide", true) == 0 || strcmp(sub, "help", true) == 0) return Ev_Help(playerid);
 

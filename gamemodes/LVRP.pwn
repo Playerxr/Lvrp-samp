@@ -4870,6 +4870,11 @@ public chargement(playerid)
 // ============================================================================
 
 
+// [ARMEE] Solde de l'etat-major (rang 6) : montant et periode.
+#define ARMEE_PAIE_RANG6   300000
+#define ARMEE_PAIE_MINUTES 30
+new ArmeePaie_Time[MAX_PLAYERS];
+
 // [DEPLACE] PaieAuto_Tick et Peage_Tick - timers critiques pour les paies/peages
 
 // ----------------------------------------------------------------------------
@@ -4898,6 +4903,23 @@ public PaieAuto_Tick()
     {
         if(!IsPlayerConnected(i) || IsPlayerNPC(i)) continue;
         if(gPlayerLogged[i] != 1) continue;
+
+        // [ARMEE] Solde du rang 6 (etat-major) : 300.000$ toutes les 30 minutes.
+        // Placee AVANT le "continue" des jobs : un general n'a pas de job civil,
+        // sinon il ne serait jamais paye.
+        if(PlayerInfo[i][pMember] >= 11 && PlayerInfo[i][pMember] <= 13 && PlayerInfo[i][pRank] == 6)
+        {
+            ArmeePaie_Time[i]++;
+            if(ArmeePaie_Time[i] >= ARMEE_PAIE_MINUTES)
+            {
+                ArmeePaie_Time[i] = 0;
+                SafeGivePlayerMoney(i, ARMEE_PAIE_RANG6, "Solde etat-major armee");
+                new astring[190];
+                format(astring, sizeof(astring), "{5B7A3A} Armee {FFFFFF} Solde d'etat-major : ${FFFF00}%d{FFFFFF} (versee toutes les %d minutes).", ARMEE_PAIE_RANG6, ARMEE_PAIE_MINUTES);
+                msg_Client(i, COLOR_WHITE, astring);
+            }
+        }
+        else ArmeePaie_Time[i] = 0;
 
         new currentJob = PlayerInfo[i][pJob];
         // Paie auto pour les JOBS uniquement (les factions lï¿½gales sont payees par le systeme existant duty)
@@ -12919,6 +12941,34 @@ stock job_UpdateTexts(playerid)
 		}
  	}
  	return 1;
+}
+
+// [FIX ESSENCE] Reparation UNIQUE des reservoirs vides par l'ancien bug.
+// La consommation tournait aussi pour les voitures garees moteur allume, et
+// Gas est sauvegarde en base : les vehicules vidés avant le correctif sont
+// donc restes a 0 en DB. Le correctif arrete l'hemorragie mais ne les remplit
+// pas. On les refait une fois, puis on pose un marqueur pour ne jamais
+// recommencer (sinon vider son reservoir + attendre un restart = plein gratuit).
+#define GASFIX_MARKER "essence_reparee.cfg"
+forward Gas_RepairOnce();
+public Gas_RepairOnce()
+{
+	if(fexist(GASFIX_MARKER)) return 1;
+
+	new nb = 0;
+	for(new carid = 1; carid <= totalVehicles; carid++)
+	{
+		if(vehicle[carid][used] != 1) continue;
+		if(vehicle[carid][cGas] > 0) continue;
+		vehicle[carid][cGas] = 100;
+		if(vehicle[carid][SQLID] > 0) vehicle_Save(carid, 0, 0);
+		nb++;
+	}
+
+	new File:f = fopen(GASFIX_MARKER, io_write);
+	if(f) { fwrite(f, "reparation des reservoirs vides effectuee\n"); fclose(f); }
+	printf("[FIX ESSENCE] %d vehicule(s) a sec remis a 100 (reparation unique).", nb);
+	return 1;
 }
 
 public car_CheckGas()
@@ -30030,6 +30080,9 @@ public OnGameModeInit()
     Obj_Init();
     // [TOP DU JOUR] charge topjour.cfg + timer 60s
     TopJour_Init();
+    // [FIX ESSENCE] differe de 30s : les vehicules arrivent par des requetes
+    // MySQL asynchrones, les parcourir tout de suite n'en verrait aucun.
+    SetTimer("Gas_RepairOnce", 30000, false);
     // [DIAGNOSTIC] Rapport differe de 20s : les maisons/biz/vehicules arrivent
     // par des requetes MySQL asynchrones, les compter maintenant donnerait 0.
     Diag_ScheduleStartup();
@@ -30534,6 +30587,13 @@ stock msg_County(countid,color,string[])
 // silencieusement par le compilateur -> aucun dialog (login) ne repondait.
 public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 {
+    // [EVENTS ADMIN / TOP DU JOUR] Traites en PREMIER, et non plus a la fin de
+    // cette fonction : leurs ID (9610-9620) n'entrent en conflit avec aucun
+    // autre, donc les servir d'abord est sans risque et garantit qu'aucun
+    // handler place avant eux ne puisse les avaler.
+    if(Ev_OnDialog(playerid, dialogid, response, listitem, inputtext)) return 1;
+    if(TopJour_OnDialog(playerid, dialogid, response, listitem)) return 1;
+
     // [MOBILE INLINE] Dispatch vers mobile_system pour ses dialogs (MARKET, SETTINGS)
     if(dialogid == MARKET_DIALOG || dialogid == SETTINGS_DIALOG)
         return Mobile_OnDialogResponse(playerid, dialogid, response, listitem, inputtext);
@@ -46995,12 +47055,6 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 	    }
 	    return 1;
 	}
-	// [EVENTS ADMIN] menus d'organisation d'evenement (9610-9618)
-	if(Ev_OnDialog(playerid, dialogid, response, listitem, inputtext)) return 1;
-
-	// [TOP DU JOUR] dialogue 9620
-	if(TopJour_OnDialog(playerid, dialogid, response, listitem)) return 1;
-
 	// [DIAGNOSTIC] Si on arrive ici, aucun handler n'a traite ce dialogue :
 	// le joueur a clique dans le vide. On le signale une fois par ID.
 	Diag_UnhandledDialog(dialogid);
@@ -53160,6 +53214,36 @@ public OnPlayerCommandText(playerid, cmdtext[])
 	else if(strcmp(cmd, "/verif", true) == 0 || strcmp(cmd, "/diag", true) == 0)
 	{
 	    return Diag_ShowDialog(playerid);
+	}
+	// [EVENTS ADMIN] /ev : organisation d'evenements (course, DM, derby...)
+	// Ces commandes etaient declarees beaucoup plus bas, dans une zone atteinte
+	// seulement apres tout le chainage. Elles sont remontees ici, a cote de
+	// commandes dont on sait qu'elles repondent, pour ecarter tout doute de
+	// routage. Note : /event reste pris par les evenements aleatoires du monde.
+	else if(strcmp(cmd, "/ev", true) == 0 || strcmp(cmd, "/evenement", true) == 0)
+	{
+	    return Ev_Command(playerid, cmdtext);
+	}
+	else if(strcmp(cmd, "/tpall", true) == 0 || strcmp(cmd, "/rassemblement", true) == 0)
+	{
+	    return Ev_CmdTpAll(playerid);
+	}
+	// Sortie de secours : degele TOUS les joueurs, event ou pas.
+	else if(strcmp(cmd, "/degel", true) == 0 || strcmp(cmd, "/degeler", true) == 0)
+	{
+	    return Ev_CmdUnfreezeAll(playerid);
+	}
+	// [TOP DU JOUR] classement des meilleurs joueurs de la journee
+	else if(strcmp(cmd, "/top", true) == 0)
+	{
+	    TopJour_OnAction(playerid);
+	    tmp = strtok(cmdtext, idx);
+	    if(strcmp(tmp, "forcer", true) == 0) return TopJour_CmdForce(playerid);
+	    return TopJour_ShowDialog(playerid);
+	}
+	else if(strcmp(cmd, "/toptd", true) == 0)
+	{
+	    return TopJour_TdToggle(playerid);
 	}
 	// [OBJECTIFS] Objectifs quotidiens. Sans argument : le detail en dialog.
 	// "hud" : affiche/cache le panneau permanent a l'ecran.
@@ -70439,33 +70523,6 @@ public OnPlayerCommandText(playerid, cmdtext[])
     if(strcmp(cmd, "/event", true) == 0 || strcmp(cmd, "/events", true) == 0)
     {
         return Events_CmdInfo(playerid);
-    }
-
-    // [TOP DU JOUR] classement des meilleurs joueurs de la journee
-    if(strcmp(cmd, "/top", true) == 0)
-    {
-        TopJour_OnAction(playerid);
-        new tmp_top[64];
-        tmp_top = strtok(cmdtext, idx);
-        if(strcmp(tmp_top, "forcer", true) == 0) return TopJour_CmdForce(playerid);
-        return TopJour_ShowDialog(playerid);
-    }
-    if(strcmp(cmd, "/toptd", true) == 0)
-    {
-        return TopJour_TdToggle(playerid);
-    }
-
-    // [EVENTS ADMIN] /tpall : rassemble tout le serveur au spawn de Los Santos
-    if(strcmp(cmd, "/tpall", true) == 0 || strcmp(cmd, "/rassemblement", true) == 0)
-    {
-        return Ev_CmdTpAll(playerid);
-    }
-
-    // [EVENTS ADMIN] /ev : organisation d'evenements (course, DM, derby...)
-    // Note : /event est deja pris par les evenements aleatoires du monde.
-    if(strcmp(cmd, "/ev", true) == 0 || strcmp(cmd, "/evenement", true) == 0)
-    {
-        return Ev_Command(playerid, cmdtext);
     }
 
     // [EVENTS] /eventtrigger <type> : declenche manuellement (admin)
