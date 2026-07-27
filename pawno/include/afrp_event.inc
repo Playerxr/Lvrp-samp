@@ -227,6 +227,38 @@ stock Ev_FreezeAll(freeze)
 // Vrai si le joueur doit RESTER gele parce qu'il attend le depart d'un event.
 // Utilise par chargement() dans LVRP.pwn : sans ca, le timer de fin de
 // chargement d'un spawn precedent degelait un participant sur la grille.
+// Vrai si le joueur participe a l'event en cours. Utilise par car_Engine :
+// sans ca, un participant assis dans son vehicule d'event ne pouvait pas
+// demarrer le moteur (voir Ev_TeleportAll).
+// vehicle[] fait MAX_CAR cases (indices 0..MAX_CAR-1) alors que les IDs SA-MP
+// vont jusqu'a MAX_VEHICLES inclus : ecrire sans borner sortirait du tableau.
+stock Ev_VehValide(vid)
+{
+	return (vid > 0 && vid != INVALID_VEHICLE_ID && vid < MAX_CAR);
+}
+
+// Detruit le vehicule ET libere sa ligne vehicle[], sinon l'ID reste marque
+// comme occupe et le prochain vehicule cree a cet ID heriterait de ces valeurs.
+stock Ev_KillVeh(playerid)
+{
+	if(evVeh[playerid] == 0) return 0;
+	if(Ev_VehValide(evVeh[playerid]))
+	{
+		vehicle[evVeh[playerid]][used]  = 0;
+		vehicle[evVeh[playerid]][cType] = 0;
+		vehicle[evVeh[playerid]][SQLID] = 0;
+	}
+	DestroyVehicle(evVeh[playerid]);
+	evVeh[playerid] = 0;
+	return 1;
+}
+
+stock Ev_IsParticipant(playerid)
+{
+	if(evState == EV_OFF) return 0;
+	return (evIn[playerid] == 1);
+}
+
 stock Ev_IsFrozen(playerid)
 {
 	if(evState != EV_ATTENTE) return 0;
@@ -435,11 +467,7 @@ stock Ev_DestroyVehicles()
 {
 	for(new i = 0; i < MAX_PLAYERS; i++)
 	{
-		if(evVeh[i] != 0)
-		{
-			DestroyVehicle(evVeh[i]);
-			evVeh[i] = 0;
-		}
+		Ev_KillVeh(i);
 	}
 	return 1;
 }
@@ -451,7 +479,7 @@ stock Ev_ResetPlayer(playerid)
 	evNextCp[playerid] = 0;
 	evLap[playerid]    = 1;
 	evRank[playerid]   = 0;
-	if(evVeh[playerid] != 0) { DestroyVehicle(evVeh[playerid]); evVeh[playerid] = 0; }
+	Ev_KillVeh(playerid);
 	if(IsPlayerConnected(playerid))
 	{
 		DisablePlayerRaceCheckpoint(playerid);
@@ -469,7 +497,7 @@ stock Ev_Reset()
 	for(new i = 0; i < MAX_PLAYERS; i++)
 	{
 		if(evIn[i] == 1) Ev_ResetPlayer(i);
-		else if(evVeh[i] != 0) { DestroyVehicle(evVeh[i]); evVeh[i] = 0; }
+		else Ev_KillVeh(i);
 	}
 	evState    = EV_OFF;
 	evPrize    = 0;
@@ -585,11 +613,27 @@ stock Ev_TeleportAll(playerid)
 		new Float:py = evSpawnY + (offX * sinA) + (offY * cosA);
 		new Float:pz = evSpawnZ;
 
-		if(evVeh[i] != 0) { DestroyVehicle(evVeh[i]); evVeh[i] = 0; }
+		Ev_KillVeh(i);
 
 		if(evVehModel > 0)
 		{
 			evVeh[i] = CreateVehicle(evVehModel, px, py, pz + 0.5, evSpawnA, -1, -1, 600);
+			// CreateVehicle seul ne suffit PAS : car_Engine lit vehicle[carid] pour
+			// decider si le moteur peut demarrer. Un vehicule non enregistre a donc
+			// cGas = 0 et le joueur recevait "Ce vehicule n'a plus d'essence" :
+			// il restait assis dans une voiture qui ne demarrait jamais.
+			if(Ev_VehValide(evVeh[i]))
+			{
+				vehicle[evVeh[i]][used]    = 1;
+				vehicle[evVeh[i]][SQLID]   = 0;   // 0 => jamais sauvegarde en base
+				vehicle[evVeh[i]][cModel]  = evVehModel;
+				vehicle[evVeh[i]][cType]   = CAR_EVENT;
+				vehicle[evVeh[i]][cOwned]  = 2;
+				vehicle[evVeh[i]][cGas]    = 100;
+				vehicle[evVeh[i]][cHealth] = 1000.0;
+				vehicle[evVeh[i]][cLock]   = 0;
+				vehicle[evVeh[i]][cEngine] = false;
+			}
 			LinkVehicleToInterior(evVeh[i], evSpawnInt);
 			SetVehicleVirtualWorld(evVeh[i], evSpawnVw);
 			SetPlayerInterior(i, evSpawnInt);
@@ -649,6 +693,15 @@ public Ev_CountdownTick()
 		GameTextForPlayer(i, "~g~GO !", 1500, 3);
 		PlayerPlaySound(i, 1057, 0.0, 0.0, 0.0);
 		TogglePlayerControllable(i, true);
+		// Moteur lance d'office : sur une course, personne ne veut perdre
+		// 3 secondes a demarrer sa voiture au feu vert.
+		if(Ev_VehValide(evVeh[i]))
+		{
+			new evEng, evLig, evAla, evDoo, evBon, evBoo, evObj;
+			GetVehicleParamsEx(evVeh[i], evEng, evLig, evAla, evDoo, evBon, evBoo, evObj);
+			SetVehicleParamsEx(evVeh[i], 1, evLig, evAla, evDoo, evBon, evBoo, evObj);
+			vehicle[evVeh[i]][cEngine] = true;
+		}
 		Ev_GiveCp(i);
 	}
 	Ev_Announce("[EVENT] C'est parti !");
@@ -684,7 +737,9 @@ stock Ev_PlayerFinish(playerid)
 	}
 	if(gain > 0)
 	{
-		PlayerInfo[playerid][pCash] += gain;
+		// SafeGivePlayerMoney et non pCash += : c'est cette fonction qui
+		// synchronise l'argent affiche chez le client et journalise le gain.
+		SafeGivePlayerMoney(playerid, gain, "Recompense event");
 		format(str, sizeof(str), "{00FF00}Tu termines %d e ! Gain : %d$", evRank[playerid], gain);
 		Ev_Msg(playerid, str);
 	}

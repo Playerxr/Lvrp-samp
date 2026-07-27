@@ -329,14 +329,14 @@ stock TopJour_ClaimPending(playerid)
 // ============================================================================
 // POINTS
 // ============================================================================
-stock TopJour_AddPoints(playerid, tjNb)
+stock TopJour_AddPoints(playerid, tjNb, refresh = 1)
 {
 	if(tjNb <= 0) return 0;
 	if(!IsPlayerConnected(playerid) || IsPlayerNPC(playerid)) return 0;
 	new k = TopJour_Entry(playerid);
 	if(k == -1) return 0;
 	tjPoints[k] += tjNb;
-	TopJour_TdRefresh(playerid);
+	if(refresh) TopJour_TdRefresh(playerid);
 	return 1;
 }
 
@@ -443,12 +443,15 @@ stock TopJour_TdCreate(playerid)
 	return 1;
 }
 
-stock TopJour_TdRefresh(playerid)
+// rebuild=0 quand l'appelant vient deja de classer : sans ce parametre, le
+// tick refaisait TopJour_BuildRank une fois PAR JOUEUR, soit jusqu'a 200 tris
+// complets par minute pour un resultat rigoureusement identique.
+stock TopJour_TdRefresh(playerid, rebuild = 1)
 {
 	if(tjTdOn[playerid] != 1) return 0;
 	if(tjTd[playerid][0] == PlayerText:INVALID_TEXT_DRAW) return 0;
 
-	TopJour_BuildRank();
+	if(rebuild) TopJour_BuildRank();
 	PlayerTextDrawSetString(playerid, tjTd[playerid][0], "~y~TOP DU JOUR");
 
 	new tjStr[96];
@@ -521,8 +524,14 @@ public TopJour_Tick()
 	for(new k = 0; k < MAX_PLAYERS; k++)
 	{
 		if(!IsPlayerConnected(k) || IsPlayerNPC(k)) continue;
-		if(TopJour_MinuteCompte(k)) TopJour_AddPoints(k, TJ_PTS_MINUTE);
-		else TopJour_TdRefresh(k);
+		if(TopJour_MinuteCompte(k)) TopJour_AddPoints(k, TJ_PTS_MINUTE, 0);
+	}
+	// Un seul classement pour tout le monde, puis on rafraichit les panneaux.
+	TopJour_BuildRank();
+	for(new k = 0; k < MAX_PLAYERS; k++)
+	{
+		if(!IsPlayerConnected(k) || IsPlayerNPC(k)) continue;
+		TopJour_TdRefresh(k, 0);
 	}
 	TopJour_Save();
 	return 1;
@@ -623,6 +632,7 @@ stock TopJour_ShowDialog(playerid)
 
 stock TopJour_OnDialog(playerid, dialogid, response, listitem)
 {
+	#pragma unused playerid
 	#pragma unused response
 	#pragma unused listitem
 	if(dialogid != DIALOG_TJ_TOP) return 0;

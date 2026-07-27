@@ -168,9 +168,14 @@ stock ArmBase_Apply(playerid, iid)
 		return ArmBase_Msg(playerid, str2);
 	}
 
+	// ancienZ DOIT etre capture ici : plus bas on ecrase ar_Spawn[2] avec la
+	// nouvelle valeur, et le test de portee qui suit comparait alors l'ancien
+	// X/Y avec le NOUVEAU Z - il echouait toujours et plus aucun soldat
+	// n'etait deplace.
 	new ancienInt = ArmeeInfo[armId][ar_Interior];
 	new Float:ancienX = ArmeeInfo[armId][ar_Spawn][0];
 	new Float:ancienY = ArmeeInfo[armId][ar_Spawn][1];
+	new Float:ancienZ = ArmeeInfo[armId][ar_Spawn][2];
 
 	SafeGivePlayerMoney(playerid, -locPrice, "Amenagement caserne armee");
 
@@ -194,7 +199,7 @@ stock ArmBase_Apply(playerid, iid)
 		if(!IsPlayerConnected(i) || IsPlayerNPC(i)) continue;
 		if(PlayerInfo[i][pMember] != PlayerInfo[playerid][pMember]) continue;
 		if(GetPlayerInterior(i) != ancienInt) continue;
-		if(!IsPlayerInRangeOfPoint(i, 120.0, ancienX, ancienY, ArmeeInfo[armId][ar_Spawn][2])) continue;
+		if(!IsPlayerInRangeOfPoint(i, 120.0, ancienX, ancienY, ancienZ)) continue;
 
 		SafeTeleportPlayer(i, ArmInteriors[iid][aiX], ArmInteriors[iid][aiY], ArmInteriors[iid][aiZ],
 			ArmInteriors[iid][aiInt], 0, ArmInteriors[iid][aiA]);

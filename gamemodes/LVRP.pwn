@@ -23477,6 +23477,7 @@ public OnPlayerConnect(playerid)
     LegalTag_OnConnect(playerid); // [LEGAL TAG] init slot label
     Obj_OnPlayerConnect(playerid); // [OBJECTIFS] reset de l'etat avant login
     TopJour_OnConnect(playerid); // [TOP DU JOUR] reset des compteurs anti-AFK
+    ArmeePaie_Time[playerid] = 0; // [ARMEE] sinon le slot garde le compteur du precedent occupant
     Ent_OnPlayerConnect(playerid); // [ENTREPRISE] reset compteur minutes accumulees
     Jobs_OnConnect(playerid); // [JOBS] reset streak
     FAQ_OnConnect(playerid); // [FAQ] reset cooldown aide auto
@@ -26284,7 +26285,11 @@ stock car_Engine(playerid)
 	    if(permis_Player[playerid] == 2)
 	    	{engine=true;}
 	}
-	else if(vehicle[carid][cType] == CAR_EVENT && gPlayerEvent[playerid] == 1 || vehicle[carid][cType] == CAR_EVENT && PlayerInfo[playerid][pAnimator] == 1)
+	// [EVENTS ADMIN] Ev_IsParticipant ajoute : les vehicules distribues par /ev tp
+	// sont de type CAR_EVENT, mais leurs occupants ne sont pas dans l'event de
+	// l'animateur (gPlayerEvent). Sans cette condition, ils ne pouvaient pas
+	// demarrer le vehicule qu'on venait de leur donner.
+	else if(vehicle[carid][cType] == CAR_EVENT && (gPlayerEvent[playerid] == 1 || PlayerInfo[playerid][pAnimator] == 1 || Ev_IsParticipant(playerid)))
 		{engine=true;}
 	// [FIX FACTION BUY] V�hicules CAR_FACTION (62) achet�s via /factionbuy
 	// Le joueur doit �tre membre/leader de la faction (ownerSQLID = facID = pMember)
