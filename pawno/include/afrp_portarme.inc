@@ -297,7 +297,7 @@ stock PortArme_Cmd(playerid, params[])
 		new footTmp[64];
 		format(footTmp, sizeof(footTmp), "\n%d joueur(s) possedent le permis.", portArme_HolderCount);
 		strcat(body, footTmp);
-		return ShowPlayerDialog(playerid, 9992, DIALOG_STYLE_MSGBOX, "Port d'arme", body, "OK", "");
+		return ShowPlayerDialog(playerid, 9600, DIALOG_STYLE_MSGBOX, "Port d'arme", body, "OK", "");
 	}
 	if(strcmp(sub, "donner", true) == 0)
 	{

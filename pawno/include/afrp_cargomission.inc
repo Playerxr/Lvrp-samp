@@ -614,7 +614,7 @@ stock Cargo_Cmd(playerid, params[])
 			strcat(body, tmp); c++;
 		}
 		if(c == 0) strcat(body, "Aucun depot.");
-		return ShowPlayerDialog(playerid, 9993, DIALOG_STYLE_MSGBOX, "Depots cargo", body, "OK", "");
+		return ShowPlayerDialog(playerid, 9601, DIALOG_STYLE_MSGBOX, "Depots cargo", body, "OK", "");
 	}
 	if(strcmp(sub, "annuler", true) == 0)
 	{

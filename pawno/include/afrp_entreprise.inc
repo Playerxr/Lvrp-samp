@@ -1139,7 +1139,7 @@ stock Ent_Cmd(playerid, params[])
 			"{FFFFFF}Nom : {FFFFB2}%s{FFFFFF}\nSecteur : {FFFFB2}%s{FFFFFF}\nProprio : %s\nCaisse : {FFFFB2}%d${FFFFFF}\nStock : {FFFFB2}%d{FFFFFF} unites\nEmployes : %d / %d\nLocal : %s\nRole : %s",
 			entreprises[eid][entName], typeStr, ownerName, entreprises[eid][entCash], entreprises[eid][entStock],
 			nbEmp, ENT_MAX_EMP, localStr, roleStr);
-		return ShowPlayerDialog(playerid, 9997, DIALOG_STYLE_MSGBOX, "Entreprise", body, "OK", "");
+		return ShowPlayerDialog(playerid, 9605, DIALOG_STYLE_MSGBOX, "Entreprise", body, "OK", "");
 	}
 
 	// ===== verser =====
@@ -1308,7 +1308,7 @@ stock Ent_Cmd(playerid, params[])
 			c++;
 		}
 		if(c == 0) strcat(body, "Aucun employe.");
-		return ShowPlayerDialog(playerid, 9996, DIALOG_STYLE_MSGBOX, "Employes entreprise", body, "OK", "");
+		return ShowPlayerDialog(playerid, 9604, DIALOG_STYLE_MSGBOX, "Employes entreprise", body, "OK", "");
 	}
 
 	// ===== supprimer =====
@@ -1373,7 +1373,7 @@ stock Ent_Cmd(playerid, params[])
 			c++;
 		}
 		if(c == 0) strcat(body, "Aucune entreprise.");
-		return ShowPlayerDialog(playerid, 9995, DIALOG_STYLE_MSGBOX, "Entreprises", body, "OK", "");
+		return ShowPlayerDialog(playerid, 9603, DIALOG_STYLE_MSGBOX, "Entreprises", body, "OK", "");
 	}
 
 	// ===== admin transferer =====

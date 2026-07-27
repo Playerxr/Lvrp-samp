@@ -615,7 +615,7 @@ stock Venue_Cmd(playerid, params[])
 				format(curTxt, sizeof(curTxt), "{FFFFFF}Aucune entreprise liee. Recettes = poche proprio.\nUsage : /venue entreprise <nom> ou 'off'.");
 			else
 				format(curTxt, sizeof(curTxt), "{FFFFFF}Actuellement liee a : {FFFFB2}%s{FFFFFF}.\nUsage : /venue entreprise <nom> ou 'off'.", venues[vid][vpEnterprise]);
-			return ShowPlayerDialog(playerid, 9994, DIALOG_STYLE_MSGBOX, "Lien entreprise", curTxt, "OK", "");
+			return ShowPlayerDialog(playerid, 9602, DIALOG_STYLE_MSGBOX, "Lien entreprise", curTxt, "OK", "");
 		}
 		if(strcmp(rest, "off", true) == 0)
 		{
@@ -804,7 +804,7 @@ stock Venue_Cmd(playerid, params[])
 			c++;
 		}
 		if(c == 0) strcat(listBody, "Aucun lieu cree.");
-		return ShowPlayerDialog(playerid, 9998, DIALOG_STYLE_MSGBOX, "Lieux prives", listBody, "OK", "");
+		return ShowPlayerDialog(playerid, 9606, DIALOG_STYLE_MSGBOX, "Lieux prives", listBody, "OK", "");
 	}
 
 	msg_Client(playerid, COLOR_WHITE, "{A98500} Usage {FFFFB2} /venue [sortir|infos|code|prix|ferme|ouvre]");
