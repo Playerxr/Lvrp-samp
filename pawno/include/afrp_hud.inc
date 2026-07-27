@@ -35,8 +35,8 @@
 
 // --- Position des barres vie / armure (bas gauche, a droite du radar) ---
 #define HUD_BAR_X        174.0
-#define HUD_BAR_Y_HP     374.0
-#define HUD_BAR_Y_AR     386.0
+#define HUD_BAR_Y_HP     344.0
+#define HUD_BAR_Y_AR     356.0
 #define HUD_BAR_W_MAX    62.0
 #define HUD_BAR_H        4.0
 
@@ -47,8 +47,8 @@
 #define HUD_SPR_COEUR    "hud:radar_girlfriend"
 #define HUD_SPR_BURGER   "hud:radar_burgerShot"
 #define HUD_ICON_X       150.0
-#define HUD_ICON_Y_VIE   371.0
-#define HUD_ICON_Y_FAIM  398.0
+#define HUD_ICON_Y_VIE   341.0
+#define HUD_ICON_Y_FAIM  368.0
 #define HUD_ICON_W       16.0
 #define HUD_ICON_H       16.0
 

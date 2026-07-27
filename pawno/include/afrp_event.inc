@@ -78,6 +78,7 @@
 #define DIALOG_EV_ROUTES    9616
 #define DIALOG_EV_SAVENAME  9617
 #define DIALOG_EV_TOURS     9618
+#define DIALOG_EV_TPALL     9619
 
 new evTypeName[EV_T_COUNT][24] = {
 	"Course a checkpoints",
@@ -211,6 +212,69 @@ stock Ev_FreezeAll(freeze)
 		n++;
 	}
 	return n;
+}
+
+// Vrai si le joueur doit RESTER gele parce qu'il attend le depart d'un event.
+// Utilise par chargement() dans LVRP.pwn : sans ca, le timer de fin de
+// chargement d'un spawn precedent degelait un participant sur la grille.
+stock Ev_IsFrozen(playerid)
+{
+	if(evState != EV_ATTENTE) return 0;
+	return (evIn[playerid] == 1);
+}
+
+// ============================================================================
+// RASSEMBLEMENT : tout le serveur au spawn de Los Santos
+// ============================================================================
+stock Ev_TpAllRun(playerid)
+{
+	new n = 0, jailed = 0, slot = 0, str[144];
+	new Float:baseA = spawn[0][pos][3];
+	new Float:cosA  = floatcos(-baseA, degrees);
+	new Float:sinA  = floatsin(-baseA, degrees);
+
+	for(new i = 0; i < MAX_PLAYERS; i++)
+	{
+		if(!IsPlayerConnected(i) || IsPlayerNPC(i)) continue;
+		// Un rassemblement ne doit pas faire sortir un detenu de prison.
+		if(PlayerInfo[i][pJailed] != 0) { jailed++; continue; }
+
+		// Grille de 6 par rangee pour ne pas empiler tout le monde au meme point.
+		new col = slot % 6;
+		new row = slot / 6;
+		new Float:offX = (float(col) - 2.5) * 3.0;
+		new Float:offY = -(float(row) * 3.0);
+		new Float:px = spawn[0][pos][0] + (offX * cosA) - (offY * sinA);
+		new Float:py = spawn[0][pos][1] + (offX * sinA) + (offY * cosA);
+
+		SafeTeleportPlayer(i, px, py, spawn[0][pos][2], 0, 0, baseA);
+		SendClientMessage(i, 0xFFCC00FF, "[RASSEMBLEMENT] Tu as ete teleporte au spawn de Los Santos par un administrateur.");
+		slot++;
+		n++;
+	}
+
+	format(str, sizeof(str), "{00FF00}%d joueur(s) teleporte(s) au spawn de Los Santos.", n);
+	Ev_Msg(playerid, str);
+	if(jailed > 0)
+	{
+		format(str, sizeof(str), "{AAAAAA}%d joueur(s) en prison n'ont pas ete deplaces.", jailed);
+		Ev_Msg(playerid, str);
+	}
+	return 1;
+}
+
+stock Ev_CmdTpAll(playerid)
+{
+	if(!Ev_IsAdmin(playerid))
+		return Ev_Msg(playerid, "{FF4444}Reserve aux administrateurs.");
+
+	new n = 0;
+	for(new i = 0; i < MAX_PLAYERS; i++)
+		if(IsPlayerConnected(i) && !IsPlayerNPC(i) && PlayerInfo[i][pJailed] == 0) n++;
+
+	new body[256];
+	format(body, sizeof(body), "{FFFFFF}Teleporter {FFFF00}%d joueur(s){FFFFFF} au spawn de Los Santos ?\n\n{AAAAAA}Tout le monde sera deplace, en jeu comme en interieur.\nLes joueurs en prison ne sont pas concernes.", n);
+	return ShowPlayerDialog(playerid, DIALOG_EV_TPALL, DIALOG_STYLE_MSGBOX, "Rassemblement general", body, "Teleporter", "Annuler");
 }
 
 // ============================================================================
@@ -1007,6 +1071,13 @@ stock Ev_OnDialog(playerid, dialogid, response, listitem, inputtext[])
 			Ev_LoadRouteInto(playerid, evRouteMap[playerid][listitem]);
 			return 1;
 		}
+		case DIALOG_EV_TPALL:
+		{
+			if(!response) return 1;
+			if(!Ev_IsAdmin(playerid)) return 1;
+			Ev_TpAllRun(playerid);
+			return 1;
+		}
 		case DIALOG_EV_PART: return 1;
 	}
 	return 0;
@@ -1026,6 +1097,7 @@ stock Ev_Help(playerid)
 	Ev_Msg(playerid, "{FFFFFF}/ev ouvrir | /ev fermer | /ev tp | /ev depart | /ev fin | /ev annuler");
 	Ev_Msg(playerid, "{FFFFFF}/ev gel | /ev degel {AAAAAA}: bloque / debloque tous les participants");
 	Ev_Msg(playerid, "{FFFFFF}/ev annonce <texte> {AAAAAA}: message a tout le serveur");
+	Ev_Msg(playerid, "{FFFFFF}/tpall {AAAAAA}: rassemble TOUT le serveur au spawn de Los Santos");
 	return 1;
 }
 
@@ -1062,6 +1134,7 @@ stock Ev_Command(playerid, const cmdline[])
 	if(strcmp(sub, "annuler", true) == 0) return Ev_Cancel(playerid);
 	if(strcmp(sub, "cp",      true) == 0) return Ev_AddCp(playerid);
 	if(strcmp(sub, "parcours",true) == 0) return Ev_ShowRoutes(playerid);
+	if(strcmp(sub, "tpall",   true) == 0) return Ev_CmdTpAll(playerid);
 
 	if(strcmp(sub, "gel", true) == 0)
 	{

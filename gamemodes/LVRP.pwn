@@ -4020,7 +4020,7 @@ stock UpdateStatsTextsPlayers(i,id)
 		PlayerTextDrawSetString(i,TextFaim[i],string);
 		totofaim[i] = 0.58*PlayerInfo[i][pFaim];
 		
-		BarUpdateFaim[i] = CreatePlayerTextDraw(i,(178+totofaim[i]), 413.000000, "~n~");
+		BarUpdateFaim[i] = CreatePlayerTextDraw(i,(178+totofaim[i]), 383.000000, "~n~");
 		PlayerTextDrawBackgroundColor(i,BarUpdateFaim[i], 255);
 		PlayerTextDrawFont(i,BarUpdateFaim[i], 1);
 		PlayerTextDrawLetterSize(i,BarUpdateFaim[i], 0.469998, 0.199999);
@@ -4048,7 +4048,7 @@ stock UpdateStatsTextsPlayers(i,id)
 		PlayerTextDrawSetString(i,TextSoif[i],string);
 		totosoif[i] = 0.58*PlayerInfo[i][pSoif];
 		
-		BarUpdateSoif[i] = CreatePlayerTextDraw(i,(178+totosoif[i]), 401.000000, "~n~");
+		BarUpdateSoif[i] = CreatePlayerTextDraw(i,(178+totosoif[i]), 371.000000, "~n~");
 		PlayerTextDrawBackgroundColor(i,BarUpdateSoif[i], 255);
 		PlayerTextDrawFont(i,BarUpdateSoif[i], 1);
 		PlayerTextDrawLetterSize(i,BarUpdateSoif[i], 0.469998, 0.199999);
@@ -4842,6 +4842,13 @@ stock SafeTeleportPlayer(playerid, Float:x, Float:y, Float:z, intid, vw, Float:a
 // [DEPLACE] callback du timer SafeTeleportPlayer - sinon joueur reste freeze a vie
 public chargement(playerid)
 {
+	// [FIX SPAWN] Ce timer est arme a chaque spawn et a chaque teleportation.
+	// S'il se declenchait en retard (double spawn, mort pendant le chargement,
+	// deconnexion puis reconnexion sur le meme slot) il degelait n'importe qui,
+	// y compris un joueur volontairement immobilise par un autre systeme.
+	if(!IsPlayerConnected(playerid) || IsPlayerNPC(playerid)) return 1;
+	if(medic_PlayerNeedMedic[playerid] == 2) return 1; // agonie au sol
+	if(Ev_IsFrozen(playerid)) return 1;                // grille de depart d'un event
 	return TogglePlayerControllable(playerid, 1), 1;
 }
 
@@ -9267,9 +9274,10 @@ public SetPlayerSpawn(playerid)
 		    }
 		    if (PlayerInfo[playerid][pMember] == 10) // L.A News Spawn
 		    {
-				SetPlayerPos(playerid, 1802.5034,-1292.7516,13.5085);
-				server_SetPlayerInterior(playerid,0);
-				server_SetPlayerVirtualWorld(playerid,0);
+				// [FIX SPAWN] L'interieur etait applique APRES la position : le joueur
+				// apparaissait une fraction de seconde dans l'ancien decor et pouvait
+				// tomber a travers la map. SafeTeleportPlayer fait tout dans l'ordre.
+				SafeTeleportPlayer(playerid, 1802.5034,-1292.7516,13.5085, 0, 0);
 				SafeGivePlayerWeapon(playerid, 43, 50);
 		        return 1;
 		    }
@@ -12902,11 +12910,29 @@ public car_CheckGas()
 			if(IsAPlane(carid) || IsABoat(carid) || IsARemorque(carid) || IsATrain(carid) || IsAHelicopter(carid) || IsABike(carid))
 				{continue;}
 
+			// [FIX ESSENCE] Un vehicule sans conducteur ne consomme plus rien.
+			// OnPlayerExitVehicle ne remet pas cEngine a false : une voiture garee
+			// moteur allume se vidait donc toute seule (1 unite par minute, soit
+			// reservoir vide en 100 minutes) et le proprietaire la retrouvait a sec.
+			new bool:hasDriver = false;
+			for(new d=0; d<MAX_PLAYERS_CURRENT+1; d++)
+			{
+			    if(IsPlayerInVehicle(d,carid) && GetPlayerState(d) == PLAYER_STATE_DRIVER)
+					{hasDriver = true; break;}
+			}
+			if(!hasDriver) continue;
+
 			if(vehicle[carid][cGas] > 0)
 				{vehicle[carid][cGas]--;}
 
-			else if(vehicle[carid][cGas]==0)
+			// [FIX ESSENCE] <= 0 et non == 0 : une valeur negative (vieille sauvegarde
+			// ou commande admin) empechait le moteur de s'eteindre, le vehicule
+			// roulait indefiniment avec une jauge vide. Le test est aussi passe en
+			// 'if' pour couper le moteur des le tour ou le reservoir atteint 0
+			// (avant, il fallait attendre la minute suivante).
+			if(vehicle[carid][cGas] <= 0)
 			{
+			    vehicle[carid][cGas] = 0;
 			    new engine,lights,alarm,doors,bonnet,boot,objective;
 			    GetVehicleParamsEx(carid,engine,lights,alarm,doors,bonnet,boot,objective);
 				SetVehicleParamsEx(carid,0,lights,alarm,doors,bonnet,boot,objective);
@@ -14874,7 +14900,7 @@ stock init_Texts()
 		
 		// [HUD BAS-GAUCHE] fond semi-transparent derriere le bloc vie/armure/soif/faim
 		// cree en premier pour etre dessine SOUS les barres
-		DisigStatsBg = TextDrawCreate(146.000000, 364.000000, "~n~");
+		DisigStatsBg = TextDrawCreate(146.000000, 334.000000, "~n~");
 		TextDrawBackgroundColor(DisigStatsBg, 255);
 		TextDrawFont(DisigStatsBg, 1);
 		TextDrawLetterSize(DisigStatsBg, 0.500000, 5.900000);
@@ -14887,7 +14913,7 @@ stock init_Texts()
 		TextDrawTextSize(DisigStatsBg, 244.000000, 0.000000);
 
 		// Systeme de Faim
-		DisigFaim1 = TextDrawCreate(238.000000, 411.000000, "~n~");
+		DisigFaim1 = TextDrawCreate(238.000000, 381.000000, "~n~");
 		TextDrawBackgroundColor(DisigFaim1, 255);
 		TextDrawFont(DisigFaim1, 1);
 		TextDrawLetterSize(DisigFaim1, 0.469998, 0.599999);
@@ -14899,7 +14925,7 @@ stock init_Texts()
 		TextDrawBoxColor(DisigFaim1, 255);
 		TextDrawTextSize(DisigFaim1, 172.000000, 0.000000);
 
-		DisigFaim2 = TextDrawCreate(236.000000, 413.000000, "~n~");
+		DisigFaim2 = TextDrawCreate(236.000000, 383.000000, "~n~");
 		TextDrawBackgroundColor(DisigFaim2, 255);
 		TextDrawFont(DisigFaim2, 1);
 		TextDrawLetterSize(DisigFaim2, 0.469998, 0.199999);
@@ -14912,7 +14938,7 @@ stock init_Texts()
 		TextDrawTextSize(DisigFaim2, 174.000000, 0.000000);
 
 		// Systme de soif
-		DisigSoif1 = TextDrawCreate(238.000000, 399.000000, "~n~");
+		DisigSoif1 = TextDrawCreate(238.000000, 369.000000, "~n~");
 		TextDrawBackgroundColor(DisigSoif1, 255);
 		TextDrawFont(DisigSoif1, 1);
 		TextDrawLetterSize(DisigSoif1, 0.469998, 0.599999);
@@ -14924,7 +14950,7 @@ stock init_Texts()
 		TextDrawBoxColor(DisigSoif1, 255);
 		TextDrawTextSize(DisigSoif1, 172.000000, 25.000000);
 
-		DisigSoif2 = TextDrawCreate(236.000000, 401.000000, "~n~");
+		DisigSoif2 = TextDrawCreate(236.000000, 371.000000, "~n~");
 		TextDrawBackgroundColor(DisigSoif2, 255);
 		TextDrawFont(DisigSoif2, 1);
 		TextDrawLetterSize(DisigSoif2, 0.469998, 0.199999);
@@ -15128,7 +15154,7 @@ stock init_PlayerTexts(i)
 	PlayerTextDrawSetProportional(i,pay_TextPrice[i], 1);
 	PlayerTextDrawSetShadow(i,pay_TextPrice[i], 1);
 	
-	BarUpdateFaim[i] = CreatePlayerTextDraw(i,236.000000, 413.000000, "~n~");
+	BarUpdateFaim[i] = CreatePlayerTextDraw(i,236.000000, 383.000000, "~n~");
 	PlayerTextDrawBackgroundColor(i,BarUpdateFaim[i], 255);
 	PlayerTextDrawFont(i,BarUpdateFaim[i], 1);
 	PlayerTextDrawLetterSize(i,BarUpdateFaim[i], 0.469998, 0.199999);
@@ -15140,7 +15166,7 @@ stock init_PlayerTexts(i)
 	PlayerTextDrawBoxColor(i,BarUpdateFaim[i], 0x009000FF);
 	PlayerTextDrawTextSize(i,BarUpdateFaim[i], 174.000000, 0.000000);
 
-	TextFaim[i] = CreatePlayerTextDraw(i,170.000000, 405.000000, "Chargement...");
+	TextFaim[i] = CreatePlayerTextDraw(i,170.000000, 375.000000, "Chargement...");
 	PlayerTextDrawBackgroundColor(i,TextFaim[i], 255);
 	PlayerTextDrawFont(i,TextFaim[i], 1);
 	PlayerTextDrawLetterSize(i,TextFaim[i], 0.220000, 0.799998);
@@ -15149,7 +15175,7 @@ stock init_PlayerTexts(i)
 	PlayerTextDrawSetProportional(i,TextFaim[i], 1);
 	PlayerTextDrawSetShadow(i,TextFaim[i], 1);
 
-	BarUpdateSoif[i] = CreatePlayerTextDraw(i,236.000000, 401.000000, "~n~");
+	BarUpdateSoif[i] = CreatePlayerTextDraw(i,236.000000, 371.000000, "~n~");
 	PlayerTextDrawBackgroundColor(i,BarUpdateSoif[i], 255);
 	PlayerTextDrawFont(i,BarUpdateSoif[i], 1);
 	PlayerTextDrawLetterSize(i,BarUpdateSoif[i], 0.469998, 0.199999);
@@ -15161,7 +15187,7 @@ stock init_PlayerTexts(i)
 	PlayerTextDrawBoxColor(i,BarUpdateSoif[i], 0x0000D1FF);
 	PlayerTextDrawTextSize(i,BarUpdateSoif[i], 174.000000, 58.000000);
 
-	TextSoif[i] = CreatePlayerTextDraw(i,170.000000, 394.000000, "Chargement...");
+	TextSoif[i] = CreatePlayerTextDraw(i,170.000000, 364.000000, "Chargement...");
 	PlayerTextDrawBackgroundColor(i,TextSoif[i], 255);
 	PlayerTextDrawFont(i,TextSoif[i], 1);
 	PlayerTextDrawLetterSize(i,TextSoif[i], 0.220000, 0.699998);
@@ -15205,7 +15231,7 @@ stock init_PlayerTexts(i)
 	PlayerTextDrawTextSize(i,TextMaladie[i], -5.000000, 38.000000);
 
 	// Vie
-	TextVie[i] = CreatePlayerTextDraw(i,170.000000, 368.000000, "Chargement...");
+	TextVie[i] = CreatePlayerTextDraw(i,170.000000, 338.000000, "Chargement...");
 	PlayerTextDrawBackgroundColor(i,TextVie[i], 255);
 	PlayerTextDrawFont(i,TextVie[i], 1);
 	PlayerTextDrawLetterSize(i,TextVie[i], 0.220000, 0.699998);
@@ -15215,7 +15241,7 @@ stock init_PlayerTexts(i)
 	PlayerTextDrawSetShadow(i,TextVie[i], 1);
 
 	// Armure
-	TextArmure[i] = CreatePlayerTextDraw(i,170.000000, 380.000000, "Chargement...");
+	TextArmure[i] = CreatePlayerTextDraw(i,170.000000, 350.000000, "Chargement...");
 	PlayerTextDrawBackgroundColor(i,TextArmure[i], 255);
 	PlayerTextDrawFont(i,TextArmure[i], 1);
 	PlayerTextDrawLetterSize(i,TextArmure[i], 0.220000, 0.699998);
@@ -25543,7 +25569,12 @@ public OnPlayerSpawn(playerid)
 			"{FFAA00}>>> AFRP - En attente de validation <<<",
 			"{FFFFFF}Votre compte a �t� cree !\n\n{FFAA00}Un administrateur doit valider votre inscription\n{FFFFFF}avant que vous puissiez jouer.\n\n{AAAAAA}Merci de patienter.",
 			"Patienter", "");
-		SetSpawnInfo(playerid, 3, 0, 0.0, 0.0, 0.0, 0.0, -1, -1, -1, -1, -1, -1);
+		// [FIX SPAWN] 0,0,0 = en pleine mer pres de Blueberry : le joueur en
+		// attente de validation apparaissait sous l'eau et pouvait s'y promener.
+		// On le pose au spawn de Los Santos et on le gele tant qu'il n'est pas valide.
+		SetSpawnInfo(playerid, 3, 0, spawn[0][pos][0], spawn[0][pos][1], spawn[0][pos][2], spawn[0][pos][3], -1, -1, -1, -1, -1, -1);
+		SetPlayerPos(playerid, spawn[0][pos][0], spawn[0][pos][1], spawn[0][pos][2]);
+		TogglePlayerControllable(playerid, false);
 		return 1;
 	}
 	TextDrawShowForPlayer(playerid, tdLogoBar);
@@ -25558,7 +25589,15 @@ public OnPlayerSpawn(playerid)
 		return 1;
 	}
 	if(inscription_Step[playerid]>=1 && inscription_Step[playerid]<=9 || gPlayerLogged[playerid] != 1)
-		{return 1;}
+	{
+		// [FIX SPAWN] Ici les donnees du joueur ne sont pas encore chargees : il
+		// apparaissait sans skin, sans position et sans HUD, et pouvait deja se
+		// deplacer. On le gele, avec un filet de securite qui le libere au bout
+		// de 8s pour qu'il ne puisse jamais rester bloque.
+		TogglePlayerControllable(playerid, false);
+		SetTimerEx("chargement", 8000, 0, "i", playerid);
+		return 1;
+	}
 	
 	// Bonus de bienvenue UNIQUEMENT pour les nouveaux joueurs (jamais d'argent en BDD)
 	// [FIX] Sans cette verification, le bonus �tait donne a CHAQUE spawn = a chaque connexion.
@@ -26143,7 +26182,7 @@ stock car_Engine(playerid)
 		{return 1;}
 	if(health <= 450)
 		{return msg_Box(playerid, "~g~", "Vhicule", "Ce vhicule est Hors Service.", 5000);}
-	if(vehicle[carid][cGas]==0)
+	if(vehicle[carid][cGas] <= 0)
    		{return msg_Box(playerid, "~g~", "Vhicule", "Ce vhicule n'a plus d'essence.", 5000);}
 
     if(AdminDuty[playerid]==1)
@@ -28250,6 +28289,10 @@ public vehicle_LoadPlayer(playerid, slot)
 	cache_get_value_name_int(0,"Rob", vehicle[vehicleid][cRob]);
 	cache_get_value_name_int(0,"Neon", vehicle[vehicleid][cNeon]);
 	cache_get_value_name_int(0,"Gas", vehicle[vehicleid][cGas]);
+	// [FIX ESSENCE] Ce chemin de chargement ne bornait pas la valeur : un Gas
+	// negatif ou > 100 en base donnait une jauge folle et un moteur increvable.
+	if(vehicle[vehicleid][cGas] < 0 || vehicle[vehicleid][cGas] > 100)
+		{vehicle[vehicleid][cGas] = 100;}
 	cache_get_value_name_int(0,"Mod1", vehicle[vehicleid][tExhausts]);
 	cache_get_value_name_int(0,"Mod2", vehicle[vehicleid][tFrontBumper]);
 	cache_get_value_name_int(0,"Mod3", vehicle[vehicleid][tRearBumper]);
@@ -70365,6 +70408,12 @@ public OnPlayerCommandText(playerid, cmdtext[])
     if(strcmp(cmd, "/event", true) == 0 || strcmp(cmd, "/events", true) == 0)
     {
         return Events_CmdInfo(playerid);
+    }
+
+    // [EVENTS ADMIN] /tpall : rassemble tout le serveur au spawn de Los Santos
+    if(strcmp(cmd, "/tpall", true) == 0 || strcmp(cmd, "/rassemblement", true) == 0)
+    {
+        return Ev_CmdTpAll(playerid);
     }
 
     // [EVENTS ADMIN] /ev : organisation d'evenements (course, DM, derby...)
