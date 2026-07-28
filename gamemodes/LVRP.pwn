@@ -3357,6 +3357,11 @@ new PlayerInfo[MAX_PLAYERS][e_Player];
 // cargo, commerce). Un enum Pawn doit etre defini AVANT toute utilisation.
 // [TOP DU JOUR] doit venir AVANT afrp_objectifs : ce dernier utilise la
 // constante TJ_PTS_OBJECTIF, et en Pawn un #define doit exister avant usage.
+// [ANNONCE] bandeaux textdraw. Remonte tout en haut : afrp_events et
+// afrp_braquage utilisent ses constantes ANNP_SRC_*, et un #define doit
+// exister avant usage. Le module ne depend que de PlayerInfo.
+#include <afrp_annonce>
+
 // [SAISON] doit preceder afrp_topjour ET afrp_objectifs : tous deux utilisent
 // ses constantes SAI_XP_*, et en Pawn un #define doit exister avant usage.
 #include <afrp_saison>
@@ -5269,8 +5274,8 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 #include <afrp_convoi>
 // [GPS PARTAGE] apres afrp_entreprise : utilise entreprises[] et Ent_FindByOwner
 #include <afrp_gpspartage>
-// [ANNONCE] bandeau textdraw, utilise par event / convoi / top du jour
-#include <afrp_annonce>
+// [BRAQUAGE] apres afrp_minijeu (Mini_Start) et afrp_saison (SAI_XP_CONVOI)
+#include <afrp_braquage>
 // [EVENTS ADMIN] Systeme generique d'evenements (course, DM, derby...)
 #include <afrp_event>
 // [DIAGNOSTIC] volontairement en dernier : il lit les compteurs de tous les
@@ -24125,6 +24130,7 @@ public OnPlayerDisconnect(playerid, reason)
     Gps_OnDisconnect(playerid); // [GPS PARTAGE] coupe ses partages et ses icones
     Mini_OnDisconnect(playerid); // [MINIJEU] detruit les textdraws
     Saison_OnDisconnect(playerid); // [SAISON] libere l'index
+    Br_OnDisconnect(playerid); // [BRAQUAGE] sort le joueur de l'equipe
     LegalTag_OnDisconnect(playerid); // [LEGAL TAG] detruit le label de faction
     Cuff_OnDisconnect(playerid); // [CUFFS] anti combat-log : auto-jail si menotte
     Phone_DestroyUI(playerid); // AFRP cleanup ancien telephone (sera vir� en P4)
@@ -25507,6 +25513,9 @@ public OnPlayerDeath(playerid, killerid, reason)
     Ev_OnDeath(playerid);
     // [CONVOI] interrompt un braquage en cours par ce joueur
     Cv_OnDeath(playerid);
+    // [BRAQUAGE] AVANT Mini_Abandon : le module doit pouvoir passer le relais
+    // a un equipier, ce qui suppose que le minijeu soit encore identifiable.
+    Br_OnDeath(playerid);
     // [MINIJEU] mourir interrompt le minijeu sans declencher l'echec
     Mini_Abandon(playerid);
 
@@ -30122,6 +30131,8 @@ public OnGameModeInit()
     Cv_Init();
     // [GPS PARTAGE] timer 5s (rafraichissement des icones)
     Gps_Init();
+    // [BRAQUAGE] charge braquages.cfg + timer 5s
+    Br_Init();
     // [OBJECTIFS] Init + timer 60s (temps de jeu, distance parcourue)
     Obj_Init();
     // [TOP DU JOUR] charge topjour.cfg + timer 60s
@@ -53312,6 +53323,11 @@ public OnPlayerCommandText(playerid, cmdtext[])
 	else if(strcmp(cmd, "/convoi", true) == 0 || strcmp(cmd, "/convois", true) == 0)
 	{
 	    return Cv_Command(playerid, cmdtext);
+	}
+	// [BRAQUAGE] braquages cooperatifs
+	else if(strcmp(cmd, "/braquage", true) == 0 || strcmp(cmd, "/braquages", true) == 0)
+	{
+	    return Br_Command(playerid, cmdtext);
 	}
 	// [SAISON] passe saisonnier
 	else if(strcmp(cmd, "/saison", true) == 0 || strcmp(cmd, "/passe", true) == 0)

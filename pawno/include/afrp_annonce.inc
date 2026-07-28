@@ -48,10 +48,22 @@
 #define ANNP_BOX_Y     4.0
 #define ANNP_TXT_Y     5.0
 
+// Plusieurs systemes peuvent vouloir ce bandeau en meme temps (un braquage
+// pendant un event du monde, par exemple). Chacun a son emplacement : sans ca,
+// le premier qui termine effacerait le bandeau de l'autre, encore actif.
+// L'emplacement le plus prioritaire (indice le plus bas) est celui affiche.
+#define ANNP_SRC_BRAQUAGE  0
+#define ANNP_SRC_EVENT     1
+#define ANNP_SRC_LIBRE     2
+#define ANNP_MAX_SRC       3
+
 new PlayerText:annPermBox[MAX_PLAYERS];
 new PlayerText:annPermTxt[MAX_PLAYERS];
-new annPermActif = 0;                  // 1 = un bandeau permanent est en cours
-new annPermTexte[144];
+new annPermOn[ANNP_MAX_SRC];
+new annPermTxtSrc[ANNP_MAX_SRC][144];
+new annPermColSrc[ANNP_MAX_SRC];
+new annPermActif = 0;                  // 1 = au moins une source est active
+new annPermTexte[144];                 // texte reellement affiche
 new annPermCouleur = 0xFFD700FF;
 
 new PlayerText:annBox[MAX_PLAYERS];
@@ -201,12 +213,28 @@ stock Annonce_PermHide(playerid)
 	return 1;
 }
 
-// Affiche le bandeau permanent pour tout le monde jusqu'a Annonce_PermClear.
-stock Annonce_PermSet(texte[], couleur = 0xFFD700FF)
+// Recalcule ce qui doit etre affiche et le pousse a tout le monde.
+stock Annonce_PermRefresh()
 {
-	format(annPermTexte, sizeof(annPermTexte), "%s", texte);
-	annPermCouleur = couleur;
+	new src = -1;
+	for(new k = 0; k < ANNP_MAX_SRC; k++)
+		if(annPermOn[k] == 1) { src = k; break; }
+
+	if(src == -1)
+	{
+		annPermActif = 0;
+		annPermTexte[0] = 0;
+		for(new i = 0; i < MAX_PLAYERS; i++)
+		{
+			if(!IsPlayerConnected(i) || IsPlayerNPC(i)) continue;
+			Annonce_PermHide(i);
+		}
+		return 1;
+	}
+
 	annPermActif   = 1;
+	annPermCouleur = annPermColSrc[src];
+	format(annPermTexte, sizeof(annPermTexte), "%s", annPermTxtSrc[src]);
 	for(new i = 0; i < MAX_PLAYERS; i++)
 	{
 		if(!IsPlayerConnected(i) || IsPlayerNPC(i)) continue;
@@ -215,16 +243,25 @@ stock Annonce_PermSet(texte[], couleur = 0xFFD700FF)
 	return 1;
 }
 
-stock Annonce_PermClear()
+// src : ANNP_SRC_BRAQUAGE, ANNP_SRC_EVENT ou ANNP_SRC_LIBRE.
+stock Annonce_PermSet(src, texte[], couleur = 0xFFD700FF)
 {
-	annPermActif = 0;
-	annPermTexte[0] = 0;
-	for(new i = 0; i < MAX_PLAYERS; i++)
-	{
-		if(!IsPlayerConnected(i) || IsPlayerNPC(i)) continue;
-		Annonce_PermHide(i);
-	}
-	return 1;
+	if(src < 0 || src >= ANNP_MAX_SRC) return 0;
+	format(annPermTxtSrc[src], 144, "%s", texte);
+	annPermColSrc[src] = couleur;
+	annPermOn[src]     = 1;
+	return Annonce_PermRefresh();
+}
+
+// N'efface QUE sa propre source : un systeme ne peut pas effacer le bandeau
+// d'un autre. Si une autre source reste active, elle reprend l'affichage.
+stock Annonce_PermClear(src)
+{
+	if(src < 0 || src >= ANNP_MAX_SRC) return 0;
+	if(annPermOn[src] == 0) return 0;
+	annPermOn[src] = 0;
+	annPermTxtSrc[src][0] = 0;
+	return Annonce_PermRefresh();
 }
 
 // Un joueur qui arrive alors qu'un event est deja en cours doit le voir : sans

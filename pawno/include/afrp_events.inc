@@ -125,7 +125,7 @@ stock Events_BroadcastStart()
 		case EVENT_VIP_CONVOY:  format(bandeau, sizeof(bandeau), "EVENT : mission escorte VIP  -  %d$  -  /event", eventReward);
 		default:                format(bandeau, sizeof(bandeau), "EVENT en cours  -  /event");
 	}
-	Annonce_PermSet(bandeau, 0xFFD700FF);
+	Annonce_PermSet(ANNP_SRC_EVENT, bandeau, 0xFFD700FF);
 
 	#pragma unused zname
 	return 1;
@@ -146,7 +146,7 @@ stock Events_Stop()
 	// [BANDEAU] Seul point de sortie du module : appele aussi bien quand l'event
 	// expire (Events_AutoDespawn) que quand un joueur le ramasse
 	// (Events_OnPickup). Effacer ici couvre donc les deux cas d'un seul coup.
-	Annonce_PermClear();
+	Annonce_PermClear(ANNP_SRC_EVENT);
 
 	currentEvent = EVENT_NONE;
 	eventReward = 0;
