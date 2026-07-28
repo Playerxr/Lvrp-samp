@@ -412,6 +412,7 @@ stock Cv_Arrivee()
 		{
 			if(!IsPlayerConnected(i) || cvEscort[i] != 1) continue;
 			SafeGivePlayerMoney(i, parPersonne, "Escorte de convoi");
+			Saison_AddXp(i, SAI_XP_CONVOI);   // [SAISON] escorter compte aussi
 			format(s, sizeof(s), "{00FF00}Convoi arrive a bon port : {FFFF00}%d${FFFFFF} pour ton escorte.", parPersonne);
 			Cv_Msg(i, s);
 		}
@@ -420,7 +421,10 @@ stock Cv_Arrivee()
 	}
 
 	if(cvDriver != INVALID_PLAYER_ID && IsPlayerConnected(cvDriver))
+	{
 		Cv_Msg(cvDriver, "{00FF00}Livraison reussie. La caisse de l'entreprise a ete creditee.");
+		Saison_AddXp(cvDriver, SAI_XP_CONVOI);   // [SAISON]
+	}
 
 	cvNextTs = gettime() + CV_COOLDOWN_MIN * 60;
 	Cv_Reset();
@@ -444,6 +448,7 @@ stock Cv_Braquage_Reussi()
 	{
 		if(!IsPlayerConnected(i) || cvBrigand[i] != 1) continue;
 		SafeGivePlayerMoney(i, parPersonne, "Braquage de convoi");
+		Saison_AddXp(i, SAI_XP_CONVOI);   // [SAISON] braquer compte autant que livrer
 		format(s, sizeof(s), "{00FF00}Braquage reussi : {FFFF00}%d${FFFFFF} pour ta part.", parPersonne);
 		Cv_Msg(i, s);
 	}

@@ -316,6 +316,7 @@ stock Obj_Progress(playerid, objType, montant)
 		// [TOP DU JOUR] un objectif accompli vaut plus que 25 minutes de presence :
 		// c'est ce qui empeche le classement de recompenser la seule anciennete.
 		TopJour_AddPoints(playerid, TJ_PTS_OBJECTIF);
+		Saison_AddXp(playerid, SAI_XP_OBJECTIF);   // [SAISON]
 
 		// Prime si les trois sont faits
 		new tousFaits = 1;

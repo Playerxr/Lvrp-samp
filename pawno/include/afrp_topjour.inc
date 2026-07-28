@@ -410,6 +410,10 @@ stock TopJour_Payout()
 		if(pid != INVALID_PLAYER_ID)
 		{
 			SafeGivePlayerMoney(pid, tjPrize[r], "Top du jour");
+			// [SAISON] le podium vaut aussi des points de saison.
+			if(r == 0)      Saison_AddXp(pid, SAI_XP_TOP1);
+			else if(r == 1) Saison_AddXp(pid, SAI_XP_TOP2);
+			else            Saison_AddXp(pid, SAI_XP_TOP3);
 			format(tjStr, sizeof(tjStr), "{FFD700} Top du jour {FFFFFF} Tu finis {FFFFB2}%d{FFFFFF} de la journee : {FFFFB2}+%d${FFFFFF} !", r + 1, tjPrize[r]);
 			msg_Client(pid, COLOR_WHITE, tjStr);
 			PlayerPlaySound(pid, 1057, 0.0, 0.0, 0.0);
@@ -528,7 +532,14 @@ public TopJour_Tick()
 	for(new k = 0; k < MAX_PLAYERS; k++)
 	{
 		if(!IsPlayerConnected(k) || IsPlayerNPC(k)) continue;
-		if(TopJour_MinuteCompte(k)) TopJour_AddPoints(k, TJ_PTS_MINUTE, 0);
+		if(TopJour_MinuteCompte(k))
+		{
+			TopJour_AddPoints(k, TJ_PTS_MINUTE, 0);
+			// [SAISON] on reutilise le meme controle anti-AFK : une minute qui
+			// ne compte pas pour le top du jour ne doit pas compter non plus
+			// pour la saison, sinon l'anti-AFK serait contournable par la bande.
+			Saison_MinuteActive(k);
+		}
 	}
 	// Un seul classement pour tout le monde, puis on rafraichit les panneaux.
 	TopJour_BuildRank();

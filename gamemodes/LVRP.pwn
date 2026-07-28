@@ -3357,6 +3357,9 @@ new PlayerInfo[MAX_PLAYERS][e_Player];
 // cargo, commerce). Un enum Pawn doit etre defini AVANT toute utilisation.
 // [TOP DU JOUR] doit venir AVANT afrp_objectifs : ce dernier utilise la
 // constante TJ_PTS_OBJECTIF, et en Pawn un #define doit exister avant usage.
+// [SAISON] doit preceder afrp_topjour ET afrp_objectifs : tous deux utilisent
+// ses constantes SAI_XP_*, et en Pawn un #define doit exister avant usage.
+#include <afrp_saison>
 #include <afrp_topjour>
 #include <afrp_objectifs>
 
@@ -4944,6 +4947,7 @@ public PaieAuto_Tick()
             new mult = Bienvenue_PayMultiplier(i);
             montant *= mult;
             SafeGivePlayerMoney(i, montant, "Paie horaire job");
+            Saison_AddXp(i, SAI_XP_PAIE);   // [SAISON] travailler fait progresser
             Obj_Progress(i, OBJ_ARGENT, montant);   // [OBJECTIFS] argent gagne en travaillant
             new pstring[180];
             if(mult > 1)
@@ -23490,6 +23494,7 @@ public OnPlayerConnect(playerid)
     TopJour_OnConnect(playerid); // [TOP DU JOUR] reset des compteurs anti-AFK
     Annonce_OnConnect(playerid); // [ANNONCE] reset du bandeau
     Mini_OnConnect(playerid); // [MINIJEU] reset des textdraws
+    Saison_OnConnect(playerid); // [SAISON] sinon le slot garde l'index du precedent
     ArmeePaie_Time[playerid] = 0; // [ARMEE] sinon le slot garde le compteur du precedent occupant
     Ent_OnPlayerConnect(playerid); // [ENTREPRISE] reset compteur minutes accumulees
     Jobs_OnConnect(playerid); // [JOBS] reset streak
@@ -24119,6 +24124,7 @@ public OnPlayerDisconnect(playerid, reason)
     Cv_OnDisconnect(playerid); // [CONVOI] retire de l'escorte / du braquage
     Gps_OnDisconnect(playerid); // [GPS PARTAGE] coupe ses partages et ses icones
     Mini_OnDisconnect(playerid); // [MINIJEU] detruit les textdraws
+    Saison_OnDisconnect(playerid); // [SAISON] libere l'index
     LegalTag_OnDisconnect(playerid); // [LEGAL TAG] detruit le label de faction
     Cuff_OnDisconnect(playerid); // [CUFFS] anti combat-log : auto-jail si menotte
     Phone_DestroyUI(playerid); // AFRP cleanup ancien telephone (sera vir� en P4)
@@ -30118,6 +30124,8 @@ public OnGameModeInit()
     Obj_Init();
     // [TOP DU JOUR] charge topjour.cfg + timer 60s
     TopJour_Init();
+    // [SAISON] charge saison.cfg + timer 60s (bascule de saison)
+    Saison_Init();
     // [FIX ESSENCE] differe de 30s : les vehicules arrivent par des requetes
     // MySQL asynchrones, les parcourir tout de suite n'en verrait aucun.
     SetTimer("Gas_RepairOnce", 30000, false);
@@ -30634,6 +30642,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     if(ArmBase_OnDialog(playerid, dialogid, response, listitem)) return 1;
     if(Assu_OnDialog(playerid, dialogid, response, listitem)) return 1;
     if(Gps_OnDialog(playerid, dialogid, response, listitem)) return 1;
+    if(Saison_OnDialog(playerid, dialogid, response, listitem)) return 1;
 
     // [MOBILE INLINE] Dispatch vers mobile_system pour ses dialogs (MARKET, SETTINGS)
     if(dialogid == MARKET_DIALOG || dialogid == SETTINGS_DIALOG)
@@ -53301,6 +53310,11 @@ public OnPlayerCommandText(playerid, cmdtext[])
 	else if(strcmp(cmd, "/convoi", true) == 0 || strcmp(cmd, "/convois", true) == 0)
 	{
 	    return Cv_Command(playerid, cmdtext);
+	}
+	// [SAISON] passe saisonnier
+	else if(strcmp(cmd, "/saison", true) == 0 || strcmp(cmd, "/passe", true) == 0)
+	{
+	    return Saison_Cmd(playerid);
 	}
 	// [MINIJEU] essai du minijeu de competence
 	else if(strcmp(cmd, "/minijeu", true) == 0)
