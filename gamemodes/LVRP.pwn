@@ -5256,6 +5256,8 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 #include <afrp_entmarket>
 #include <afrp_justice>
 #include <afrp_armeebase>
+// [ASSURANCE] apres afrp_parkingpayant : utilise la constante PP_FEE_IMPOUND
+#include <afrp_assurance>
 // [ANNONCE] bandeau textdraw, utilise par event / convoi / top du jour
 #include <afrp_annonce>
 // [EVENTS ADMIN] Systeme generique d'evenements (course, DM, derby...)
@@ -30091,6 +30093,8 @@ public OnGameModeInit()
     Justice_Init();
     // [EVENTS ADMIN] charge scriptfiles/events_parcours.cfg
     Ev_Init();
+    // [ASSURANCE] charge assurances.cfg
+    Assu_Init();
     // [OBJECTIFS] Init + timer 60s (temps de jeu, distance parcourue)
     Obj_Init();
     // [TOP DU JOUR] charge topjour.cfg + timer 60s
@@ -30609,6 +30613,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     if(Ev_OnDialog(playerid, dialogid, response, listitem, inputtext)) return 1;
     if(TopJour_OnDialog(playerid, dialogid, response, listitem)) return 1;
     if(ArmBase_OnDialog(playerid, dialogid, response, listitem)) return 1;
+    if(Assu_OnDialog(playerid, dialogid, response, listitem)) return 1;
 
     // [MOBILE INLINE] Dispatch vers mobile_system pour ses dialogs (MARKET, SETTINGS)
     if(dialogid == MARKET_DIALOG || dialogid == SETTINGS_DIALOG)
@@ -49553,6 +49558,8 @@ public OnVehicleSpawn(vehicleid)
     // [FIX VEHICULE TRANSFORMATION] tuning_Load accumule les composants a chaque respawn
     // On ne recharge le tuning que pour les v�hicules perso (CAR_OWN)
     // Les v�hicules job/faction n'ont pas de tuning et ChangeVehiclePaintjob en double = crash visuel
+    // [ASSURANCE] un vehicule assure ressort repare au lieu de rester Hors Service
+    Assu_OnVehicleSpawn(vehicleid);
     if(vehicle[vehicleid][cOwned] == 1) tuning_Load(vehicleid);
     tCount[vehicleid] = false;
 	vehicle[vehicleid][cEngine] = false;
@@ -53260,6 +53267,11 @@ public OnPlayerCommandText(playerid, cmdtext[])
 	else if(strcmp(cmd, "/toptd", true) == 0)
 	{
 	    return TopJour_TdToggle(playerid);
+	}
+	// [ASSURANCE] contrats sur les vehicules du joueur
+	else if(strcmp(cmd, "/assurance", true) == 0 || strcmp(cmd, "/assurances", true) == 0)
+	{
+	    return Assu_Cmd(playerid);
 	}
 	// [OBJECTIFS] Objectifs quotidiens. Sans argument : le detail en dialog.
 	// "hud" : affiche/cache le panneau permanent a l'ecran.

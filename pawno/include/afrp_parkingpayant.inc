@@ -91,15 +91,19 @@ stock ParkingPay_CanAfford(playerid, carSqlid)
 	if(existing != -1 && PPTicket[existing][ppUsed] == 1)
 		return 1;
 	new required = PP_FEE_INITIAL;
+	// [ASSURANCE] Assu_SupplementFourriere renvoie une franchise reduite si le
+	// vehicule est couvert, sinon le tarif plein. Le tarif est decide la, et
+	// nulle part ailleurs, pour que le message et le debit restent coherents.
+	new supp = Assu_SupplementFourriere(carSqlid);
 	if(existing != -1 && PPTicket[existing][ppUsed] == 2)
-		required += PP_FEE_IMPOUND;
+		required += supp;
 	if(PlayerInfo[playerid][pCash] < required)
 	{
 		new msg[160];
 		if(required == PP_FEE_INITIAL)
 			format(msg, sizeof(msg), "{CF9756} Parking {FFFFFF} Il te faut {FFFFB2}%d${FFFFFF} pour te garer ici (30 min).", required);
 		else
-			format(msg, sizeof(msg), "{CF9756} Parking {FFFFFF} Ta voiture est en fourriere : {FFFFB2}%d${FFFFFF} pour la recuperer (fourriere %d$ + parking %d$).", required, PP_FEE_IMPOUND, PP_FEE_INITIAL);
+			format(msg, sizeof(msg), "{CF9756} Parking {FFFFFF} Ta voiture est en fourriere : {FFFFB2}%d${FFFFFF} pour la recuperer (fourriere %d$ + parking %d$).", required, supp, PP_FEE_INITIAL);
 		msg_Client(playerid, COLOR_INFO, msg);
 		return 0;
 	}
@@ -139,7 +143,8 @@ stock ParkingPay_ApplyPayment(playerid, carSqlid, pid, vidx)
 
 	new required = PP_FEE_INITIAL;
 	new bool:wasImpounded = (tid != -1 && PPTicket[tid][ppUsed] == 2);
-	if(wasImpounded) required += PP_FEE_IMPOUND;
+	// [ASSURANCE] meme tarif que celui annonce par ParkingPay_CanAfford.
+	if(wasImpounded) required += Assu_SupplementFourriere(carSqlid);
 	SafeGivePlayerMoney(playerid, -required, "Parking payant");
 
 	if(tid == -1) tid = ParkingPay_AllocSlot();

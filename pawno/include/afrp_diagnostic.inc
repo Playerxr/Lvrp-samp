@@ -74,6 +74,8 @@ static const DiagDialogs[][e_DiagDlg] = {
 	{9616, "event"},             {9617, "event"},
 	{9618, "event"},            {9619, "event"},
 	{9620, "topjour"},        {9621, "armeebase"},
+	{9623, "assurance"},      {9624, "assurance"},
+	{9625, "assurance"},
 	{9800, "factionmenu"},       {9801, "factionmenu"},
 	{9802, "factionmenu"},       {9803, "factionmenu"},
 	{9940, "justice"},           {9941, "justice"},
