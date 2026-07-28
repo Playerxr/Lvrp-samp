@@ -5258,6 +5258,9 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 #include <afrp_armeebase>
 // [ASSURANCE] apres afrp_parkingpayant : utilise la constante PP_FEE_IMPOUND
 #include <afrp_assurance>
+// [CONVOI] apres afrp_entreprise, afrp_cargomission et afrp_annonce :
+// utilise entreprises[], cargoDepot[] et Annonce_All
+#include <afrp_convoi>
 // [ANNONCE] bandeau textdraw, utilise par event / convoi / top du jour
 #include <afrp_annonce>
 // [EVENTS ADMIN] Systeme generique d'evenements (course, DM, derby...)
@@ -24108,6 +24111,7 @@ public OnPlayerDisconnect(playerid, reason)
     Obj_OnPlayerDisconnect(playerid); // [OBJECTIFS] sauvegarde la progression
     TopJour_OnDisconnect(playerid); // [TOP DU JOUR] detruit le panneau
     Annonce_OnDisconnect(playerid); // [ANNONCE] detruit le bandeau
+    Cv_OnDisconnect(playerid); // [CONVOI] retire de l'escorte / du braquage
     LegalTag_OnDisconnect(playerid); // [LEGAL TAG] detruit le label de faction
     Cuff_OnDisconnect(playerid); // [CUFFS] anti combat-log : auto-jail si menotte
     Phone_DestroyUI(playerid); // AFRP cleanup ancien telephone (sera vir� en P4)
@@ -25488,6 +25492,8 @@ public OnPlayerDeath(playerid, killerid, reason)
     Jobs_ResetStreak(playerid);
     // [EVENTS ADMIN] elimine le joueur si le type d'event est a elimination
     Ev_OnDeath(playerid);
+    // [CONVOI] interrompt un braquage en cours par ce joueur
+    Cv_OnDeath(playerid);
 
     new string[128],weapon[46];
     new Float:x,Float:y,Float:z;
@@ -30095,6 +30101,8 @@ public OnGameModeInit()
     Ev_Init();
     // [ASSURANCE] charge assurances.cfg
     Assu_Init();
+    // [CONVOI] timer 5s (braquage, arrivee, icones)
+    Cv_Init();
     // [OBJECTIFS] Init + timer 60s (temps de jeu, distance parcourue)
     Obj_Init();
     // [TOP DU JOUR] charge topjour.cfg + timer 60s
@@ -53272,6 +53280,11 @@ public OnPlayerCommandText(playerid, cmdtext[])
 	else if(strcmp(cmd, "/assurance", true) == 0 || strcmp(cmd, "/assurances", true) == 0)
 	{
 	    return Assu_Cmd(playerid);
+	}
+	// [CONVOI] convois de marchandises escortes
+	else if(strcmp(cmd, "/convoi", true) == 0 || strcmp(cmd, "/convois", true) == 0)
+	{
+	    return Cv_Command(playerid, cmdtext);
 	}
 	// [OBJECTIFS] Objectifs quotidiens. Sans argument : le detail en dialog.
 	// "hud" : affiche/cache le panneau permanent a l'ecran.
