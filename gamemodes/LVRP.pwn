@@ -5261,6 +5261,8 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 // [CONVOI] apres afrp_entreprise, afrp_cargomission et afrp_annonce :
 // utilise entreprises[], cargoDepot[] et Annonce_All
 #include <afrp_convoi>
+// [GPS PARTAGE] apres afrp_entreprise : utilise entreprises[] et Ent_FindByOwner
+#include <afrp_gpspartage>
 // [ANNONCE] bandeau textdraw, utilise par event / convoi / top du jour
 #include <afrp_annonce>
 // [EVENTS ADMIN] Systeme generique d'evenements (course, DM, derby...)
@@ -24112,6 +24114,7 @@ public OnPlayerDisconnect(playerid, reason)
     TopJour_OnDisconnect(playerid); // [TOP DU JOUR] detruit le panneau
     Annonce_OnDisconnect(playerid); // [ANNONCE] detruit le bandeau
     Cv_OnDisconnect(playerid); // [CONVOI] retire de l'escorte / du braquage
+    Gps_OnDisconnect(playerid); // [GPS PARTAGE] coupe ses partages et ses icones
     LegalTag_OnDisconnect(playerid); // [LEGAL TAG] detruit le label de faction
     Cuff_OnDisconnect(playerid); // [CUFFS] anti combat-log : auto-jail si menotte
     Phone_DestroyUI(playerid); // AFRP cleanup ancien telephone (sera vir� en P4)
@@ -30103,6 +30106,8 @@ public OnGameModeInit()
     Assu_Init();
     // [CONVOI] timer 5s (braquage, arrivee, icones)
     Cv_Init();
+    // [GPS PARTAGE] timer 5s (rafraichissement des icones)
+    Gps_Init();
     // [OBJECTIFS] Init + timer 60s (temps de jeu, distance parcourue)
     Obj_Init();
     // [TOP DU JOUR] charge topjour.cfg + timer 60s
@@ -30622,6 +30627,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     if(TopJour_OnDialog(playerid, dialogid, response, listitem)) return 1;
     if(ArmBase_OnDialog(playerid, dialogid, response, listitem)) return 1;
     if(Assu_OnDialog(playerid, dialogid, response, listitem)) return 1;
+    if(Gps_OnDialog(playerid, dialogid, response, listitem)) return 1;
 
     // [MOBILE INLINE] Dispatch vers mobile_system pour ses dialogs (MARKET, SETTINGS)
     if(dialogid == MARKET_DIALOG || dialogid == SETTINGS_DIALOG)
@@ -53285,6 +53291,12 @@ public OnPlayerCommandText(playerid, cmdtext[])
 	else if(strcmp(cmd, "/convoi", true) == 0 || strcmp(cmd, "/convois", true) == 0)
 	{
 	    return Cv_Command(playerid, cmdtext);
+	}
+	// [GPS PARTAGE] partage de position en direct (/gps est deja pris par le
+	// GPS de vehicule, plus haut dans cette fonction)
+	else if(strcmp(cmd, "/position", true) == 0 || strcmp(cmd, "/partagegps", true) == 0)
+	{
+	    return Gps_Command(playerid, cmdtext);
 	}
 	// [OBJECTIFS] Objectifs quotidiens. Sans argument : le detail en dialog.
 	// "hud" : affiche/cache le panneau permanent a l'ecran.
