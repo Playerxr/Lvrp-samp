@@ -5258,6 +5258,8 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 #include <afrp_armeebase>
 // [ASSURANCE] apres afrp_parkingpayant : utilise la constante PP_FEE_IMPOUND
 #include <afrp_assurance>
+// [MINIJEU] avant afrp_convoi, qui s'en sert pour le braquage
+#include <afrp_minijeu>
 // [CONVOI] apres afrp_entreprise, afrp_cargomission et afrp_annonce :
 // utilise entreprises[], cargoDepot[] et Annonce_All
 #include <afrp_convoi>
@@ -23487,6 +23489,7 @@ public OnPlayerConnect(playerid)
     Obj_OnPlayerConnect(playerid); // [OBJECTIFS] reset de l'etat avant login
     TopJour_OnConnect(playerid); // [TOP DU JOUR] reset des compteurs anti-AFK
     Annonce_OnConnect(playerid); // [ANNONCE] reset du bandeau
+    Mini_OnConnect(playerid); // [MINIJEU] reset des textdraws
     ArmeePaie_Time[playerid] = 0; // [ARMEE] sinon le slot garde le compteur du precedent occupant
     Ent_OnPlayerConnect(playerid); // [ENTREPRISE] reset compteur minutes accumulees
     Jobs_OnConnect(playerid); // [JOBS] reset streak
@@ -24115,6 +24118,7 @@ public OnPlayerDisconnect(playerid, reason)
     Annonce_OnDisconnect(playerid); // [ANNONCE] detruit le bandeau
     Cv_OnDisconnect(playerid); // [CONVOI] retire de l'escorte / du braquage
     Gps_OnDisconnect(playerid); // [GPS PARTAGE] coupe ses partages et ses icones
+    Mini_OnDisconnect(playerid); // [MINIJEU] detruit les textdraws
     LegalTag_OnDisconnect(playerid); // [LEGAL TAG] detruit le label de faction
     Cuff_OnDisconnect(playerid); // [CUFFS] anti combat-log : auto-jail si menotte
     Phone_DestroyUI(playerid); // AFRP cleanup ancien telephone (sera vir� en P4)
@@ -25497,6 +25501,8 @@ public OnPlayerDeath(playerid, killerid, reason)
     Ev_OnDeath(playerid);
     // [CONVOI] interrompt un braquage en cours par ce joueur
     Cv_OnDeath(playerid);
+    // [MINIJEU] mourir interrompt le minijeu sans declencher l'echec
+    Mini_Abandon(playerid);
 
     new string[128],weapon[46];
     new Float:x,Float:y,Float:z;
@@ -47257,6 +47263,10 @@ public OnPlayerKeyStateChange(playerid, newkeys, oldkeys)
     // [VIBE PHONE P1] Deverrouillage par ENTREE depuis lockscreen
     if(phone_OnKey(playerid, newkeys)) return 1;
 
+    // [MINIJEU] TIR / SPRINT sont captes tant qu'un minijeu est affiche,
+    // sinon le joueur tirerait en essayant de valider sa manche.
+    if(Mini_OnKey(playerid, newkeys)) return 1;
+
     // ========================================================================
     // [CASINO] Touche F (KEY_SECONDARY_ATTACK = 16) pour entrer/sortir d'un casino
     // ========================================================================
@@ -53291,6 +53301,11 @@ public OnPlayerCommandText(playerid, cmdtext[])
 	else if(strcmp(cmd, "/convoi", true) == 0 || strcmp(cmd, "/convois", true) == 0)
 	{
 	    return Cv_Command(playerid, cmdtext);
+	}
+	// [MINIJEU] essai du minijeu de competence
+	else if(strcmp(cmd, "/minijeu", true) == 0)
+	{
+	    return Mini_CmdTest(playerid);
 	}
 	// [GPS PARTAGE] partage de position en direct (/gps est deja pris par le
 	// GPS de vehicule, plus haut dans cette fonction)

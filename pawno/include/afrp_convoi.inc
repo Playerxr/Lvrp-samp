@@ -337,18 +337,48 @@ stock Cv_Braquer(playerid)
 		return Cv_Msg(playerid, "{00FF00}Tu prets main-forte au braquage : tu toucheras ta part du butin.");
 	}
 
+	// Forcer le coffre demande de la precision, pas de la patience : le minijeu
+	// remplace l'attente passive. Rester pres du camion reste obligatoire, le
+	// tick de 5s continue de le verifier.
+	// On verifie AVANT de poser cvHold : un joueur deja pris par un autre
+	// minijeu aurait laisse un braquage fantome jusqu'au tick suivant.
+	if(Mini_EnCours(playerid))
+		return Cv_Msg(playerid, "{FF4444}Tu es deja occupe a autre chose.");
+	if(!Mini_Start(playerid, "Cv_BraquageOk", "Cv_BraquageKo", 0, 4, 5, "~r~FORCER LE COFFRE"))
+		return Cv_Msg(playerid, "{FF4444}Impossible de commencer maintenant, reessaie.");
+
 	cvHold = playerid;
 	cvHoldSec = 0;
 	cvBrigand[playerid] = 1;
 
 	new s[190];
-	format(s, sizeof(s), "{FF4444}Braquage en cours : reste pres du camion pendant %d secondes.", CV_BRAQUAGE_SEC);
+	format(s, sizeof(s), "{FF4444}Braquage en cours : reste pres du camion et force le coffre.");
 	Cv_Msg(playerid, s);
 	format(s, sizeof(s), "[CONVOI] Le convoi de %s est attaque !", cvEntName);
 	Cv_Chat(s);
 	Annonce_All("~r~CONVOI ATTAQUE", "Le chargement est en train d'etre braque", 0xFF4444FF, 8000);
 	if(cvDriver != INVALID_PLAYER_ID && IsPlayerConnected(cvDriver))
 		Cv_Msg(cvDriver, "{FF4444}On braque ton convoi ! Eloigne le camion ou fais-les fuir.");
+	return 1;
+}
+
+// Rappels du minijeu de braquage. Ce sont des publics : Mini_Start les
+// appelle par leur nom via CallLocalFunction.
+forward Cv_BraquageOk(playerid, param);
+public Cv_BraquageOk(playerid, param)
+{
+	#pragma unused param
+	if(cvState != CV_ROUTE || cvHold != playerid) return 1;
+	Cv_Braquage_Reussi();
+	return 1;
+}
+
+forward Cv_BraquageKo(playerid, param);
+public Cv_BraquageKo(playerid, param)
+{
+	#pragma unused param
+	if(cvHold == playerid) { cvHold = INVALID_PLAYER_ID; cvHoldSec = 0; }
+	Cv_Msg(playerid, "{FF4444}Le coffre a resiste. Tu peux retenter avec /convoi braquer.");
 	return 1;
 }
 
@@ -472,18 +502,21 @@ public Cv_Tick()
 		if(!IsPlayerConnected(cvHold) || !IsPlayerInRangeOfPoint(cvHold, CV_RADIUS, vx, vy, vz))
 		{
 			if(IsPlayerConnected(cvHold))
+			{
+				Mini_Abandon(cvHold);
 				Cv_Msg(cvHold, "{FF4444}Tu t'es eloigne du camion : le braquage est interrompu.");
+			}
 			cvHold = INVALID_PLAYER_ID;
 			cvHoldSec = 0;
 		}
-		else
+		// Le temps ne conclut plus rien : c'est le minijeu qui decide. Le tick
+		// ne sert plus qu'a verifier que le braqueur reste bien sur place.
+		else if(!Mini_EnCours(cvHold))
 		{
-			cvHoldSec += CV_TICK_MS / 1000;
-			if(cvHoldSec >= CV_BRAQUAGE_SEC) return Cv_Braquage_Reussi(), 1;
-
-			new reste = CV_BRAQUAGE_SEC - cvHoldSec, gt[48];
-			format(gt, sizeof(gt), "~r~Braquage~n~~w~%d s", reste);
-			GameTextForPlayer(cvHold, gt, CV_TICK_MS, 3);
+			// Le minijeu s'est termine sans que les rappels aient remis cvHold
+			// a zero : filet de securite pour ne pas bloquer un braquage mort.
+			cvHold = INVALID_PLAYER_ID;
+			cvHoldSec = 0;
 		}
 	}
 
