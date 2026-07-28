@@ -25726,6 +25726,8 @@ public OnPlayerSpawn(playerid)
 
 	// [HUD] Cr�e/affich� les TextDraws HP/AR/Ping au spawn (1ere creation lazy)
 	HUD_OnSpawn(playerid);
+	// [ANNONCE] bandeau permanent : un joueur qui arrive pendant un event doit le voir
+	Annonce_OnSpawn(playerid);
 
 	AntiDeAMX();
 	

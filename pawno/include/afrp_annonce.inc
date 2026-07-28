@@ -37,6 +37,23 @@
 #define ANN_TEXTE_Y    152.0
 #define ANN_DUREE_DEF  7000        // duree par defaut en millisecondes
 
+// --- Bandeau PERMANENT (haut de l'ecran) ---
+// Different du bandeau du milieu : celui-ci n'a pas de minuteur, il reste
+// affiche tant qu'on ne l'efface pas explicitement. Sert a signaler ce qui
+// est EN COURS et qu'on peut encore aller chercher (event du monde, etc.).
+// Place en Y 4..20 : au-dessus de la premiere ligne de chat (~Y 22), a droite
+// du logo AFRP (X 5) et a gauche de la barre d'endurance (X 542).
+#define ANNP_BOX_X1    180.0
+#define ANNP_BOX_X2    460.0
+#define ANNP_BOX_Y     4.0
+#define ANNP_TXT_Y     5.0
+
+new PlayerText:annPermBox[MAX_PLAYERS];
+new PlayerText:annPermTxt[MAX_PLAYERS];
+new annPermActif = 0;                  // 1 = un bandeau permanent est en cours
+new annPermTexte[144];
+new annPermCouleur = 0xFFD700FF;
+
 new PlayerText:annBox[MAX_PLAYERS];
 new PlayerText:annTitre[MAX_PLAYERS];
 new PlayerText:annTexte[MAX_PLAYERS];
@@ -136,8 +153,91 @@ stock Annonce_All(titre[], texte[], couleur = 0xFFD700FF, duree = ANN_DUREE_DEF)
 	return n;
 }
 
+// ============================================================================
+// BANDEAU PERMANENT
+// ============================================================================
+stock Annonce_PermCreate(playerid)
+{
+	if(annPermBox[playerid] != PlayerText:INVALID_TEXT_DRAW) return 1;
+
+	annPermBox[playerid] = CreatePlayerTextDraw(playerid, ANNP_BOX_X1, ANNP_BOX_Y, "_");
+	PlayerTextDrawFont(playerid, annPermBox[playerid], 1);
+	PlayerTextDrawLetterSize(playerid, annPermBox[playerid], 0.0, 1.6);
+	PlayerTextDrawColor(playerid, annPermBox[playerid], 0x00000000);
+	PlayerTextDrawBackgroundColor(playerid, annPermBox[playerid], 0x00000000);
+	PlayerTextDrawTextSize(playerid, annPermBox[playerid], ANNP_BOX_X2, 0.0);
+	PlayerTextDrawUseBox(playerid, annPermBox[playerid], 1);
+	PlayerTextDrawBoxColor(playerid, annPermBox[playerid], 0x000000A0);
+
+	annPermTxt[playerid] = CreatePlayerTextDraw(playerid, 320.0, ANNP_TXT_Y, " ");
+	PlayerTextDrawFont(playerid, annPermTxt[playerid], 1);
+	PlayerTextDrawAlignment(playerid, annPermTxt[playerid], 2);
+	PlayerTextDrawLetterSize(playerid, annPermTxt[playerid], 0.24, 1.2);
+	PlayerTextDrawColor(playerid, annPermTxt[playerid], annPermCouleur);
+	PlayerTextDrawSetShadow(playerid, annPermTxt[playerid], 0);
+	PlayerTextDrawSetOutline(playerid, annPermTxt[playerid], 1);
+	PlayerTextDrawBackgroundColor(playerid, annPermTxt[playerid], 0x000000FF);
+	PlayerTextDrawSetProportional(playerid, annPermTxt[playerid], 1);
+	return 1;
+}
+
+stock Annonce_PermShow(playerid)
+{
+	if(annPermActif != 1) return 0;
+	if(!IsPlayerConnected(playerid) || IsPlayerNPC(playerid)) return 0;
+	Annonce_PermCreate(playerid);
+	PlayerTextDrawSetString(playerid, annPermTxt[playerid], annPermTexte);
+	PlayerTextDrawColor(playerid, annPermTxt[playerid], annPermCouleur);
+	PlayerTextDrawShow(playerid, annPermBox[playerid]);
+	PlayerTextDrawShow(playerid, annPermTxt[playerid]);
+	return 1;
+}
+
+stock Annonce_PermHide(playerid)
+{
+	if(annPermBox[playerid] == PlayerText:INVALID_TEXT_DRAW) return 0;
+	PlayerTextDrawHide(playerid, annPermBox[playerid]);
+	PlayerTextDrawHide(playerid, annPermTxt[playerid]);
+	return 1;
+}
+
+// Affiche le bandeau permanent pour tout le monde jusqu'a Annonce_PermClear.
+stock Annonce_PermSet(texte[], couleur = 0xFFD700FF)
+{
+	format(annPermTexte, sizeof(annPermTexte), "%s", texte);
+	annPermCouleur = couleur;
+	annPermActif   = 1;
+	for(new i = 0; i < MAX_PLAYERS; i++)
+	{
+		if(!IsPlayerConnected(i) || IsPlayerNPC(i)) continue;
+		Annonce_PermShow(i);
+	}
+	return 1;
+}
+
+stock Annonce_PermClear()
+{
+	annPermActif = 0;
+	annPermTexte[0] = 0;
+	for(new i = 0; i < MAX_PLAYERS; i++)
+	{
+		if(!IsPlayerConnected(i) || IsPlayerNPC(i)) continue;
+		Annonce_PermHide(i);
+	}
+	return 1;
+}
+
+// Un joueur qui arrive alors qu'un event est deja en cours doit le voir : sans
+// ca, seuls les joueurs presents au declenchement auraient le bandeau.
+stock Annonce_OnSpawn(playerid)
+{
+	return Annonce_PermShow(playerid);
+}
+
 stock Annonce_OnConnect(playerid)
 {
+	annPermBox[playerid] = PlayerText:INVALID_TEXT_DRAW;
+	annPermTxt[playerid] = PlayerText:INVALID_TEXT_DRAW;
 	annBox[playerid]     = PlayerText:INVALID_TEXT_DRAW;
 	annTitre[playerid]   = PlayerText:INVALID_TEXT_DRAW;
 	annTexte[playerid]   = PlayerText:INVALID_TEXT_DRAW;
@@ -153,6 +253,11 @@ stock Annonce_OnDisconnect(playerid)
 		PlayerTextDrawDestroy(playerid, annBox[playerid]);
 		PlayerTextDrawDestroy(playerid, annTitre[playerid]);
 		PlayerTextDrawDestroy(playerid, annTexte[playerid]);
+	}
+	if(annPermBox[playerid] != PlayerText:INVALID_TEXT_DRAW)
+	{
+		PlayerTextDrawDestroy(playerid, annPermBox[playerid]);
+		PlayerTextDrawDestroy(playerid, annPermTxt[playerid]);
 	}
 	Annonce_OnConnect(playerid);
 	return 1;

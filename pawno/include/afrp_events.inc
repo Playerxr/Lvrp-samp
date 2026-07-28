@@ -113,6 +113,20 @@ stock Events_BroadcastStart()
 		SendClientMessage(i, -1, msg);
 		PlayerPlaySound(i, 1057, 0.0, 0.0, 0.0);
 	}
+	// [BANDEAU] Un message de chat se noie en trois lignes. Le bandeau du haut
+	// reste affiche tant que l'event est disponible, et Events_Stop l'efface -
+	// que l'event ait expire ou que quelqu'un l'ait ramasse.
+	new bandeau[144];
+	switch(currentEvent)
+	{
+		case EVENT_MONEY_TRUCK: format(bandeau, sizeof(bandeau), "EVENT : transport de fonds renverse  -  %d$  -  /event", eventReward);
+		case EVENT_WEAPON_DROP: format(bandeau, sizeof(bandeau), "EVENT : cache d'armes reperee  -  /event");
+		case EVENT_DRUG_PICKUP: format(bandeau, sizeof(bandeau), "EVENT : livraison de drogue abandonnee  -  %d$  -  /event", eventReward);
+		case EVENT_VIP_CONVOY:  format(bandeau, sizeof(bandeau), "EVENT : mission escorte VIP  -  %d$  -  /event", eventReward);
+		default:                format(bandeau, sizeof(bandeau), "EVENT en cours  -  /event");
+	}
+	Annonce_PermSet(bandeau, 0xFFD700FF);
+
 	#pragma unused zname
 	return 1;
 }
@@ -129,6 +143,11 @@ stock Events_Stop()
 		DestroyDynamic3DTextLabel(eventLabel3D);
 		eventLabel3D = Text3D:INVALID_3DTEXT_ID;
 	}
+	// [BANDEAU] Seul point de sortie du module : appele aussi bien quand l'event
+	// expire (Events_AutoDespawn) que quand un joueur le ramasse
+	// (Events_OnPickup). Effacer ici couvre donc les deux cas d'un seul coup.
+	Annonce_PermClear();
+
 	currentEvent = EVENT_NONE;
 	eventReward = 0;
 	eventLabel[0] = 0;
