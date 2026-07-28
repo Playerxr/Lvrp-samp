@@ -396,6 +396,10 @@ stock TopJour_Payout()
 
 	new tjStr[176];
 	SendClientMessageToAll(0xFFD700FF, "|_____________ TOP DU JOUR _____________|");
+	// Le podium merite mieux qu'une ligne de chat noyee dans le flux.
+	new tjEcran[128];
+	format(tjEcran, sizeof(tjEcran), "1er : %s  (%d points)", tjName[tjRank[0]], tjPoints[tjRank[0]]);
+	Annonce_All("~y~MEILLEUR JOUEUR DU JOUR", tjEcran, 0xFFD700FF, 12000);
 	for(new r = 0; r < 3 && r < tjRankCount; r++)
 	{
 		new k = tjRank[r];

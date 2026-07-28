@@ -159,6 +159,14 @@ stock Ev_Announce(const text[])
 	return 1;
 }
 
+// Les moments qui comptent passent aussi par un bandeau a l'ecran : dans le
+// chat, une annonce d'event disparait en trois lignes et personne ne la voit.
+stock Ev_AnnonceEcran(titre[], texte[], couleur = 0xFFD700FF, duree = 8000)
+{
+	Annonce_All(titre, texte, couleur, duree);
+	return 1;
+}
+
 // Petit tokenizer autonome : evite de dependre de l'index de OnPlayerCommandText.
 stock Ev_Tok(const src[], &evPos, dest[], destSize)
 {
@@ -544,6 +552,10 @@ stock Ev_Open(playerid)
 	new str[160];
 	format(str, sizeof(str), "[EVENT] %s - %s | Inscriptions OUVERTES : tape /ev rejoindre", evName, evTypeName[evType]);
 	Ev_Announce(str);
+	new titreEcran[64], texteEcran[128];
+	format(titreEcran, sizeof(titreEcran), "~y~EVENEMENT : %s", evName);
+	format(texteEcran, sizeof(texteEcran), "%s  -  tape /ev rejoindre pour participer", evTypeName[evType]);
+	Ev_AnnonceEcran(titreEcran, texteEcran, 0xFFD700FF, 10000);
 	if(evPrize > 0)
 	{
 		format(str, sizeof(str), "[EVENT] Recompense du gagnant : %d$", evPrize);
@@ -705,6 +717,7 @@ public Ev_CountdownTick()
 		Ev_GiveCp(i);
 	}
 	Ev_Announce("[EVENT] C'est parti !");
+	Ev_AnnonceEcran("~g~L'EVENEMENT EST LANCE", "Bonne chance a tous les participants", 0x00FF00FF, 5000);
 	return 1;
 }
 
@@ -755,6 +768,9 @@ stock Ev_Finish(playerid)
 	new str[144];
 	format(str, sizeof(str), "[EVENT] \"%s\" termine. Merci a tous les participants !", evName);
 	Ev_Announce(str);
+	new finEcran[128];
+	format(finEcran, sizeof(finEcran), "%s  -  merci a tous les participants", evName);
+	Ev_AnnonceEcran("~y~EVENEMENT TERMINE", finEcran, 0xFFD700FF, 6000);
 	Ev_DestroyVehicles();
 	Ev_Reset();
 	if(playerid != INVALID_PLAYER_ID) Ev_Msg(playerid, "{00FF00}Event termine et nettoye.");
@@ -765,6 +781,7 @@ stock Ev_Cancel(playerid)
 {
 	if(evState == EV_OFF) return Ev_Msg(playerid, "{FF4444}Aucun event en cours.");
 	Ev_Announce("[EVENT] L'evenement a ete annule par l'organisation.");
+	Ev_AnnonceEcran("~r~EVENEMENT ANNULE", "L'organisation a annule l'evenement", 0xFF4444FF, 6000);
 	Ev_DestroyVehicles();
 	Ev_Reset();
 	Ev_Msg(playerid, "{FFFF00}Event annule, aucune recompense versee.");
@@ -1299,7 +1316,8 @@ stock Ev_Command(playerid, const cmdline[])
 		if(!strlen(msg)) return Ev_Msg(playerid, "{FFFFFF}Usage : {FFFF00}/ev annonce <texte>");
 		new s2[200];
 		format(s2, sizeof(s2), "[EVENT] %s", msg);
-		return Ev_Announce(s2);
+		Ev_Announce(s2);
+		return Ev_AnnonceEcran("~y~ANNONCE", msg, 0xFFD700FF, 8000);
 	}
 
 	return Ev_Help(playerid);

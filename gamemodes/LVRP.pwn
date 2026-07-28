@@ -5256,6 +5256,8 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 #include <afrp_entmarket>
 #include <afrp_justice>
 #include <afrp_armeebase>
+// [ANNONCE] bandeau textdraw, utilise par event / convoi / top du jour
+#include <afrp_annonce>
 // [EVENTS ADMIN] Systeme generique d'evenements (course, DM, derby...)
 #include <afrp_event>
 // [DIAGNOSTIC] volontairement en dernier : il lit les compteurs de tous les
@@ -23477,6 +23479,7 @@ public OnPlayerConnect(playerid)
     LegalTag_OnConnect(playerid); // [LEGAL TAG] init slot label
     Obj_OnPlayerConnect(playerid); // [OBJECTIFS] reset de l'etat avant login
     TopJour_OnConnect(playerid); // [TOP DU JOUR] reset des compteurs anti-AFK
+    Annonce_OnConnect(playerid); // [ANNONCE] reset du bandeau
     ArmeePaie_Time[playerid] = 0; // [ARMEE] sinon le slot garde le compteur du precedent occupant
     Ent_OnPlayerConnect(playerid); // [ENTREPRISE] reset compteur minutes accumulees
     Jobs_OnConnect(playerid); // [JOBS] reset streak
@@ -24102,6 +24105,7 @@ public OnPlayerDisconnect(playerid, reason)
     Justice_OnPlayerFree(playerid); // [JUSTICE] retire son dossier de proces s'il en avait un
     Obj_OnPlayerDisconnect(playerid); // [OBJECTIFS] sauvegarde la progression
     TopJour_OnDisconnect(playerid); // [TOP DU JOUR] detruit le panneau
+    Annonce_OnDisconnect(playerid); // [ANNONCE] detruit le bandeau
     LegalTag_OnDisconnect(playerid); // [LEGAL TAG] detruit le label de faction
     Cuff_OnDisconnect(playerid); // [CUFFS] anti combat-log : auto-jail si menotte
     Phone_DestroyUI(playerid); // AFRP cleanup ancien telephone (sera vir� en P4)
