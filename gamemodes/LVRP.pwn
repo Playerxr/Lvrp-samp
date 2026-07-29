@@ -5293,6 +5293,8 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 #include <afrp_braquage>
 // [NOUVEAUTES] menu automatique des fonctionnalites recentes
 #include <afrp_nouveautes>
+// [MAPEDIT] editeur de mapping en jeu
+#include <afrp_mapedit>
 // [EVENTS ADMIN] Systeme generique d'evenements (course, DM, derby...)
 #include <afrp_event>
 // [DIAGNOSTIC] volontairement en dernier : il lit les compteurs de tous les
@@ -23528,6 +23530,7 @@ public OnPlayerConnect(playerid)
     Saison_OnConnect(playerid); // [SAISON] sinon le slot garde l'index du precedent
     ArmBase_OnConnect(playerid); // [ARMEE BASE] reset de l'armee ciblee
     ArmNiv_OnConnect(playerid); // [ARMES / NIVEAU] reset anti-spam du message
+    MapEd_OnConnect(playerid); // [MAPEDIT] reset de l'objet selectionne
     ArmeePaie_Time[playerid] = 0; // [ARMEE] sinon le slot garde le compteur du precedent occupant
     Ent_OnPlayerConnect(playerid); // [ENTREPRISE] reset compteur minutes accumulees
     Jobs_OnConnect(playerid); // [JOBS] reset streak
@@ -30165,6 +30168,8 @@ public OnGameModeInit()
     Br_Init();
     // [NOUVEAUTES] charge qui a deja vu le menu
     News_Init();
+    // [MAPEDIT] recree les objets de mapping sauvegardes
+    MapEd_Init();
     // [OBJECTIFS] Init + timer 60s (temps de jeu, distance parcourue)
     Obj_Init();
     // [TOP DU JOUR] charge topjour.cfg + timer 60s
@@ -49266,6 +49271,9 @@ public OnPlayerClickTextDraw(playerid, Text:clickedid)
 
 public OnPlayerSelectDynamicObject(playerid, objectid, modelid, Float:x, Float:y, Float:z)
 {
+    // [MAPEDIT] selection d'un objet de mapping : ne repond que pour les siens.
+    if(MapEd_OnSelect(playerid, objectid, modelid, x, y, z))
+        {return 1;}
 	if(player_Dialog[playerid]==5 || player_Dialog[playerid]==6)
 	{
 	    new obj=-1;
@@ -49328,6 +49336,10 @@ public OnPlayerEditAttachedObject(playerid, response, index, modelid, boneid, Fl
 
 public OnPlayerEditDynamicObject(playerid, objectid, response, Float:x, Float:y, Float:z, Float:rx, Float:ry, Float:rz)
 {
+    // [MAPEDIT] objets de mapping : ne repond que pour les siens, donc sans
+    // risque de voler l'edition d'un autre systeme.
+    if(MapEd_OnEdit(playerid, objectid, response, x, y, z, rx, ry, rz))
+        {return 1;}
     // [MEUBLES DEHORS] edition d'un meuble exterieur : traite ici en priorite
     if(MD_OnEditObject(playerid, objectid, response, x, y, z, rx, ry, rz))
         {return 1;}
@@ -53356,6 +53368,11 @@ public OnPlayerCommandText(playerid, cmdtext[])
 	else if(strcmp(cmd, "/convoi", true) == 0 || strcmp(cmd, "/convois", true) == 0)
 	{
 	    return Cv_Command(playerid, cmdtext);
+	}
+	// [MAPEDIT] editeur de mapping en jeu (admin)
+	else if(strcmp(cmd, "/mapedit", true) == 0 || strcmp(cmd, "/objet", true) == 0)
+	{
+	    return MapEd_Command(playerid, cmdtext);
 	}
 	// [NOUVEAUTES] rouvrir le menu des fonctionnalites recentes
 	else if(strcmp(cmd, "/nouveautes", true) == 0 || strcmp(cmd, "/news", true) == 0)
