@@ -6,6 +6,7 @@
 	voit qu'en jeu. Cet editeur laisse l'admin mapper lui-meme, a la souris,
 	et sauvegarde tout seul. Aucune coordonnee n'est jamais ecrite a la main.
 
+	  /mapedit modeles         catalogue de modeles range par theme
 	  /mapedit objet <model>   pose un objet devant toi et ouvre l'edition
 	  /mapedit select          clique un objet pose pour le selectionner
 	  /mapedit editer          rouvre l'edition souris sur le selectionne
@@ -36,7 +37,8 @@
 	- OnPlayerConnect               -> MapEd_OnConnect(playerid)
 	- OnPlayerEditDynamicObject     -> MapEd_OnEdit(...)   EN PREMIER
 	- OnPlayerSelectDynamicObject   -> MapEd_OnSelect(...) EN PREMIER
-	- /mapedit                      -> MapEd_Command(playerid, cmdtext)
+	- OnDialogResponse              -> MapEd_OnDialog(playerid, ...)
+- /mapedit                      -> MapEd_Command(playerid, cmdtext)
 */
 
 #if defined AFRP_MAPEDIT_INCLUDED
@@ -365,11 +367,352 @@ stock MapEd_OnSelect(playerid, objectid, modelid, Float:x, Float:y, Float:z)
 }
 
 // ============================================================================
+// CATALOGUE DE MODELES
+//
+// Retenir des numeros de modeles a cinq chiffres et les taper a l'aveugle est
+// le vrai obstacle du mapping, pas la pose de l'objet. Le catalogue range les
+// modeles utiles par theme : on choisit dans une liste et l'objet est pose.
+//
+// Tous les identifiants viennent des fichiers .ide de GTA San Andreas et de
+// SAMP.ide : ce sont les modeles reellement presents dans le jeu.
+// ============================================================================
+#define DIALOG_ME_CAT_THEME 9635
+#define DIALOG_ME_CAT_MODEL 9636
+
+#define ME_CAT_THEMES 9
+
+new meCatTheme[ME_CAT_THEMES][40] = {
+	"Prison : murs, grilles, portails",
+	"Prison : cellules et securite",
+	"Postes de garde et barrieres",
+	"Logements prets : exterieurs",
+	"Logements prets : interieurs",
+	"Construction : murs, dalles, escaliers",
+	"Portes et fenetres",
+	"Meubles : chambre et salon",
+	"Meubles : cuisine et salle de bain"
+};
+
+new meCatGrp[] = {
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3,
+	3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4,
+	4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5,
+	5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5,
+	5, 5, 5, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6, 6,
+	6, 6, 6, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7, 7,
+	7, 7, 7, 7, 7, 7, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+	8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8
+};
+
+new meCatModel[] = {
+	19794, 19795, 19796, 14883, 4099, 19312, 19313, 19913, 3936, 3937,
+	8147, 987, 974, 19868, 19869, 19641, 19870, 19912, 18762, 18766,
+	14856, 19301, 19302, 19303, 19304, 2602, 2603, 1771, 19305, 19804,
+	19810, 19834, 19419, 19420, 19618, 19619, 19799, 19805, 19832, 19942,
+	8168, 5837, 16095, 16096, 966, 967, 969, 985, 986, 990,
+	993, 19467, 19871, 2920, 1237, 19425, 1215, 19489, 19491, 19493,
+	19495, 19497, 19499, 19501, 19503, 19505, 19507, 19509, 19511, 19595,
+	19854, 19849, 19865, 19866, 19867, 19490, 19492, 19494, 19496, 19498,
+	19500, 19502, 19504, 19506, 19508, 19510, 19512, 19855, 19856, 19857,
+	19858, 19859, 19860, 19861, 19862, 18762, 18763, 18764, 18765, 18766,
+	18980, 18981, 18767, 19789, 19790, 19791, 19353, 19354, 19355, 19356,
+	19357, 19358, 19359, 19360, 19361, 19362, 19843, 19844, 19845, 19846,
+	19531, 19545, 19943, 1491, 1492, 1494, 1502, 1499, 1495, 1497,
+	1498, 1500, 1501, 1504, 1505, 1506, 1507, 19802, 19875, 19466,
+	19325, 1493, 1496, 1800, 1793, 1804, 1798, 1771, 2331, 1763,
+	1766, 1753, 1735, 2096, 1810, 1594, 1781, 1792, 19787, 19786,
+	2313, 1567, 1742, 2562, 19806, 19807, 19826, 2170, 2147, 2336,
+	2149, 1208, 19922, 19923, 19924, 19925, 19926, 19932, 19933, 19934,
+	19935, 19938, 19830, 19831, 2514, 2521, 2517, 2520, 2516, 2519,
+	2515, 2518, 19873, 19874
+};
+
+new meCatNom[][33] = {
+	"Mur de prison de Los Santos",
+	"Portail de prison (est)",
+	"Portail de prison (sud)",
+	"Grille de prison",
+	"Grillage de prison (LS)",
+	"Cloture militaire haute",
+	"Cloture militaire (retour)",
+	"Grande cloture SA-MP",
+	"Cloture barbelee",
+	"Cloture barbelee (variante)",
+	"Grillage renforce barbele",
+	"Cloture electrifiee",
+	"Cloture haute",
+	"Grillage souple 1",
+	"Grillage souple 2",
+	"Section de cloture",
+	"Portail metallique",
+	"Grand portail metallique",
+	"Bloc beton 1x1x5",
+	"Mur beton 10x1x5",
+	"Bloc de cellules",
+	"Commissariat SF (sans cellules)",
+	"Porte de cellule (grille)",
+	"Porte de cellule (barreaux)",
+	"Haut de porte de cellule",
+	"Toilettes de cellule",
+	"Lit de cellule",
+	"Lits superposes",
+	"Clavier a code",
+	"Cadenas",
+	"Panneau Personnel autorise",
+	"Rubalise de police",
+	"Gyrophare de police 1",
+	"Gyrophare de police 2",
+	"Coffre-fort",
+	"Porte de coffre-fort",
+	"Porte blindee de Caligula",
+	"Tableau blanc",
+	"Caisse de munitions",
+	"Radio de police",
+	"Guerite de garde (Vegas)",
+	"Guerite de garde (LS)",
+	"Poste de garde militaire 1",
+	"Poste de garde militaire 2",
+	"Barriere levante",
+	"Boitier de barriere",
+	"Portail electrique",
+	"Portail automatique (droite)",
+	"Portail automatique (gauche)",
+	"Barriere de chantier",
+	"Barriere de rue",
+	"Barriere pour vehicules",
+	"Poteau de cordon",
+	"Barriere de police",
+	"Barriere de rue (petite)",
+	"Ralentisseur",
+	"Borne lumineuse",
+	"Maison SF 1",
+	"Maison SF 2",
+	"Maison SF 3",
+	"Maison SF 4",
+	"Maison LV 1",
+	"Maison LV 2",
+	"Maison LV 3",
+	"Maison LV 4",
+	"Maison LS 1",
+	"Maison LS 2",
+	"Maison LS 3",
+	"Maison LS 4",
+	"Immeuble d'appartements LS",
+	"Maison de campagne (exterieur)",
+	"Terrain de la maison de campagne",
+	"Cloture en bois",
+	"Cloture en blocs",
+	"Boite aux lettres",
+	"Interieur maison SF 1",
+	"Interieur maison SF 2",
+	"Interieur maison SF 3",
+	"Interieur maison SF 4",
+	"Interieur maison LV 1",
+	"Interieur maison LV 2",
+	"Interieur maison LV 3",
+	"Interieur maison LV 4",
+	"Interieur maison LS 1",
+	"Interieur maison LS 2",
+	"Interieur maison LS 3",
+	"Interieur maison LS 4",
+	"Interieur maison de campagne",
+	"Cloisons interieures",
+	"Porte de maison 1",
+	"Porte de maison 2",
+	"Porte de maison 3",
+	"Porte de maison 4",
+	"Porte de garage 1",
+	"Porte de garage 2",
+	"Bloc beton 1x1x5",
+	"Bloc beton 3x3x5",
+	"Bloc beton 5x5x5",
+	"Bloc beton 10x10x5",
+	"Bloc beton 10x1x5",
+	"Poutre beton 1x1x25",
+	"Panneau beton 1x25x25",
+	"Escalier en beton",
+	"Cube 1x1",
+	"Cube 5x5",
+	"Cube 10x10",
+	"Mur 001",
+	"Mur 002",
+	"Mur 003",
+	"Mur 004",
+	"Mur 005",
+	"Mur 006",
+	"Mur 007",
+	"Mur 008",
+	"Mur 009",
+	"Mur 010",
+	"Panneau metal 1",
+	"Panneau metal 2",
+	"Panneau metal 3",
+	"Panneau metal 4",
+	"Dalle beton 125x125",
+	"Dalle beton 62x15",
+	"Pilier de pierre",
+	"Porte interieure 1",
+	"Porte interieure 2",
+	"Porte interieure 3",
+	"Porte interieure 4",
+	"Porte interieure 5",
+	"Porte exterieure 1",
+	"Porte exterieure 2",
+	"Porte exterieure 3",
+	"Porte exterieure 4",
+	"Porte exterieure 5",
+	"Porte exterieure 6",
+	"Porte exterieure 7",
+	"Porte exterieure 8",
+	"Porte exterieure 9",
+	"Porte interieure fixe",
+	"Porte de bureau",
+	"Fenetre",
+	"Vitrine de magasin",
+	"Porte de boutique 1",
+	"Porte de boutique 2",
+	"Lit simple 1",
+	"Lit simple 2",
+	"Lit double 1",
+	"Lit double de luxe",
+	"Lits superposes",
+	"Lit avec table de nuit",
+	"Canape 1",
+	"Canape 2",
+	"Canape de luxe",
+	"Fauteuil",
+	"Rocking-chair",
+	"Chaise pliante",
+	"Table et chaises",
+	"Television 1",
+	"Television de luxe",
+	"Television ecran plat",
+	"Grande television ecran plat",
+	"Meuble TV",
+	"Armoire",
+	"Bibliotheque",
+	"Commode",
+	"Lustre",
+	"Telephone fixe",
+	"Interrupteur",
+	"Cuisiniere",
+	"Refrigerateur",
+	"Evier de cuisine",
+	"Micro-ondes",
+	"Machine a laver",
+	"Table de cuisine",
+	"Ilot de cuisson",
+	"Hotte aspirante",
+	"Plan de travail 1",
+	"Plan de travail 2",
+	"Meuble a four",
+	"Four mural",
+	"Placard de cuisine 1",
+	"Placard de cuisine 2",
+	"Etagere de cuisine",
+	"Mixeur",
+	"Barbecue",
+	"Toilettes 1",
+	"Toilettes 2",
+	"Douche 1",
+	"Douche 2",
+	"Baignoire 1",
+	"Baignoire 2",
+	"Lavabo 1",
+	"Lavabo 2",
+	"Rouleau de papier toilette",
+	"Savon"
+};
+
+new meCatSel[MAX_PLAYERS];   // theme ouvert par le joueur, -1 si aucun
+
+
+stock MapEd_CatNbTheme(theme)
+{
+	new n = 0;
+	for(new i = 0; i < sizeof(meCatModel); i++) if(meCatGrp[i] == theme) n++;
+	return n;
+}
+
+stock MapEd_CatThemes(playerid)
+{
+	if(!MapEd_IsAdmin(playerid)) return MapEd_Msg(playerid, "{FF4444}Reserve aux administrateurs niveau 3.");
+
+	new body[900], str[80];
+	body[0] = 0;
+	for(new t = 0; t < ME_CAT_THEMES; t++)
+	{
+		format(str, sizeof(str), "%s {AAAAAA}(%d)\n", meCatTheme[t], MapEd_CatNbTheme(t));
+		strcat(body, str);
+	}
+	meCatSel[playerid] = -1;
+	return ShowPlayerDialog(playerid, DIALOG_ME_CAT_THEME, DIALOG_STYLE_LIST, "Catalogue de modeles", body, "Ouvrir", "Fermer");
+}
+
+stock MapEd_CatModeles(playerid, theme)
+{
+	if(theme < 0 || theme >= ME_CAT_THEMES) return MapEd_CatThemes(playerid);
+
+	// Dans un dialogue LIST, TOUTE ligne est cliquable : une ligne de titre
+	// decalerait les index. La premiere ligne est donc une vraie action.
+	new body[2600], str[80];
+	format(body, sizeof(body), "{FFFF00}<< Retour aux themes\n");
+	for(new i = 0; i < sizeof(meCatModel); i++)
+	{
+		if(meCatGrp[i] != theme) continue;
+		format(str, sizeof(str), "{FFFFFF}%s {AAAAAA}[%d]\n", meCatNom[i], meCatModel[i]);
+		strcat(body, str);
+	}
+	meCatSel[playerid] = theme;
+	return ShowPlayerDialog(playerid, DIALOG_ME_CAT_MODEL, DIALOG_STYLE_LIST, meCatTheme[theme], body, "Poser", "Retour");
+}
+
+stock MapEd_OnDialog(playerid, dialogid, response, listitem)
+{
+	// Un client modifie peut repondre a un dialogue qu'il n'a jamais ouvert :
+	// on revalide le niveau admin ici, pas seulement a l'ouverture.
+	if(dialogid == DIALOG_ME_CAT_THEME || dialogid == DIALOG_ME_CAT_MODEL)
+	{
+		if(!MapEd_IsAdmin(playerid)) return 1;
+	}
+
+	if(dialogid == DIALOG_ME_CAT_THEME)
+	{
+		if(!response) return 1;
+		return MapEd_CatModeles(playerid, listitem);
+	}
+
+	if(dialogid == DIALOG_ME_CAT_MODEL)
+	{
+		if(!response) return MapEd_CatThemes(playerid);
+		if(listitem == 0) return MapEd_CatThemes(playerid);
+
+		new theme = meCatSel[playerid];
+		if(theme < 0 || theme >= ME_CAT_THEMES) return MapEd_CatThemes(playerid);
+
+		// listitem 1 = premier modele du theme : on reparcourt le catalogue
+		// dans le meme ordre que l'affichage.
+		new rang = 0;
+		for(new i = 0; i < sizeof(meCatModel); i++)
+		{
+			if(meCatGrp[i] != theme) continue;
+			rang++;
+			if(rang == listitem) return MapEd_Nouveau(playerid, meCatModel[i]);
+		}
+		return MapEd_CatThemes(playerid);
+	}
+	return 0;
+}
+
+// ============================================================================
 // COMMANDE
 // ============================================================================
 stock MapEd_Aide(playerid)
 {
 	MapEd_Msg(playerid, "{FFFF00}--- Editeur de mapping ---");
+	MapEd_Msg(playerid, "{FFFFFF}/mapedit modeles {AAAAAA}: catalogue range par theme (prison, logement, meubles...)");
 	MapEd_Msg(playerid, "{FFFFFF}/mapedit objet <model> {AAAAAA}: pose un objet devant toi et ouvre l'edition souris");
 	MapEd_Msg(playerid, "{FFFFFF}/mapedit select {AAAAAA}: clique un objet deja pose pour le selectionner");
 	MapEd_Msg(playerid, "{FFFFFF}/mapedit editer | copier | suppr {AAAAAA}: agit sur le selectionne");
@@ -406,6 +749,8 @@ stock MapEd_Command(playerid, const cmdline[])
 	if(strcmp(sub, "suppr",  true) == 0) return MapEd_Supprimer(playerid);
 	if(strcmp(sub, "copier", true) == 0) return MapEd_Copier(playerid);
 	if(strcmp(sub, "liste",  true) == 0) return MapEd_Liste(playerid);
+	if(strcmp(sub, "modeles",   true) == 0) return MapEd_CatThemes(playerid);
+	if(strcmp(sub, "catalogue", true) == 0) return MapEd_CatThemes(playerid);
 	if(strcmp(sub, "sauver", true) == 0)
 	{
 		MapEd_Save();
@@ -441,12 +786,13 @@ stock MapEd_OnConnect(playerid)
 {
 	meSel[playerid]  = -1;
 	meNeuf[playerid] = 0;
+	meCatSel[playerid] = -1;
 	return 1;
 }
 
 stock MapEd_Init()
 {
-	for(new i = 0; i < MAX_PLAYERS; i++) { meSel[i] = -1; meNeuf[i] = 0; }
+	for(new i = 0; i < MAX_PLAYERS; i++) { meSel[i] = -1; meNeuf[i] = 0; meCatSel[i] = -1; }
 	MapEd_Load();
 	return 1;
 }

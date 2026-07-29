@@ -30694,6 +30694,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     if(Assu_OnDialog(playerid, dialogid, response, listitem)) return 1;
     if(Gps_OnDialog(playerid, dialogid, response, listitem)) return 1;
     if(Saison_OnDialog(playerid, dialogid, response, listitem)) return 1;
+    if(MapEd_OnDialog(playerid, dialogid, response, listitem)) return 1;
 
     // [MOBILE INLINE] Dispatch vers mobile_system pour ses dialogs (MARKET, SETTINGS)
     if(dialogid == MARKET_DIALOG || dialogid == SETTINGS_DIALOG)
