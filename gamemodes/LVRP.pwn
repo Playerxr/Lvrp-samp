@@ -5291,6 +5291,8 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 #include <afrp_gpspartage>
 // [BRAQUAGE] apres afrp_minijeu (Mini_Start) et afrp_saison (SAI_XP_CONVOI)
 #include <afrp_braquage>
+// [NOUVEAUTES] menu automatique des fonctionnalites recentes
+#include <afrp_nouveautes>
 // [EVENTS ADMIN] Systeme generique d'evenements (course, DM, derby...)
 #include <afrp_event>
 // [DIAGNOSTIC] volontairement en dernier : il lit les compteurs de tous les
@@ -25763,6 +25765,8 @@ public OnPlayerSpawn(playerid)
 	HUD_OnSpawn(playerid);
 	// [ANNONCE] bandeau permanent : un joueur qui arrive pendant un event doit le voir
 	Annonce_OnSpawn(playerid);
+	// [NOUVEAUTES] menu differe de 8s pour ne pas ecraser le tutoriel
+	News_OnSpawn(playerid);
 
 	AntiDeAMX();
 	
@@ -30159,6 +30163,8 @@ public OnGameModeInit()
     Gps_Init();
     // [BRAQUAGE] charge braquages.cfg + timer 5s
     Br_Init();
+    // [NOUVEAUTES] charge qui a deja vu le menu
+    News_Init();
     // [OBJECTIFS] Init + timer 60s (temps de jeu, distance parcourue)
     Obj_Init();
     // [TOP DU JOUR] charge topjour.cfg + timer 60s
@@ -30679,6 +30685,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     if(Ev_OnDialog(playerid, dialogid, response, listitem, inputtext)) return 1;
     if(TopJour_OnDialog(playerid, dialogid, response, listitem)) return 1;
     if(ArmBase_OnDialog(playerid, dialogid, response, listitem)) return 1;
+    if(News_OnDialog(playerid, dialogid, response, listitem)) return 1;
     if(Assu_OnDialog(playerid, dialogid, response, listitem)) return 1;
     if(Gps_OnDialog(playerid, dialogid, response, listitem)) return 1;
     if(Saison_OnDialog(playerid, dialogid, response, listitem)) return 1;
@@ -53349,6 +53356,11 @@ public OnPlayerCommandText(playerid, cmdtext[])
 	else if(strcmp(cmd, "/convoi", true) == 0 || strcmp(cmd, "/convois", true) == 0)
 	{
 	    return Cv_Command(playerid, cmdtext);
+	}
+	// [NOUVEAUTES] rouvrir le menu des fonctionnalites recentes
+	else if(strcmp(cmd, "/nouveautes", true) == 0 || strcmp(cmd, "/news", true) == 0)
+	{
+	    return News_Cmd(playerid);
 	}
 	// [ARMES / NIVEAU] tableau des armes debloquees par niveau
 	// Pas d'alias /arme : trop proche de /armee (la faction), un joueur qui
