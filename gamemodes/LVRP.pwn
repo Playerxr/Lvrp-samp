@@ -5296,6 +5296,9 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 // [DIAGNOSTIC] volontairement en dernier : il lit les compteurs de tous les
 // autres modules pour verifier que chacun a bien charge ses donnees.
 #include <afrp_diagnostic>
+// [ARMES / NIVEAU] remplace le port d'arme a 20M. Avant afrp_portarme,
+// dont le controle de ramassage delegue desormais a ce module.
+#include <afrp_armeniveau>
 #include <afrp_portarme>
 #include <afrp_gangcreation>
 
@@ -7353,6 +7356,12 @@ stock SafeGivePlayerWeapon(plyid, weaponid, ammo)
 	// FIX CRASH : valider weaponid (1-46 seuls valides en SA-MP)
 	if(weaponid < 1 || weaponid > 46) return 0;
 	if(!IsPlayerConnected(plyid)) return 0;
+	// [ARMES / NIVEAU] Controle pose ICI parce que cette fonction est
+	// l'entonnoir unique par lequel toute arme est donnee : boutique,
+	// ramassage au sol, restauration apres crash, coffre de vehicule. Le
+	// poser ailleurs aurait laisse autant de portes derobees qu'il existe
+	// de sources d'armes. Admins en service et factions legales passent outre.
+	if(!ArmNiv_Autorise(plyid, weaponid)) return 0;
 	new s = GetWeaponSlot(weaponid);
 	// FIX CRASH : valider le slot (0-12) pour eviter ScriptWeapons[plyid][-1]
 	if(s < 0 || s > 12) return 0;
@@ -23516,6 +23525,7 @@ public OnPlayerConnect(playerid)
     Mini_OnConnect(playerid); // [MINIJEU] reset des textdraws
     Saison_OnConnect(playerid); // [SAISON] sinon le slot garde l'index du precedent
     ArmBase_OnConnect(playerid); // [ARMEE BASE] reset de l'armee ciblee
+    ArmNiv_OnConnect(playerid); // [ARMES / NIVEAU] reset anti-spam du message
     ArmeePaie_Time[playerid] = 0; // [ARMEE] sinon le slot garde le compteur du precedent occupant
     Ent_OnPlayerConnect(playerid); // [ENTREPRISE] reset compteur minutes accumulees
     Jobs_OnConnect(playerid); // [JOBS] reset streak
@@ -53339,6 +53349,13 @@ public OnPlayerCommandText(playerid, cmdtext[])
 	else if(strcmp(cmd, "/convoi", true) == 0 || strcmp(cmd, "/convois", true) == 0)
 	{
 	    return Cv_Command(playerid, cmdtext);
+	}
+	// [ARMES / NIVEAU] tableau des armes debloquees par niveau
+	// Pas d'alias /arme : trop proche de /armee (la faction), un joueur qui
+	// vise le menu militaire tomberait sur le tableau des armes.
+	else if(strcmp(cmd, "/armes", true) == 0 || strcmp(cmd, "/niveauarmes", true) == 0)
+	{
+	    return ArmNiv_Cmd(playerid);
 	}
 	// [ARMEE BASE] porte d'entree admin : /armee rejette les non-militaires
 	else if(strcmp(cmd, "/armeebase", true) == 0)

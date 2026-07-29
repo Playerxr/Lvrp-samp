@@ -3,7 +3,12 @@
 
 	Un admin place une guerite physique (meme modele que les cabanes de
 	peage : 1273) a un ou plusieurs endroits. Les joueurs s'en approchent
-	et tapent /portarme pour acheter le permis pour 20.000.000$.
+	et tapaient /portarme pour acheter le permis pour 20.000.000$.
+
+	[REMPLACE] Ce permis est supprime : l'acces aux armes depend desormais du
+	NIVEAU du joueur, voir afrp_armeniveau.inc. Les guerites et les commandes
+	admin restent en place pour ne pas casser les donnees deja enregistrees,
+	mais plus rien ne s'achete.
 
 	Sans ce permis, il est desormais impossible de RAMASSER une arme a
 	feu tombee au sol (armes de melee toujours libres pour tout le monde).
@@ -63,11 +68,16 @@ stock bool:PortArme_Has(sqlid)
 
 // Regle centrale : un joueur peut-il ramasser cette arme au sol ?
 // Admin en service : toujours. Arme de melee : toujours. Sinon : permis requis.
+// [REMPLACE] Le permis a 20.000.000$ est supprime : l'acces aux armes depend
+// maintenant du NIVEAU du joueur (afrp_armeniveau.inc). Cette fonction est
+// conservee parce que le ramassage au sol l'appelle, mais elle ne fait plus
+// que deleguer. Le detail du refus (niveau requis) est explique au joueur par
+// ArmNiv_Autorise lui-meme.
 stock bool:PortArme_CanPickup(playerid, weaponModel)
 {
 	if(AdminDuty[playerid] == 1) return true;
 	if(IsWeaponMelee(weaponModel)) return true;
-	return PortArme_Has(PlayerInfo[playerid][pSQLID]);
+	return (ArmNiv_Autorise(playerid, weaponModel) == 1);
 }
 
 // ===================== PERSISTANCE =====================
@@ -240,6 +250,20 @@ stock PortArme_NearestBooth(playerid)
 
 stock PortArme_Cmd(playerid, params[])
 {
+	// [REMPLACE] La vente du permis a 20.000.000$ est retiree. Les guerites et
+	// les commandes admin restent en place pour ne pas casser les donnees
+	// existantes, mais plus rien ne s'achete ici : /portarme sans argument
+	// renvoie vers le nouveau systeme.
+	// Seul /portarme SANS argument achetait le permis : c'est donc le seul
+	// chemin a intercepter. Filtrer sur la premiere lettre aurait avale les
+	// sous-commandes admin lister, donner, retirer et infos.
+	if(!strlen(params))
+	{
+		msg_Client(playerid, COLOR_WHITE, "{F0A020} Armes {FFFFFF} Le permis a 20.000.000$ n'existe plus.");
+		msg_Client(playerid, COLOR_WHITE, "{F0A020} Armes {FFFFFF} Les armes se debloquent avec ton niveau. Tape {FFFFB2}/armes{FFFFFF}.");
+		return ArmNiv_Cmd(playerid);
+	}
+
 	new sub[16], rest[64];
 	new i = 0, p = 0;
 	while(p < 15 && params[i] && params[i] != ' ') { sub[p++] = params[i++]; }
