@@ -23500,6 +23500,7 @@ public OnPlayerConnect(playerid)
     Annonce_OnConnect(playerid); // [ANNONCE] reset du bandeau
     Mini_OnConnect(playerid); // [MINIJEU] reset des textdraws
     Saison_OnConnect(playerid); // [SAISON] sinon le slot garde l'index du precedent
+    ArmBase_OnConnect(playerid); // [ARMEE BASE] reset de l'armee ciblee
     ArmeePaie_Time[playerid] = 0; // [ARMEE] sinon le slot garde le compteur du precedent occupant
     Ent_OnPlayerConnect(playerid); // [ENTREPRISE] reset compteur minutes accumulees
     Jobs_OnConnect(playerid); // [JOBS] reset streak
@@ -53323,6 +53324,11 @@ public OnPlayerCommandText(playerid, cmdtext[])
 	else if(strcmp(cmd, "/convoi", true) == 0 || strcmp(cmd, "/convois", true) == 0)
 	{
 	    return Cv_Command(playerid, cmdtext);
+	}
+	// [ARMEE BASE] porte d'entree admin : /armee rejette les non-militaires
+	else if(strcmp(cmd, "/armeebase", true) == 0)
+	{
+	    return ArmBase_CmdAdmin(playerid);
 	}
 	// [BRAQUAGE] braquages cooperatifs
 	else if(strcmp(cmd, "/braquage", true) == 0 || strcmp(cmd, "/braquages", true) == 0)
