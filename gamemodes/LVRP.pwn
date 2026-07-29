@@ -4878,7 +4878,11 @@ public chargement(playerid)
 // ============================================================================
 
 
-// [ARMEE] Solde de l'etat-major (rang 6) : montant et periode.
+// [ARMEE] Solde de l'etat-major : montant, periode, et QUELLE faction.
+// ARMEE_PAIE_MEMBER = 13 : la Marine uniquement. L'Armee de Terre (11) et
+// l'Armee de l'Air (12) ne touchent rien. Changer ce seul nombre suffit a
+// deplacer la solde sur une autre faction.
+#define ARMEE_PAIE_MEMBER  13
 #define ARMEE_PAIE_RANG6   300000
 #define ARMEE_PAIE_MINUTES 30
 new ArmeePaie_Time[MAX_PLAYERS];
@@ -4912,10 +4916,11 @@ public PaieAuto_Tick()
         if(!IsPlayerConnected(i) || IsPlayerNPC(i)) continue;
         if(gPlayerLogged[i] != 1) continue;
 
-        // [ARMEE] Solde du rang 6 (etat-major) : 300.000$ toutes les 30 minutes.
-        // Placee AVANT le "continue" des jobs : un general n'a pas de job civil,
+        // [ARMEE] Solde du rang 6 de la MARINE uniquement : 300.000$ / 30 min.
+        // Placee AVANT le "continue" des jobs : un amiral n'a pas de job civil,
         // sinon il ne serait jamais paye.
-        if(PlayerInfo[i][pMember] >= 11 && PlayerInfo[i][pMember] <= 13 && PlayerInfo[i][pRank] == 6)
+        // Le rang est teste avec == et non >= : seul le rang 6 est concerne.
+        if(PlayerInfo[i][pMember] == ARMEE_PAIE_MEMBER && PlayerInfo[i][pRank] == 6)
         {
             ArmeePaie_Time[i]++;
             if(ArmeePaie_Time[i] >= ARMEE_PAIE_MINUTES)
@@ -4923,7 +4928,7 @@ public PaieAuto_Tick()
                 ArmeePaie_Time[i] = 0;
                 SafeGivePlayerMoney(i, ARMEE_PAIE_RANG6, "Solde etat-major armee");
                 new astring[190];
-                format(astring, sizeof(astring), "{5B7A3A} Armee {FFFFFF} Solde d'etat-major : ${FFFF00}%d{FFFFFF} (versee toutes les %d minutes).", ARMEE_PAIE_RANG6, ARMEE_PAIE_MINUTES);
+                format(astring, sizeof(astring), "{00CED1} Marine {FFFFFF} Solde d'etat-major : ${FFFF00}%d{FFFFFF} (versee toutes les %d minutes).", ARMEE_PAIE_RANG6, ARMEE_PAIE_MINUTES);
                 msg_Client(i, COLOR_WHITE, astring);
             }
         }
