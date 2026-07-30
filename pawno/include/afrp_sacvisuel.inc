@@ -21,12 +21,14 @@
 	stockage n'est change : si la grille deplaisait, la supprimer ne ferait
 	perdre aucun objet a personne.
 
-	=== POURQUOI LES TEXTDRAWS SONT CREES A L'OUVERTURE ===
-	La grille demande 96 textdraws. Un client SA-MP en accepte 256 par joueur,
-	et ce gamemode en utilise deja beaucoup (telephone, HUD, tableau de bord).
-	Les garder en permanence aurait pu faire disparaitre un autre panneau sans
-	que personne ne comprenne pourquoi. Ils sont crees a l'ouverture du sac et
-	detruits a la fermeture.
+	=== LE BUDGET DE TEXTDRAWS ===
+	Un client SA-MP n'accepte que 256 textdraws par joueur, et ce gamemode en
+	tient deja pres de 200 en permanence : 169 pour le telephone, plus le HUD,
+	le panneau du top du jour et les objectifs. Une grille bavarde ne se serait
+	pas affichee du tout, sans message d'erreur.
+	Deux mesures : la grille se limite a 51 elements (un apercu et un libelle
+	par case, au lieu de quatre elements comme dans le pack fourni), et ils sont
+	crees a l'ouverture puis detruits a la fermeture.
 
 	=== LES ARMES NE SONT PAS DANS LA GRILLE ===
 	Elles sont rangees a part dans le gamemode (pInvWeapon / pInvAmmo, avec un
@@ -76,12 +78,9 @@
 #define SV_BTN_FERMER     4
 
 new PlayerText:svFondP[MAX_PLAYERS][5];
-new PlayerText:svCase[MAX_PLAYERS][SV_CASES];
 new PlayerText:svModele[MAX_PLAYERS][SV_CASES];
 new PlayerText:svNom[MAX_PLAYERS][SV_CASES];
-new PlayerText:svQte[MAX_PLAYERS][SV_CASES];
-new PlayerText:svBtnFond[MAX_PLAYERS][SV_BOUTONS];
-new PlayerText:svBtnTexte[MAX_PLAYERS][SV_BOUTONS];
+new PlayerText:svBtn[MAX_PLAYERS][SV_BOUTONS];
 new PlayerText:svPanneau[MAX_PLAYERS];
 
 new svOuvert[MAX_PLAYERS];          // 1 = grille affichee
@@ -214,20 +213,15 @@ stock SacV_Creer(playerid)
 	PlayerTextDrawSetProportional(playerid, svFondP[playerid][4], 1);
 
 	// --- les 20 cases ---
+	// Un client SA-MP n'accepte que 256 textdraws par joueur, et ce gamemode en
+	// tient deja pres de 200 en permanence (telephone, HUD, panneaux). La grille
+	// se limite donc a deux elements par case, apercu et libelle, au lieu des
+	// quatre du pack d'origine : au-dela, la grille ne s'affichait tout
+	// simplement pas pour un joueur qui a un telephone.
 	for(new k = 0; k < SV_CASES; k++)
 	{
 		x = SV_CASE_X0 + (float(k % SV_COLS) * SV_COL_PAS);
 		y = SV_CASE_Y0 + (float(k / SV_COLS) * SV_LIGNE_PAS);
-
-		svCase[playerid][k] = CreatePlayerTextDraw(playerid, x, y, "LD_SPAC:white");
-		PlayerTextDrawTextSize(playerid, svCase[playerid][k], x + SV_CASE_W, y + SV_CASE_H);
-		PlayerTextDrawAlignment(playerid, svCase[playerid][k], 1);
-		PlayerTextDrawColor(playerid, svCase[playerid][k], SV_COUL_CASE);
-		PlayerTextDrawSetShadow(playerid, svCase[playerid][k], 0);
-		PlayerTextDrawSetOutline(playerid, svCase[playerid][k], 0);
-		PlayerTextDrawBackgroundColor(playerid, svCase[playerid][k], 255);
-		PlayerTextDrawFont(playerid, svCase[playerid][k], 4);
-		PlayerTextDrawSetProportional(playerid, svCase[playerid][k], 1);
 
 		// L'apercu 3D est l'element cliquable : il couvre le centre de la case.
 		svModele[playerid][k] = CreatePlayerTextDraw(playerid, x + 4.0, y + 9.0, "_");
@@ -243,25 +237,20 @@ stock SacV_Creer(playerid)
 		PlayerTextDrawSetPreviewRot(playerid, svModele[playerid][k], 0.0, 0.0, 0.0, 1.0);
 		PlayerTextDrawSetSelectable(playerid, svModele[playerid][k], 1);
 
-		svNom[playerid][k] = CreatePlayerTextDraw(playerid, x + 3.0, y + 1.0, "_");
+		// Nom et quantite sur la meme ligne, avec un fond de case dessine par la
+		// boite de ce textdraw : la selection change sa couleur.
+		svNom[playerid][k] = CreatePlayerTextDraw(playerid, x + 2.0, y + 1.0, "_");
 		PlayerTextDrawLetterSize(playerid, svNom[playerid][k], 0.119, 0.598);
 		PlayerTextDrawAlignment(playerid, svNom[playerid][k], 1);
 		PlayerTextDrawColor(playerid, svNom[playerid][k], -1);
 		PlayerTextDrawSetShadow(playerid, svNom[playerid][k], 0);
 		PlayerTextDrawSetOutline(playerid, svNom[playerid][k], 0);
-		PlayerTextDrawBackgroundColor(playerid, svNom[playerid][k], 150);
+		PlayerTextDrawBackgroundColor(playerid, svNom[playerid][k], 0);
 		PlayerTextDrawFont(playerid, svNom[playerid][k], 1);
 		PlayerTextDrawSetProportional(playerid, svNom[playerid][k], 1);
-
-		svQte[playerid][k] = CreatePlayerTextDraw(playerid, x + 1.0, y + 42.0, "_");
-		PlayerTextDrawLetterSize(playerid, svQte[playerid][k], 0.119, 0.598);
-		PlayerTextDrawAlignment(playerid, svQte[playerid][k], 1);
-		PlayerTextDrawColor(playerid, svQte[playerid][k], 0xFFFF00FF);
-		PlayerTextDrawSetShadow(playerid, svQte[playerid][k], 0);
-		PlayerTextDrawSetOutline(playerid, svQte[playerid][k], 0);
-		PlayerTextDrawBackgroundColor(playerid, svQte[playerid][k], 150);
-		PlayerTextDrawFont(playerid, svQte[playerid][k], 1);
-		PlayerTextDrawSetProportional(playerid, svQte[playerid][k], 1);
+		PlayerTextDrawUseBox(playerid, svNom[playerid][k], 1);
+		PlayerTextDrawBoxColor(playerid, svNom[playerid][k], SV_COUL_CASE);
+		PlayerTextDrawTextSize(playerid, svNom[playerid][k], x + SV_CASE_W, y + SV_CASE_H);
 	}
 
 	// --- panneau d'actions ---
@@ -280,26 +269,21 @@ stock SacV_Creer(playerid)
 	{
 		y = 174.0 + (float(b) * 21.0);
 
-		svBtnFond[playerid][b] = CreatePlayerTextDraw(playerid, 352.0, y, "LD_SPAC:white");
-		PlayerTextDrawTextSize(playerid, svBtnFond[playerid][b], 397.0, y + 18.0);
-		PlayerTextDrawAlignment(playerid, svBtnFond[playerid][b], 1);
-		PlayerTextDrawColor(playerid, svBtnFond[playerid][b], 859394047);
-		PlayerTextDrawSetShadow(playerid, svBtnFond[playerid][b], 0);
-		PlayerTextDrawSetOutline(playerid, svBtnFond[playerid][b], 0);
-		PlayerTextDrawBackgroundColor(playerid, svBtnFond[playerid][b], 255);
-		PlayerTextDrawFont(playerid, svBtnFond[playerid][b], 4);
-		PlayerTextDrawSetProportional(playerid, svBtnFond[playerid][b], 1);
-		PlayerTextDrawSetSelectable(playerid, svBtnFond[playerid][b], 1);
-
-		svBtnTexte[playerid][b] = CreatePlayerTextDraw(playerid, 375.0, y + 5.0, libelles[b]);
-		PlayerTextDrawLetterSize(playerid, svBtnTexte[playerid][b], 0.15, 0.898);
-		PlayerTextDrawAlignment(playerid, svBtnTexte[playerid][b], 2);
-		PlayerTextDrawColor(playerid, svBtnTexte[playerid][b], -1);
-		PlayerTextDrawSetShadow(playerid, svBtnTexte[playerid][b], 0);
-		PlayerTextDrawSetOutline(playerid, svBtnTexte[playerid][b], 0);
-		PlayerTextDrawBackgroundColor(playerid, svBtnTexte[playerid][b], 150);
-		PlayerTextDrawFont(playerid, svBtnTexte[playerid][b], 1);
-		PlayerTextDrawSetProportional(playerid, svBtnTexte[playerid][b], 1);
+		// Texte et fond dans le meme textdraw (font 1 + UseBox) : deux elements
+		// par bouton auraient coute cinq slots de plus pour rien.
+		svBtn[playerid][b] = CreatePlayerTextDraw(playerid, 356.0, y + 4.0, libelles[b]);
+		PlayerTextDrawLetterSize(playerid, svBtn[playerid][b], 0.15, 0.898);
+		PlayerTextDrawAlignment(playerid, svBtn[playerid][b], 1);
+		PlayerTextDrawColor(playerid, svBtn[playerid][b], -1);
+		PlayerTextDrawSetShadow(playerid, svBtn[playerid][b], 0);
+		PlayerTextDrawSetOutline(playerid, svBtn[playerid][b], 0);
+		PlayerTextDrawBackgroundColor(playerid, svBtn[playerid][b], 0);
+		PlayerTextDrawFont(playerid, svBtn[playerid][b], 1);
+		PlayerTextDrawSetProportional(playerid, svBtn[playerid][b], 1);
+		PlayerTextDrawUseBox(playerid, svBtn[playerid][b], 1);
+		PlayerTextDrawBoxColor(playerid, svBtn[playerid][b], 859394047);
+		PlayerTextDrawTextSize(playerid, svBtn[playerid][b], 397.0, y + 18.0);
+		PlayerTextDrawSetSelectable(playerid, svBtn[playerid][b], 1);
 	}
 	return 1;
 }
@@ -309,16 +293,10 @@ stock SacV_Detruire(playerid)
 	for(new k = 0; k < 5; k++) PlayerTextDrawDestroy(playerid, svFondP[playerid][k]);
 	for(new k = 0; k < SV_CASES; k++)
 	{
-		PlayerTextDrawDestroy(playerid, svCase[playerid][k]);
 		PlayerTextDrawDestroy(playerid, svModele[playerid][k]);
 		PlayerTextDrawDestroy(playerid, svNom[playerid][k]);
-		PlayerTextDrawDestroy(playerid, svQte[playerid][k]);
 	}
-	for(new b = 0; b < SV_BOUTONS; b++)
-	{
-		PlayerTextDrawDestroy(playerid, svBtnFond[playerid][b]);
-		PlayerTextDrawDestroy(playerid, svBtnTexte[playerid][b]);
-	}
+	for(new b = 0; b < SV_BOUTONS; b++) PlayerTextDrawDestroy(playerid, svBtn[playerid][b]);
 	PlayerTextDrawDestroy(playerid, svPanneau[playerid]);
 	return 1;
 }
@@ -347,15 +325,12 @@ stock SacV_Remplir(playerid)
 		new slot = svSlotDe[playerid][k];
 		if(slot == -1)
 		{
-			// Case vide : on garde le cadre, on vide le contenu.
+			// Case vide : le cadre reste, le contenu part. L'apercu est masque
+			// plutot que mis au modele 0, un modele invalide affichant parfois
+			// un objet au hasard cote client.
 			PlayerTextDrawSetString(playerid, svNom[playerid][k], "_");
-			PlayerTextDrawSetString(playerid, svQte[playerid][k], "_");
-			PlayerTextDrawColor(playerid, svCase[playerid][k], SV_COUL_CASE);
-			PlayerTextDrawShow(playerid, svCase[playerid][k]);
+			PlayerTextDrawBoxColor(playerid, svNom[playerid][k], SV_COUL_CASE);
 			PlayerTextDrawShow(playerid, svNom[playerid][k]);
-			PlayerTextDrawShow(playerid, svQte[playerid][k]);
-			// Apercu masque plutot que mis au modele 0 : un modele invalide
-			// affiche parfois un objet au hasard cote client.
 			PlayerTextDrawHide(playerid, svModele[playerid][k]);
 			continue;
 		}
@@ -363,19 +338,14 @@ stock SacV_Remplir(playerid)
 		new modelid = PlayerInfo[playerid][pInvModel][slot];
 		format(nom, sizeof(nom), "%s", GetItemName(modelid));
 		// Un nom trop long depasse de la case : on le coupe.
-		if(strlen(nom) > 11) nom[11] = 0;
-		PlayerTextDrawSetString(playerid, svNom[playerid][k], nom);
-
-		format(s, sizeof(s), "x%d", PlayerInfo[playerid][pInvQuant][slot]);
-		PlayerTextDrawSetString(playerid, svQte[playerid][k], s);
-
-		PlayerTextDrawSetPreviewModel(playerid, svModele[playerid][k], SacV_ModeleAffiche(modelid));
-		PlayerTextDrawColor(playerid, svCase[playerid][k],
+		if(strlen(nom) > 10) nom[10] = 0;
+		format(s, sizeof(s), "%s x%d", nom, PlayerInfo[playerid][pInvQuant][slot]);
+		PlayerTextDrawSetString(playerid, svNom[playerid][k], s);
+		PlayerTextDrawBoxColor(playerid, svNom[playerid][k],
 			(svSel[playerid] == k) ? (SV_COUL_CASE_SEL) : (SV_COUL_CASE));
 
-		PlayerTextDrawShow(playerid, svCase[playerid][k]);
+		PlayerTextDrawSetPreviewModel(playerid, svModele[playerid][k], SacV_ModeleAffiche(modelid));
 		PlayerTextDrawShow(playerid, svNom[playerid][k]);
-		PlayerTextDrawShow(playerid, svQte[playerid][k]);
 		PlayerTextDrawShow(playerid, svModele[playerid][k]);
 	}
 
@@ -414,11 +384,7 @@ stock SacV_Ouvrir(playerid)
 
 	for(new k = 0; k < 5; k++) PlayerTextDrawShow(playerid, svFondP[playerid][k]);
 	PlayerTextDrawShow(playerid, svPanneau[playerid]);
-	for(new b = 0; b < SV_BOUTONS; b++)
-	{
-		PlayerTextDrawShow(playerid, svBtnFond[playerid][b]);
-		PlayerTextDrawShow(playerid, svBtnTexte[playerid][b]);
-	}
+	for(new b = 0; b < SV_BOUTONS; b++) PlayerTextDrawShow(playerid, svBtn[playerid][b]);
 	SacV_Remplir(playerid);
 	SelectTextDraw(playerid, 0x00C8FFAA);
 
@@ -604,7 +570,7 @@ stock SacV_OnClick(playerid, PlayerText:playertextid)
 
 	for(new b = 0; b < SV_BOUTONS; b++)
 	{
-		if(playertextid != svBtnFond[playerid][b]) continue;
+		if(playertextid != svBtn[playerid][b]) continue;
 		switch(b)
 		{
 			case SV_BTN_DETAILS: SacV_Details(playerid);

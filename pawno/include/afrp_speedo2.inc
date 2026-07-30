@@ -26,6 +26,12 @@
 	l'ancien compteur affichait. Les perdre en gagnant du style aurait ete un
 	mauvais echange : une ligne a ete ajoutee en bas du panneau.
 
+	=== LES ELEMENTS NE VIVENT QUE PENDANT LA CONDUITE ===
+	Ils sont crees en montant dans un vehicule et detruits en descendant. Un
+	client SA-MP n'accepte que 256 textdraws par joueur ; le telephone en tient
+	deja 169 en permanence. Les garder en reserve a pied aurait pu empecher un
+	autre panneau de s'afficher, sans message d'erreur pour l'expliquer.
+
 	=== CE QUI RESTE A L'ANCIEN COMPTEUR ===
 	Les clignotants (speedometer_Blinking) et l'alerte de bridage continuent de
 	passer par le code existant. Ce module ne touche pas a la conduite.
@@ -453,6 +459,13 @@ stock Sp2_Hide(playerid)
 	if(spVisible[playerid] != 1) return 0;
 	for(new k = 0; k < SP2_NB_TD; k++) PlayerTextDrawHide(playerid, spTD[playerid][k]);
 	spVisible[playerid] = 0;
+
+	// Les 30 elements sont detruits en sortant du vehicule, pas seulement
+	// masques. Un client SA-MP n'en accepte que 256 par joueur et le telephone
+	// en tient deja 169 en permanence : garder le tableau de bord en reserve
+	// pendant qu'on est a pied aurait pu empecher un autre panneau, le sac par
+	// exemple, de s'afficher du tout, sans aucun message d'erreur.
+	Sp2_Detruire(playerid);
 	return 1;
 }
 
