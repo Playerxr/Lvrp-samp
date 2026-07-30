@@ -5295,6 +5295,8 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 #include <afrp_nouveautes>
 // [MAPEDIT] editeur de mapping en jeu
 #include <afrp_mapedit>
+// [BASKET] dribble, paniers et points (remet en marche le basket existant)
+#include <afrp_basket>
 // [SPEEDO2] tableau de bord moderne (habillage alternatif du compteur)
 #include <afrp_speedo2>
 // [MAPPACK] mappings importes, allumables carte par carte
@@ -20577,44 +20579,36 @@ stock tag_Remove(tagId)
 }
 
 
+// [BASKET] panier 1 reussi. Le corps d'origine renvoyait le ballon a des coordonnees
+// ecrites en dur, heritees d'un autre serveur, et posait owner a 999 alors
+// que MAX_PLAYERS vaut 100 : l'ecriture suivante sortait du tableau.
 public BallDown2(playerid,ballid)
 {
-	MoveDynamicObject(basket[ballid][object], 2795.5237,-2019.6152,13.5547-0.8, 10.0+random(3));
-	basket[ballid][owner] = 999;
-	basket[ballid][shooting] = 0;
-	GameTextForPlayer(playerid, "Encesta!", 3000, 3);
-	basket[ballid][bounce] = 1;
-	return 1;
+	return Bsk_Retour(playerid, ballid, 0, 1);
 }
 
+// [BASKET] panier 2 reussi. Le corps d'origine renvoyait le ballon a des coordonnees
+// ecrites en dur, heritees d'un autre serveur, et posait owner a 999 alors
+// que MAX_PLAYERS vaut 100 : l'ecriture suivante sortait du tableau.
 public BallDown3(playerid,ballid)
 {
-	MoveDynamicObject(basket[ballid][object], 2768.3669,-2019.6644,13.5547-0.8, 10.0+random(3));
-	basket[ballid][owner] = 999;
-	basket[ballid][shooting] = 0;
-	GameTextForPlayer(playerid, "Encesta!", 3000, 3);
-	basket[ballid][bounce] = 1;
-	return 1;
+	return Bsk_Retour(playerid, ballid, 1, 1);
 }
 
+// [BASKET] panier 1 rate. Le corps d'origine renvoyait le ballon a des coordonnees
+// ecrites en dur, heritees d'un autre serveur, et posait owner a 999 alors
+// que MAX_PLAYERS vaut 100 : l'ecriture suivante sortait du tableau.
 public BallDown4(playerid,ballid)
 {
-	MoveDynamicObject(basket[ballid][object], 2795.5237+random(5),-2019.6152+random(5),13.5547-0.8, 10.0+random(3));
-	basket[ballid][owner] = 999;
-	basket[ballid][shooting] = 0;
-	GameTextForPlayer(playerid, "Pelota Mala!", 3000, 3);
-	basket[ballid][bounce] = 1;
-	return 1;
+	return Bsk_Retour(playerid, ballid, 0, 0);
 }
 
+// [BASKET] panier 2 rate. Le corps d'origine renvoyait le ballon a des coordonnees
+// ecrites en dur, heritees d'un autre serveur, et posait owner a 999 alors
+// que MAX_PLAYERS vaut 100 : l'ecriture suivante sortait du tableau.
 public BallDown5(playerid,ballid)
 {
-	MoveDynamicObject(basket[ballid][object], 2768.3669+random(5),-2019.6644+random(5),13.5547-0.8, 10.0+random(3));
-	basket[ballid][owner] = 999;
-	basket[ballid][shooting] = 0;
-	GameTextForPlayer(playerid, "Pelota Mala!", 3000, 3);
-	basket[ballid][bounce] = 1;
-	return 1;
+	return Bsk_Retour(playerid, ballid, 1, 0);
 }
 
 
@@ -23538,6 +23532,7 @@ public OnPlayerConnect(playerid)
     MapEd_OnConnect(playerid); // [MAPEDIT] reset de l'objet selectionne
     MapPack_OnConnect(playerid); // [MAPPACK] retire les batiments remplaces par les cartes allumees
     Sp2_OnConnect(playerid); // [SPEEDO2] sinon le slot garde la preference du precedent occupant
+    Bsk_OnConnect(playerid); // [BASKET] libere un ballon reste au nom du precedent occupant
     ArmeePaie_Time[playerid] = 0; // [ARMEE] sinon le slot garde le compteur du precedent occupant
     Ent_OnPlayerConnect(playerid); // [ENTREPRISE] reset compteur minutes accumulees
     Jobs_OnConnect(playerid); // [JOBS] reset streak
@@ -24163,6 +24158,7 @@ public OnPlayerDisconnect(playerid, reason)
     Justice_OnPlayerFree(playerid); // [JUSTICE] retire son dossier de proces s'il en avait un
     Obj_OnPlayerDisconnect(playerid); // [OBJECTIFS] sauvegarde la progression
     Sp2_OnDisconnect(playerid); // [SPEEDO2] detruit les textdraws du tableau de bord
+    Bsk_OnDisconnect(playerid); // [BASKET] rend le ballon qu'il tenait
     TopJour_OnDisconnect(playerid); // [TOP DU JOUR] detruit le panneau
     Annonce_OnDisconnect(playerid); // [ANNONCE] detruit le bandeau
     Cv_OnDisconnect(playerid); // [CONVOI] retire de l'escorte / du braquage
@@ -26604,120 +26600,11 @@ public OnDynamicObjectMoved(objectid)
 	    ElevatorState 	= ELEVATOR_STATE_WAITING;
 	    SetTimer("Elevator_TurnToIdle", ELEVATOR_WAIT_TIME, 0);
 	}
-    /*for(new i=0; i<MAX_BALL+1; i++)
-	{
-	    if(basket[i][used] == 0)
-	        {continue;}
-	    if(basket[i][shooting] == 2)
-	    	{BallDown2(basket[i][owner],i);return 1;}
-	    else if(basket[i][shooting] == 3)
-	    	{BallDown3(basket[i][owner],i);return 1;}
-	    else if(basket[i][shooting] == 4)
-	    	{BallDown4(basket[i][owner],i);return 1;}
-	    else if(basket[i][shooting] == 5)
-	    	{BallDown5(basket[i][owner],i);return 1;}
-	    else if(basket[i][shooting] == 6)
-	    	{ApplyAnimation(basket[i][owner],"BSKTBALL","BBALL_walk",4.1,1,1,1,1,1); basket_HavingBall[basket[i][owner]]=1; basket_Anim[basket[i][owner]] = 0;}
-	    	
-        if(basket[i][bounce] == 1)
-	    {
-	            GetDynamicObjectPos(basket[i][object], x, y, z);
-	            MoveDynamicObject(basket[i][object], x, y, z+1.2, 4);
-	            basket[i][bounce] = 2;
-	    }
-	    else if(basket[i][bounce]  == 2)
-	    {
-	            GetDynamicObjectPos(basket[i][object], x, y, z);
-	            MoveDynamicObject(basket[i][object], x, y, z-1.2, 4);
-	            basket[i][bounce] = 3;
-	    }
-	    else if(basket[i][bounce]  == 3)
-	    {
-	            GetDynamicObjectPos(basket[i][object], x, y, z);
-	            MoveDynamicObject(basket[i][object], x, y, z+0.8, 3);
-	            basket[i][bounce] = 4;
-	    }
-	    else if(basket[i][bounce]  == 4)
-	    {
-	            GetDynamicObjectPos(basket[i][object], x, y, z);
-	            MoveDynamicObject(basket[i][object], x, y, z-0.8, 3);
-	            basket[i][bounce] = 5;
-	    }
-	    else if(basket[i][bounce] == 5)
-	    {
-	            GetDynamicObjectPos(basket[i][object], x, y, z);
-	            MoveDynamicObject(basket[i][object], x, y, z+0.5, 2);
-	            basket[i][bounce] = 6;
-	    }
-	    else if(basket[i][bounce]  == 6)
-	    {
-	            GetDynamicObjectPos(basket[i][object], x, y, z);
-	            MoveDynamicObject(basket[i][object], x, y, z-0.5, 2);
-	            basket[i][bounce] = 7;
-	    }
-	    else if(basket[i][bounce]  == 7)
-	    {
-	            GetDynamicObjectPos(basket[i][object], x, y, z);
-	            MoveDynamicObject(basket[i][object], x, y, z+0.2, 1);
-	            basket[i][bounce] = 8;
-	    }
-	    else if(basket[i][bounce]  == 8)
-	    {
-	            GetDynamicObjectPos(basket[i][object], x, y, z);
-	            MoveDynamicObject(basket[i][object], x, y, z-0.2, 1);
-	            basket[i][bounce] = 0;
-	    }
-
-	    if(!basket_HavingBall[basket[i][owner]])
-			{return 1;}
-
-	    new Keys, ud, lr;
-	    GetPlayerKeys(i, Keys, ud, lr);
-
-	    if(basket_Anim[basket[i][owner]])
-	    {
-	        GetPlayerPos(basket[i][owner], x, y, z);
-			StopDynamicObject(basket[i][object]);
-	        GetXYInFrontOfPlayer(basket[i][owner], x2, y2, 0.4);
-	        switch(basket[i][statut])
-			{
-				case 0:
-					{basket[i][statut] = 1;MoveDynamicObject(basket[i][object], x2, y2, z+0.1, 5.5);}
-				case 1:
-					{basket[i][statut] = 0;MoveDynamicObject(basket[i][object], x2, y2, z-0.8, 5.5);}
-			}
-			return 1;
-	    }
-
-	    if(Keys & KEY_SPRINT)
-		{
-	        ApplyAnimation(basket[i][owner],"BSKTBALL","BBALL_run",4.1,1,1,1,1,1);
-	        GetPlayerPos(basket[i][owner], x, y, z);
-	        StopDynamicObject(basket[i][object]);
-	        GetXYInFrontOfPlayer(basket[i][owner], x2, y2, 1.5);
-	        switch(basket[i][statut])
-			{
-				case 0:
-					{basket[i][statut] = 1;MoveDynamicObject(basket[i][object], x2, y2, z+0.1, 8);}
-	            case 1:
-	            	{basket[i][statut] = 0;MoveDynamicObject(basket[i][object], x2, y2, z-0.8, 8);}
-			}
-			return 1;
-	    }
-	    else
-	    	{ApplyAnimation(i,"BSKTBALL","BBALL_walk",4.1,1,1,1,1,1);}
-
-        GetPlayerPos(basket[i][owner], x, y, z);
-	    StopDynamicObject(basket[i][object]);
-	    GetXYInFrontOfPlayer(basket[i][owner], x2, y2, 1.2);
-		switch(basket[i][statut])
-		{
-			case 0:
-				{basket[i][statut] = 1;MoveDynamicObject(basket[i][object], x2, y2, z+0.1, 5);}
-	        case 1:
-	        	{basket[i][statut] = 0;MoveDynamicObject(basket[i][object], x2, y2, z-0.8, 5);}
-		}
-	}*/
+    // [BASKET] Dribble, rebond et arrivee des tirs. Ce bloc etait entierement
+    // commente : il parcourait MAX_BALL+1 ballons pour un tableau de MAX_BALL,
+    // et retraitait tous les ballons a chaque objet deplace du serveur,
+    // ascenseur compris. Il ne traite plus que le ballon concerne.
+    if(Bsk_OnObjectMoved(objectid)) return 1;
 	return 1;
 }
 
@@ -30186,6 +30073,8 @@ public OnGameModeInit()
     MapPack_Init();
     // [SPEEDO2] cree le timer du tableau de bord moderne
     Sp2_Init();
+    // [BASKET] charge les paniers poses en jeu
+    Bsk_Init();
     // [OBJECTIFS] Init + timer 60s (temps de jeu, distance parcourue)
     Obj_Init();
     // [TOP DU JOUR] charge topjour.cfg + timer 60s
@@ -48063,11 +47952,17 @@ public OnPlayerKeyStateChange(playerid, newkeys, oldkeys)
 			    {
 			        if(basket[i][used] == 0)
 			            {continue;}
-			        if(basket[tmpBall][owner] == playerid)
+			        // [FIX BASKET] lisait basket[tmpBall][owner] avec tmpBall
+			        // encore a -1 : lecture hors tableau, et le ballon tenu
+			        // n'etait jamais trouve. Tirer ne marchait pas.
+			        if(basket[i][owner] == playerid)
 			        	{tmpBall=i; break;}
 			    }
 			    if(tmpBall==-1)
 			        {return 1;}
+			    // [BASKET] Tir au panier avant la passe : viser l'anneau doit
+			    // primer sur le fait qu'un coequipier passe dans le champ.
+			    if(Bsk_Tirer(playerid, tmpBall)) return 1;
 			    for(new i=0; i < MAX_PLAYERS_CURRENT+1; i++)
 				{
 					if(!IsPlayerConnected(i))
@@ -53391,6 +53286,11 @@ public OnPlayerCommandText(playerid, cmdtext[])
 	else if(strcmp(cmd, "/mapedit", true) == 0 || strcmp(cmd, "/objet", true) == 0)
 	{
 	    return MapEd_Command(playerid, cmdtext);
+	}
+	// [BASKET] poser les paniers en jeu (admin)
+	else if(strcmp(cmd, "/basketpanier", true) == 0)
+	{
+	    return Bsk_Cmd(playerid, cmdtext);
 	}
 	// [SPEEDO2] basculer entre le tableau de bord moderne et le classique
 	else if(strcmp(cmd, "/compteur", true) == 0)
