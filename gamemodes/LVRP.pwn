@@ -5295,6 +5295,9 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 #include <afrp_nouveautes>
 // [MAPEDIT] editeur de mapping en jeu
 #include <afrp_mapedit>
+// [MAPPACK] mappings importes, allumables carte par carte
+#include <afrp_mappack_data>
+#include <afrp_mappack>
 // [EVENTS ADMIN] Systeme generique d'evenements (course, DM, derby...)
 #include <afrp_event>
 // [DIAGNOSTIC] volontairement en dernier : il lit les compteurs de tous les
@@ -23531,6 +23534,7 @@ public OnPlayerConnect(playerid)
     ArmBase_OnConnect(playerid); // [ARMEE BASE] reset de l'armee ciblee
     ArmNiv_OnConnect(playerid); // [ARMES / NIVEAU] reset anti-spam du message
     MapEd_OnConnect(playerid); // [MAPEDIT] reset de l'objet selectionne
+    MapPack_OnConnect(playerid); // [MAPPACK] retire les batiments remplaces par les cartes allumees
     ArmeePaie_Time[playerid] = 0; // [ARMEE] sinon le slot garde le compteur du precedent occupant
     Ent_OnPlayerConnect(playerid); // [ENTREPRISE] reset compteur minutes accumulees
     Jobs_OnConnect(playerid); // [JOBS] reset streak
@@ -30170,6 +30174,8 @@ public OnGameModeInit()
     News_Init();
     // [MAPEDIT] recree les objets de mapping sauvegardes
     MapEd_Init();
+    // [MAPPACK] recree les cartes importees qui sont allumees
+    MapPack_Init();
     // [OBJECTIFS] Init + timer 60s (temps de jeu, distance parcourue)
     Obj_Init();
     // [TOP DU JOUR] charge topjour.cfg + timer 60s
@@ -30695,6 +30701,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     if(Gps_OnDialog(playerid, dialogid, response, listitem)) return 1;
     if(Saison_OnDialog(playerid, dialogid, response, listitem)) return 1;
     if(MapEd_OnDialog(playerid, dialogid, response, listitem)) return 1;
+    if(MapPack_OnDialog(playerid, dialogid, response, listitem)) return 1;
 
     // [MOBILE INLINE] Dispatch vers mobile_system pour ses dialogs (MARKET, SETTINGS)
     if(dialogid == MARKET_DIALOG || dialogid == SETTINGS_DIALOG)
@@ -53374,6 +53381,16 @@ public OnPlayerCommandText(playerid, cmdtext[])
 	else if(strcmp(cmd, "/mapedit", true) == 0 || strcmp(cmd, "/objet", true) == 0)
 	{
 	    return MapEd_Command(playerid, cmdtext);
+	}
+	// [MAPPACK] cartes importees : liste, apercu, allumer / eteindre (admin)
+	else if(strcmp(cmd, "/mappack", true) == 0 || strcmp(cmd, "/cartes", true) == 0)
+	{
+	    return MapPack_Cmd(playerid);
+	}
+	// [MAPPACK] porte du coffre de la Banque du coin
+	else if(strcmp(cmd, "/coffrebanque", true) == 0)
+	{
+	    return MapPack_Coffre(playerid);
 	}
 	// [NOUVEAUTES] rouvrir le menu des fonctionnalites recentes
 	else if(strcmp(cmd, "/nouveautes", true) == 0 || strcmp(cmd, "/news", true) == 0)
