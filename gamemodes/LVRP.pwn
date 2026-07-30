@@ -5295,6 +5295,8 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 #include <afrp_nouveautes>
 // [MAPEDIT] editeur de mapping en jeu
 #include <afrp_mapedit>
+// [TELAPPS] contenu des 8 applications du smartphone (apres vibe_phone)
+#include <afrp_telapps>
 // [SAC VISUEL] le sac en grille d'images au lieu d'une liste de texte
 #include <afrp_sacvisuel>
 // [BASKET] dribble, paniers et points (remet en marche le basket existant)
@@ -23536,6 +23538,7 @@ public OnPlayerConnect(playerid)
     Sp2_OnConnect(playerid); // [SPEEDO2] sinon le slot garde la preference du precedent occupant
     Bsk_OnConnect(playerid); // [BASKET] libere un ballon reste au nom du precedent occupant
     SacV_OnConnect(playerid); // [SAC VISUEL] sinon le slot croit sa grille encore ouverte
+    TelApp_OnConnect(playerid); // [TELAPPS] reset du numero en cours de saisie
     ArmeePaie_Time[playerid] = 0; // [ARMEE] sinon le slot garde le compteur du precedent occupant
     Ent_OnPlayerConnect(playerid); // [ENTREPRISE] reset compteur minutes accumulees
     Jobs_OnConnect(playerid); // [JOBS] reset streak
@@ -30606,6 +30609,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     if(MapEd_OnDialog(playerid, dialogid, response, listitem)) return 1;
     if(MapPack_OnDialog(playerid, dialogid, response, listitem)) return 1;
     if(SacV_OnDialog(playerid, dialogid, response, inputtext)) return 1;
+    if(TelApp_OnDialog(playerid, dialogid, response, listitem, inputtext)) return 1;
 
     // [MOBILE INLINE] Dispatch vers mobile_system pour ses dialogs (MARKET, SETTINGS)
     if(dialogid == MARKET_DIALOG || dialogid == SETTINGS_DIALOG)
@@ -50271,17 +50275,19 @@ public OnPlayerCommandText(playerid, cmdtext[])
 	// ============================================================
 	// COMMANDES TERRITOIRES / GANG ZONES (admin)
 	// ============================================================
-	// [DESACTIVE] /tel /phone /telephone (vibe_phone) - remplace par /mobile (mobile_system inline).
-	// L'ancien parseur sous-commandes reste accessible si l'utilisateur passe un arg.
+	// [TELAPPS] /tel /phone /telephone reactivees : les huit applications du
+	// smartphone ont maintenant un contenu (voir afrp_telapps.inc). Elles
+	// etaient desactivees parce que chaque icone repondait "en developpement".
+	// /mobile continue de fonctionner en parallele.
 	if(strcmp(cmd, "/tel", true) == 0 || strcmp(cmd, "/phone", true) == 0 || strcmp(cmd, "/telephone", true) == 0)
 	{
 		tmp = strtok(cmdtext, idx);
 		if(!strlen(tmp))
 		{
-			SendClientMessage(playerid, 0xAAAAAAFF, "{AAAAAA}[Info]{FFFFFF} /tel est desactive. Utilise {00FF00}/mobile{FFFFFF}.");
-			return 1;
+			if(phone_State[playerid] != PHONE_STATE_CLOSED) return phone_Close(playerid);
+			return phone_Open(playerid);
 		}
-		return 0; // sous-commandes traitees plus loin (/tel sms etc.)
+		return 0; // sous-commandes traitees plus loin
 	}
 	if(strcmp(cmd, "/turfs", true) == 0)
 	{

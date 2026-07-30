@@ -375,6 +375,13 @@ stock SacV_Ouvrir(playerid)
 			return SacV_Msg(playerid, "{FF4444}Tu n'es pas a cote de ton sac.");
 	}
 
+	// Le telephone et le sac ne peuvent pas tenir ensemble dans le budget de
+	// textdraws du client : 234 pour le smartphone ouvert, plus 51 pour la
+	// grille, depasse les 256 autorises et la grille ne s'afficherait pas.
+	if(phone_State[playerid] != PHONE_STATE_CLOSED) phone_Close(playerid);
+	if(usingPhone[playerid] == 1)
+		return SacV_Msg(playerid, "{FF8888}Ferme d'abord ton telephone.");
+
 	if(svOuvert[playerid] == 1) SacV_Fermer(playerid);
 
 	SacV_Creer(playerid);

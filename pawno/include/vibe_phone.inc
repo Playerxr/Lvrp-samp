@@ -49,11 +49,11 @@ new phone_Wallpaper[MAX_PLAYERS];
 
 static stock const phone_AppIcons[PHONE_APP_COUNT][8] = {
     !"Tel",   !"SMS",   !"Ctc",   !"Bnk",
-    !"Gal",   !"Set",   !"Map",   !"Cal"
+    !"SOS",   !"Set",   !"Map",   !"Inf"
 };
 static stock const phone_AppLabels[PHONE_APP_COUNT][16] = {
     !"Telephone", !"Messages",  !"Contacts", !"Banque",
-    !"Galerie",   !"Reglages",  !"Plan",     !"Agenda"
+    !"Urgences",  !"Reglages",  !"Plan",     !"Infos"
 };
 static stock const phone_AppColors[PHONE_APP_COUNT] = {
     0x34C759FF, 0x32D74BFF, 0xFFAA00FF, 0x007AFFFF,
@@ -308,6 +308,9 @@ stock phone_ShowHome(playerid)
 stock phone_Open(playerid)
 {
     if(!IsPlayerConnected(playerid)) return 0;
+    // [BUDGET TEXTDRAWS] La grille du sac et le smartphone ne tiennent pas
+    // ensemble dans les 256 textdraws d'un client : on ferme la grille.
+    SacV_Fermer(playerid);
     if(hasPhone[playerid] != 1)
     {
         SendClientMessage(playerid, 0xFF4444FF, "{FF4444}[Telephone]{FFFFFF} Vous n'avez pas de telephone. Achetez-en un au 24/7 ou via /market.");
@@ -322,6 +325,13 @@ stock phone_Close(playerid)
     if(phone_State[playerid] == PHONE_STATE_CLOSED) return 0;
     phone_HideAll(playerid);
     CancelSelectTextDraw(playerid);
+
+    // [BUDGET TEXTDRAWS] Les 50 elements sont detruits, pas seulement masques.
+    // Un client SA-MP n'en accepte que 256 par joueur et le gamemode en tient
+    // deja pres de 200 : les garder en reserve telephone ferme empechait le sac
+    // ou le tableau de bord de s'afficher, sans aucun message d'erreur.
+    // phone_ShowLockscreen les recreera a la prochaine ouverture.
+    phone_Destroy(playerid);
     phone_State[playerid] = PHONE_STATE_CLOSED;
     return 1;
 }
@@ -342,25 +352,12 @@ stock phone_GoHome(playerid)
 
 stock phone_OpenApp(playerid, app)
 {
+    // [TELAPPS] Le corps d'origine annoncait "App en developpement - P2-P4" et
+    // revenait a l'accueil : les huit icones ne faisaient rien. Le contenu est
+    // dans afrp_telapps.inc, qui rebranche chaque application sur ce que le
+    // gamemode sait deja faire.
     phone_State[playerid] = app;
-    new appName[16];
-    switch(app)
-    {
-        case PHONE_STATE_APP_TEL: appName = "Telephone";
-        case PHONE_STATE_APP_SMS: appName = "Messages";
-        case PHONE_STATE_APP_CTC: appName = "Contacts";
-        case PHONE_STATE_APP_BNK: appName = "Banque";
-        case PHONE_STATE_APP_GAL: appName = "Galerie";
-        case PHONE_STATE_APP_SET: appName = "Reglages";
-        case PHONE_STATE_APP_MAP: appName = "Plan";
-        case PHONE_STATE_APP_CAL: appName = "Agenda";
-        default: appName = "?";
-    }
-    new msg[96];
-    format(msg, sizeof(msg), "{007AFF}[Telephone]{FFFFFF} App '%s' (en developpement - P2-P4)", appName);
-    SendClientMessage(playerid, -1, msg);
-    phone_ShowHome(playerid);
-    return 1;
+    return TelApp_Ouvrir(playerid, app);
 }
 
 stock phone_OnClick(playerid, PlayerText:clickedid)
