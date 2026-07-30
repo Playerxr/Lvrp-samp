@@ -5295,6 +5295,8 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 #include <afrp_nouveautes>
 // [MAPEDIT] editeur de mapping en jeu
 #include <afrp_mapedit>
+// [SPEEDO2] tableau de bord moderne (habillage alternatif du compteur)
+#include <afrp_speedo2>
 // [MAPPACK] mappings importes, allumables carte par carte
 #include <afrp_mappack_data>
 #include <afrp_mappack>
@@ -23535,6 +23537,7 @@ public OnPlayerConnect(playerid)
     ArmNiv_OnConnect(playerid); // [ARMES / NIVEAU] reset anti-spam du message
     MapEd_OnConnect(playerid); // [MAPEDIT] reset de l'objet selectionne
     MapPack_OnConnect(playerid); // [MAPPACK] retire les batiments remplaces par les cartes allumees
+    Sp2_OnConnect(playerid); // [SPEEDO2] sinon le slot garde la preference du precedent occupant
     ArmeePaie_Time[playerid] = 0; // [ARMEE] sinon le slot garde le compteur du precedent occupant
     Ent_OnPlayerConnect(playerid); // [ENTREPRISE] reset compteur minutes accumulees
     Jobs_OnConnect(playerid); // [JOBS] reset streak
@@ -24159,6 +24162,7 @@ public OnPlayerDisconnect(playerid, reason)
     GangTag_OnDisconnect(playerid); // [GANG TAG] detruit le label du gang
     Justice_OnPlayerFree(playerid); // [JUSTICE] retire son dossier de proces s'il en avait un
     Obj_OnPlayerDisconnect(playerid); // [OBJECTIFS] sauvegarde la progression
+    Sp2_OnDisconnect(playerid); // [SPEEDO2] detruit les textdraws du tableau de bord
     TopJour_OnDisconnect(playerid); // [TOP DU JOUR] detruit le panneau
     Annonce_OnDisconnect(playerid); // [ANNONCE] detruit le bandeau
     Cv_OnDisconnect(playerid); // [CONVOI] retire de l'escorte / du braquage
@@ -26735,6 +26739,9 @@ public anticheat_Sobeit(playerid)
 
 stock speedometer_Show(playerid)
 {
+    // [SPEEDO2] Tableau de bord moderne : s'il prend l'affichage en charge, on
+    // n'empile pas l'ancien compteur par-dessus, les deux occupent le meme coin.
+    if(Sp2_Show(playerid)) return 1;
     TextDrawShowForPlayer(playerid, speedo_Box[0]);
     TextDrawShowForPlayer(playerid, speedo_Box[1]);
     TextDrawShowForPlayer(playerid, speedo_Gas);
@@ -26766,6 +26773,7 @@ stock speedometer_Show(playerid)
 
 stock speedometer_Hide(playerid)
 {
+    Sp2_Hide(playerid); // [SPEEDO2] sans effet si le joueur est sur le compteur classique
     KillTimer(SpeedoTimer[playerid]);
     TextDrawHideForPlayer(playerid, speedo_Box[0]);
     TextDrawHideForPlayer(playerid, speedo_Box[1]);
@@ -30176,6 +30184,8 @@ public OnGameModeInit()
     MapEd_Init();
     // [MAPPACK] recree les cartes importees qui sont allumees
     MapPack_Init();
+    // [SPEEDO2] cree le timer du tableau de bord moderne
+    Sp2_Init();
     // [OBJECTIFS] Init + timer 60s (temps de jeu, distance parcourue)
     Obj_Init();
     // [TOP DU JOUR] charge topjour.cfg + timer 60s
@@ -53381,6 +53391,11 @@ public OnPlayerCommandText(playerid, cmdtext[])
 	else if(strcmp(cmd, "/mapedit", true) == 0 || strcmp(cmd, "/objet", true) == 0)
 	{
 	    return MapEd_Command(playerid, cmdtext);
+	}
+	// [SPEEDO2] basculer entre le tableau de bord moderne et le classique
+	else if(strcmp(cmd, "/compteur", true) == 0)
+	{
+	    return Sp2_Cmd(playerid);
 	}
 	// [MAPPACK] cartes importees : liste, apercu, allumer / eteindre (admin)
 	else if(strcmp(cmd, "/mappack", true) == 0 || strcmp(cmd, "/cartes", true) == 0)
