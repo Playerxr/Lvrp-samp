@@ -5295,6 +5295,8 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 #include <afrp_nouveautes>
 // [MAPEDIT] editeur de mapping en jeu
 #include <afrp_mapedit>
+// [SAC VISUEL] le sac en grille d'images au lieu d'une liste de texte
+#include <afrp_sacvisuel>
 // [BASKET] dribble, paniers et points (remet en marche le basket existant)
 #include <afrp_basket>
 // [SPEEDO2] tableau de bord moderne (habillage alternatif du compteur)
@@ -23533,6 +23535,7 @@ public OnPlayerConnect(playerid)
     MapPack_OnConnect(playerid); // [MAPPACK] retire les batiments remplaces par les cartes allumees
     Sp2_OnConnect(playerid); // [SPEEDO2] sinon le slot garde la preference du precedent occupant
     Bsk_OnConnect(playerid); // [BASKET] libere un ballon reste au nom du precedent occupant
+    SacV_OnConnect(playerid); // [SAC VISUEL] sinon le slot croit sa grille encore ouverte
     ArmeePaie_Time[playerid] = 0; // [ARMEE] sinon le slot garde le compteur du precedent occupant
     Ent_OnPlayerConnect(playerid); // [ENTREPRISE] reset compteur minutes accumulees
     Jobs_OnConnect(playerid); // [JOBS] reset streak
@@ -24159,6 +24162,7 @@ public OnPlayerDisconnect(playerid, reason)
     Obj_OnPlayerDisconnect(playerid); // [OBJECTIFS] sauvegarde la progression
     Sp2_OnDisconnect(playerid); // [SPEEDO2] detruit les textdraws du tableau de bord
     Bsk_OnDisconnect(playerid); // [BASKET] rend le ballon qu'il tenait
+    SacV_OnDisconnect(playerid); // [SAC VISUEL] detruit les textdraws de la grille
     TopJour_OnDisconnect(playerid); // [TOP DU JOUR] detruit le panneau
     Annonce_OnDisconnect(playerid); // [ANNONCE] detruit le bandeau
     Cv_OnDisconnect(playerid); // [CONVOI] retire de l'escorte / du braquage
@@ -30601,6 +30605,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     if(Saison_OnDialog(playerid, dialogid, response, listitem)) return 1;
     if(MapEd_OnDialog(playerid, dialogid, response, listitem)) return 1;
     if(MapPack_OnDialog(playerid, dialogid, response, listitem)) return 1;
+    if(SacV_OnDialog(playerid, dialogid, response, inputtext)) return 1;
 
     // [MOBILE INLINE] Dispatch vers mobile_system pour ses dialogs (MARKET, SETTINGS)
     if(dialogid == MARKET_DIALOG || dialogid == SETTINGS_DIALOG)
@@ -48624,6 +48629,10 @@ public OnPlayerModelSelectionEx(playerid, response, extraid, modelid)
 public OnPlayerClickPlayerTextDraw(playerid, PlayerText:playertextid)
 {
     new string[256];
+    // [SAC VISUEL] la grille du sac passe avant le telephone : les deux ne
+    // peuvent pas etre ouverts en meme temps, et ses clics ne concernent
+    // aucun autre systeme.
+    if(SacV_OnClick(playerid, playertextid)) return 1;
     // [MOBILE APPS] Intercepte clics sur les 3 nouvelles tiles (GPS/M�t�o/News) AVANT mobile_system
     if(usingPhone[playerid] == 1 && MobileApps_OnClick(playerid, playertextid)) return 1;
     // [MOBILE INLINE] Dispatch clics vers mobile_system (apps Notes/SMS/Banque/Appels/Twitter)
@@ -48683,6 +48692,8 @@ public OnPlayerClickPlayerTextDraw(playerid, PlayerText:playertextid)
 public OnPlayerClickTextDraw(playerid, Text:clickedid)
 {
 	new string[256];
+	// [SAC VISUEL] Echap pendant la selection : sinon la grille reste a l'ecran.
+	if(SacV_OnClickHorsZone(playerid, clickedid)) return 1;
 	// Fermer le telephone AFRP si clic hors zone
 	if(clickedid == Text:INVALID_TEXT_DRAW && usingPhone[playerid] == 1)
 	{
@@ -55002,8 +55013,10 @@ public OnPlayerCommandText(playerid, cmdtext[])
         tmp = strtok(cmdtext,idx);
 		if (!strlen(tmp))
 		{
-			msg_Client(playerid, COLOR_USAGE, "{A98500} Usage {FFFFB2} /sac <nom>");
-			return msg_Client(playerid, COLOR_USAGE, "{FFFFB2} voir - arme - poser - prendre - afficher");
+			// [SAC VISUEL] /sac sans argument ouvre la grille d'images. Les
+			// sous-commandes existantes ne changent pas.
+			msg_Client(playerid, COLOR_USAGE, "{FFFFB2} Aussi : /sac voir - arme - poser - prendre - afficher");
+			return SacV_Ouvrir(playerid);
 		}
 		if(strcmp(tmp,"voir",true) == 0)
 		{

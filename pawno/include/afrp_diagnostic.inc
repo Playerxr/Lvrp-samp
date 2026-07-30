@@ -83,6 +83,7 @@ static const DiagDialogs[][e_DiagDlg] = {
 	{9633, "nouveautes"},   {9634, "mapedit"},
 	{9635, "mapedit"},      {9636, "mapedit"},
 	{9637, "mappack"},      {9638, "mappack"},
+	{9639, "sacvisuel"},    {9640, "sacvisuel"},
 	{9800, "factionmenu"},       {9801, "factionmenu"},
 	{9802, "factionmenu"},       {9803, "factionmenu"},
 	{9940, "justice"},           {9941, "justice"},
