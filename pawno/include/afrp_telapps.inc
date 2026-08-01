@@ -365,7 +365,10 @@ stock TelApp_OnDialog(playerid, dialogid, response, listitem, const inputtext[])
 				// La couleur du fond est fixee a la creation du textdraw et
 				// n'est jamais relue : sans cette ligne, changer de fond
 				// n'aurait eu aucun effet visible.
-				PlayerTextDrawBoxColor(playerid, phone_TD[playerid][8], taFonds[listitem]);
+				// [HABILLAGE HANDPHONE] L'indice 8 (ancien design) est devenu
+				// PHONE_TD_WALLPAPER (vibe_phone.inc) : c'est maintenant le
+				// fond d'ecran visible derriere les icones du nouveau design.
+				PlayerTextDrawColor(playerid, phone_TD[playerid][PHONE_TD_WALLPAPER], taFonds[listitem]);
 				TelApp_Msg(playerid, "{00FF00}Fond d'ecran change.");
 			}
 			TelApp_Accueil(playerid);
