@@ -25,10 +25,15 @@
 #define MP_MECANO    4
 #define MP_BANQUE2   5
 #define MP_LSPD      6
-#define MP_MAX_CARTES 7
+#define MP_B13       7
+#define MP_BALLAS    8
+#define MP_VAGOS     9
+#define MP_VARIOS    10
+#define MP_WISE      11
+#define MP_MAX_CARTES 12
 
 #define MP_MAX_OBJ    700   // la plus grosse carte en compte 688
-#define MP_MAX_RETRAIT 158
+#define MP_MAX_RETRAIT 199
 
 new mpNom[MP_MAX_CARTES][32] = {
 	"Banque BDO",
@@ -37,7 +42,12 @@ new mpNom[MP_MAX_CARTES][32] = {
 	"Ile privee au large",
 	"Garage mecanicien",
 	"Banque du coin (coffre)",
-	"Commissariat LSPD"
+	"Commissariat LSPD",
+	"QG B13 Brothers",
+	"QG Ballas",
+	"QG Vagos",
+	"QG Varios",
+	"Magasin de vetements Wise"
 };
 
 new mpAuteur[MP_MAX_CARTES][20] = {
@@ -47,14 +57,19 @@ new mpAuteur[MP_MAX_CARTES][20] = {
 	"inconnu",
 	"Ghostx",
 	"UnuAlex",
-	"Stiven"
+	"Stiven",
+	"Naroto",
+	"Naroto",
+	"Naroto",
+	"Naroto",
+	"WISE_ENTERPRISE"
 };
 
-new mpNbObj[MP_MAX_CARTES] = { 164, 167, 688, 550, 126, 231, 84 };
+new mpNbObj[MP_MAX_CARTES] = { 164, 167, 688, 550, 126, 231, 84, 120, 230, 143, 150, 224 };
 
-new Float:mpVoirX[MP_MAX_CARTES] = { 940.5729, 1016.6318, 2592.9810, 1279.8729, 2282.2308, 1450.8242, 1560.5968 };
-new Float:mpVoirY[MP_MAX_CARTES] = { -1671.7339, -1332.1266, 766.9609, -3898.9602, -2346.5765, -1129.5380, -1625.2272 };
-new Float:mpVoirZ[MP_MAX_CARTES] = { 22.2706, 13.3828, 10.9803, 26.1658, 24.3869, 55.0938, 18.3428 };
+new Float:mpVoirX[MP_MAX_CARTES] = { 940.5729, 1016.6318, 2592.9810, 1279.8729, 2282.2308, 1450.8242, 1560.5968, 2463.4643, 2528.4714, 2789.5127, 1733.9089, 1674.6700 };
+new Float:mpVoirY[MP_MAX_CARTES] = { -1671.7339, -1332.1266, 766.9609, -3898.9602, -2346.5765, -1129.5380, -1625.2272, -1912.3887, -1485.5647, -1619.2209, -2110.4419, -1752.1637 };
+new Float:mpVoirZ[MP_MAX_CARTES] = { 22.2706, 13.3828, 10.9803, 26.1658, 24.3869, 55.0938, 18.3428, 24.8360, 31.6719, 28.1672, 22.1828, 21.0198 };
 
 // Batiments d'origine a retirer, carte par carte.
 new mpRmCarte[MP_MAX_RETRAIT] = {
@@ -65,7 +80,10 @@ new mpRmCarte[MP_MAX_RETRAIT] = {
 	2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
 	2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
 	2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-	2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4, 4, 4, 4, 5, 5, 5
+	2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4, 4, 4, 4, 5, 5, 5,
+	7, 7, 7, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
+	9, 9, 9, 9, 9, 9, 9, 9, 9, 10, 10, 10, 10, 10, 10, 10, 10, 10,
+	11, 11
 };
 new mpRmModel[MP_MAX_RETRAIT] = {
 	729, 726, 620, 1297, 1438, 3454, 3478, 3454, 3478, 3454, 3478, 3454, 3478, 3454, 3478,
@@ -78,7 +96,12 @@ new mpRmModel[MP_MAX_RETRAIT] = {
 	785, 791, 785, 18230, 18267, 694, 784, 791, 785, 694, 784, 791, 785, 791, 785,
 	791, 785, 791, 785, 791, 785, 791, 785, 791, 785, 791, 785, 3459, 1294, 1350,
 	1350, 1350, 1350, 3513, 1294, 1350, 1294, 1294, 1294, 1350, 1350, 1294, 1294, 1294, 1294,
-	1294, 3686, 3627, 1412, 1412, 1538, 4572, 4628
+	1294, 3686, 3627, 1412, 1412, 1538, 4572, 4628,
+	1315, 1689, 5232, 3594,
+	3594, 3594, 3594, 17912, 17859, 17861, 1267, 1261, 1297, 17912, 1527, 1267, 1261, 1226, 3635, 3670, 1308,
+	17550, 17772, 1308, 1315, 1468, 1226, 1315, 17550, 17772,
+	1226, 1308, 3634, 3669, 1308, 1308, 1308, 1308, 1308,
+	8677, 8752
 };
 new Float:mpRmX[MP_MAX_RETRAIT] = {
 	940.929, 958.039, 930.140, 922.750, 1015.530, 2663.398, 2663.398, 2656.300,
@@ -100,7 +123,12 @@ new Float:mpRmX[MP_MAX_RETRAIT] = {
 	-2796.060, -2796.060, -2836.560, -2836.560, 2497.418, 2255.060, 2281.800, 2276.570,
 	2292.948, 2297.770, 2277.550, 2291.560, 2277.260, 2186.208, 2220.239, 2283.229,
 	2281.820, 2297.500, 2319.438, 2357.138, 2477.340, 2431.628, 2322.388, 2288.265,
-	2288.265, 2282.070, 2285.828, 1455.630, 1449.739, 1449.739
+	2288.265, 2282.070, 2285.828, 1455.630, 1449.739, 1449.739,
+	2402.510, 2473.449, 2472.659, 2450.459,
+	2510.590, 2526.580, 2526.520, 2672.909, 2524.040, 2524.040, 2538.159, 2538.159, 2531.179, 2672.909, 2522.459, 2538.159, 2538.159, 1681.969, 1668.729, 1668.729, 1676.280,
+	2870.239, 2870.239, 2424.090, 2425.050, 2475.639, 2425.830, 2416.659, 2870.239, 2870.239,
+	1817.010, 1813.150, 1711.630, 1711.630, 1832.729, 1842.449, 1832.880, 1863.300, 1833.979,
+	2362.320, 2362.320
 };
 new Float:mpRmY[MP_MAX_RETRAIT] = {
 	-1668.859, -1678.050, -1662.300, -1683.338, -1337.170, 746.320, 746.320, 716.390,
@@ -122,7 +150,12 @@ new Float:mpRmY[MP_MAX_RETRAIT] = {
 	-1582.770, -1582.770, -1597.410, -1597.410, 783.031, 771.187, 773.328, 757.867,
 	753.101, 768.640, 754.515, 783.187, 707.687, 816.992, 782.687, 738.625,
 	723.335, 718.789, 717.515, 708.890, 768.976, 757.226, 763.929, -2342.070,
-	-2342.070, -2312.046, -2315.757, -1137.760, -1122.770, -1122.770
+	-2342.070, -2312.046, -2315.757, -1137.760, -1122.770, -1122.770,
+	-1975.479, -1903.709, -1932.089, -1890.780,
+	-1474.040, -1474.380, -1474.380, -1883.770, -1480.209, -1480.209, -1490.880, -1490.880, -1499.359, -1883.770, -1478.739, -1490.880, -1490.880, -2108.300, -2096.199, -2096.199, -2118.090,
+	-1589.390, -1589.390, -1999.420, -2006.839, -2022.810, -2013.849, -2020.969, -1589.390, -1589.390,
+	-2118.550, -2133.560, -2095.959, -2095.959, -2107.770, -2107.770, -2079.979, -2109.800, -2142.040,
+	1023.179, 1023.179
 };
 new Float:mpRmZ[MP_MAX_RETRAIT] = {
 	11.319, 10.741, 4.967, 15.937, 12.554, 14.170, 14.170, 14.170,
@@ -144,7 +177,12 @@ new Float:mpRmZ[MP_MAX_RETRAIT] = {
 	139.125, 139.125, 138.983, 138.983, 17.319, 14.000, 9.788, 9.609,
 	9.803, 9.663, 13.991, 14.303, 9.795, 10.241, 12.920, 14.303,
 	9.788, 9.788, 14.335, 14.295, 14.303, 14.288, 14.000, 15.562,
-	15.562, 13.757, 13.757, 22.914, 53.093, 53.093
+	15.562, 13.757, 13.757, 22.914, 53.093, 53.093,
+	15.812, 17.757, 23.218, 13.164,
+	23.609, 24.585, 23.625, 13.875, 25.242, 25.242, 36.062, 36.062, 26.304, 13.875, 24.164, 36.062, 36.062, 16.390, 15.187, 15.187, 12.750,
+	16.562, 16.562, 12.703, 15.812, 13.820, 16.265, 15.812, 16.562, 16.562,
+	16.390, 12.750, 15.210, 15.210, 12.750, 12.750, 12.750, 12.851, 12.734,
+	7.820, 7.820
 };
 new Float:mpRmR[MP_MAX_RETRAIT] = {
 	0.250, 0.250, 0.250, 0.250, 0.250, 0.250, 0.250, 0.250,
@@ -166,7 +204,11 @@ new Float:mpRmR[MP_MAX_RETRAIT] = {
 	0.250, 0.250, 0.250, 0.250, 0.250, 0.250, 0.250, 0.250,
 	0.250, 0.250, 0.250, 0.250, 0.250, 0.250, 0.250, 0.250,
 	0.250, 0.250, 0.250, 0.250, 0.250, 0.250, 0.250, 0.250,
-	0.250, 0.250, 0.250, 0.250, 0.250, 0.250
+	0.250, 0.250, 0.250, 0.250, 0.250, 0.250,
+	0.250, 0.250, 0.250, 0.250, 0.250, 0.250, 0.250, 0.250, 0.250, 0.250, 0.250, 0.250, 0.250, 0.250, 0.250,
+	0.250, 0.250, 0.250, 0.250, 0.250, 0.250, 0.250, 0.250, 0.250, 0.250, 0.250, 0.250, 0.250, 0.250, 0.250,
+	0.250, 0.250, 0.250, 0.250, 0.250, 0.250,
+	0.250, 0.250, 0.250, 0.250, 0.250
 };
 
 new mpVaultDoor = -1;   // porte du coffre de la Banque du coin
@@ -3640,6 +3682,1355 @@ stock MapPack_Creer_LSPD()
 	return 1;
 }
 
+// QG B13 Brothers - 120 objets, mapping de Naroto
+stock MapPack_Creer_B13()
+{
+	new tmpobjid;
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(8614, 2476.984619, -1901.404785, 14.846882, 0.000000, 0.000000, 179.999984, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18065, "ab_sfammumain", "shelf_glas", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 1, 10765, "airportgnd_sfse", "white", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 2, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 3, 18646, "matcolours", "red-4", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 15, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(19379, 2477.313964, -1914.555419, 16.150009, 0.000000, -0.000004, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(19379, 2472.609375, -1919.354248, 16.150009, -0.000004, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18065, "ab_sfammumain", "shelf_glas", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(19379, 2463.100097, -1919.354248, 16.150009, -0.000004, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18065, "ab_sfammumain", "shelf_glas", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(19379, 2458.295410, -1914.655395, 16.150009, 0.000000, 0.000004, -179.999984, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(19379, 2458.295410, -1911.656127, 16.150009, 0.000000, 0.000004, -179.999984, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(19379, 2477.313964, -1911.656127, 16.150009, 0.000000, 0.000004, -179.999984, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(18762, 2477.318847, -1907.060668, 19.250019, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "red-4", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 1, 18646, "matcolours", "red-4", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(18762, 2477.318847, -1907.060668, 16.250009, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "red-4", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 1, 18646, "matcolours", "red-4", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(18762, 2477.318847, -1919.257690, 19.250019, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "red-4", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 1, 18646, "matcolours", "red-4", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(18762, 2477.318847, -1919.257690, 18.150016, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "red-4", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 1, 18646, "matcolours", "red-4", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(18762, 2458.200195, -1919.257690, 18.150016, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "red-4", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 1, 18646, "matcolours", "red-4", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(18762, 2458.200195, -1919.257690, 19.250019, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "red-4", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 1, 18646, "matcolours", "red-4", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(18762, 2458.200195, -1907.160644, 19.250019, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "red-4", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 1, 18646, "matcolours", "red-4", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(18762, 2458.200195, -1907.160644, 18.450017, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "red-4", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 1, 18646, "matcolours", "red-4", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(18762, 2477.318847, -1909.859985, 21.250026, 90.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "red-4", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 1, 18646, "matcolours", "red-4", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(18762, 2477.318847, -1914.658813, 21.250026, 90.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "red-4", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 1, 18646, "matcolours", "red-4", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(18762, 2477.318847, -1916.658325, 21.250026, 90.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "red-4", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 1, 18646, "matcolours", "red-4", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(18762, 2474.716308, -1919.257690, 21.250026, 90.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "red-4", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 1, 18646, "matcolours", "red-4", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(18762, 2470.111816, -1919.257690, 21.250026, 90.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "red-4", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 1, 18646, "matcolours", "red-4", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(18762, 2465.407226, -1919.257690, 21.250026, 90.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "red-4", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 1, 18646, "matcolours", "red-4", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(18762, 2460.902832, -1919.257690, 21.250026, 90.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "red-4", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 1, 18646, "matcolours", "red-4", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(18762, 2458.200195, -1916.458374, 21.250026, 90.000000, 0.000000, 179.999984, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "red-4", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 1, 18646, "matcolours", "red-4", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(18762, 2458.200195, -1909.859985, 21.250026, 90.000000, 0.000000, 179.999984, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "red-4", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 1, 18646, "matcolours", "red-4", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(18762, 2458.200195, -1911.859497, 21.250026, 90.000000, 0.000000, 179.999984, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "red-4", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 1, 18646, "matcolours", "red-4", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(19379, 2463.800781, -1907.257202, 16.150009, 0.000000, 0.000003, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(19379, 2463.200195, -1907.257202, 16.150009, 0.000000, 0.000003, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(19359, 2475.890136, -1907.211425, 18.150016, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(19359, 2475.890136, -1907.211425, 19.650022, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(19383, 2472.656738, -1907.212524, 18.250017, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18065, "ab_sfammumain", "shelf_glas", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(19379, 2466.203125, -1907.257202, 16.150009, 0.000000, 0.000003, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(1499, 2471.943847, -1907.234497, 16.450010, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "red-4", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 1, 2755, "ab_dojowall", "ab_trellis", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(18762, 2474.716308, -1907.060668, 21.250026, 90.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "red-4", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 1, 18646, "matcolours", "red-4", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(18762, 2470.011718, -1907.060668, 21.250026, 90.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "red-4", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 1, 18646, "matcolours", "red-4", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(18762, 2465.207031, -1907.060668, 21.250026, 90.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "red-4", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 1, 18646, "matcolours", "red-4", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(18762, 2460.202148, -1907.060668, 21.250026, 90.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "red-4", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 1, 18646, "matcolours", "red-4", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(19379, 2471.708496, -1912.255981, 21.150028, 0.000000, 89.999992, -179.999984, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(19379, 2471.708496, -1914.055541, 21.150028, 0.000000, 89.999992, -179.999984, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(19379, 2463.800781, -1914.055541, 21.150028, 0.000000, 89.999992, -179.999984, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(19379, 2463.800781, -1912.355957, 21.150028, 0.000000, 89.999992, -179.999984, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(19427, 2472.577148, -1907.185913, 20.850027, 90.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(19483, 2464.424316, -1907.113403, 17.950130, -0.000009, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterialText(tmpobjid, 0, "B13", 60, "Ariel", 20, 1, 0xEFF00000, 0x00000000, 0);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(1215, 2467.027587, -1909.804565, 21.835968, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 1, 18646, "matcolours", "red-4", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(1215, 2467.027587, -1917.602661, 21.835968, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 1, 18646, "matcolours", "red-4", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(1215, 2459.620361, -1917.602661, 21.835968, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 1, 18646, "matcolours", "red-4", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(1215, 2459.620361, -1909.704589, 21.835968, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 1, 18646, "matcolours", "red-4", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(1215, 2468.829345, -1909.804565, 21.835968, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 1, 18646, "matcolours", "red-4", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(1215, 2468.829345, -1917.702636, 21.835968, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 1, 18646, "matcolours", "red-4", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(1215, 2476.236572, -1917.702636, 21.835968, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 1, 18646, "matcolours", "red-4", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(1215, 2476.236572, -1909.804565, 21.835968, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 1, 18646, "matcolours", "red-4", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(19379, 2472.008789, -1912.056030, 16.550010, 0.000000, 89.999992, -179.999984, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(19379, 2472.008789, -1914.455444, 16.550010, 0.000000, 89.999992, -179.999984, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(19379, 2463.700683, -1914.455444, 16.550010, 0.000000, 89.999992, -179.999984, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(19379, 2463.700683, -1912.156005, 16.550010, 0.000000, 89.999992, -179.999984, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(1271, 2459.443359, -1911.383911, 17.035949, 0.000000, 0.000000, -29.999998, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7981, "vgssairport02", "exit_noexit128", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(1271, 2459.443359, -1911.383911, 17.735952, 0.000000, 0.000000, -70.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7981, "vgssairport02", "exit_noexit128", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(1271, 2459.443359, -1911.383911, 18.435955, 0.000000, 0.000000, -20.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7981, "vgssairport02", "exit_noexit128", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(1713, 2451.661621, -1915.337646, 16.550125, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 1, 18646, "matcolours", "red-3", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(1713, 2451.661621, -1912.638305, 16.550125, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 1, 18646, "matcolours", "red-3", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(1713, 2451.661621, -1909.938964, 16.550125, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 1, 18646, "matcolours", "red-3", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(1713, 2454.964843, -1908.339355, 16.550125, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 1, 18646, "matcolours", "red-3", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(1713, 2454.964843, -1911.138671, 16.550125, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 1, 18646, "matcolours", "red-3", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(1713, 2454.964843, -1913.838012, 16.550125, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 1, 18646, "matcolours", "red-3", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(941, 2453.432861, -1911.641235, 16.750125, 0.000001, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 10765, "airportgnd_sfse", "white", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 1, 18646, "matcolours", "red-4", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(941, 2453.432861, -1909.141845, 16.750125, 0.000001, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 10765, "airportgnd_sfse", "white", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 1, 18646, "matcolours", "red-4", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(941, 2453.432861, -1914.140625, 16.750125, 0.000001, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 10765, "airportgnd_sfse", "white", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 1, 18646, "matcolours", "red-4", 0x00000000);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(19483, 2477.409423, -1907.132568, 20.050024, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterialText(tmpobjid, 0, "By MODRITCH", 120, "Ariel", 20, 1, 0xFFFFFFFF, 0x00000000, 0);
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(3850, 2444.772460, -1921.148559, 17.050127, 0.000004, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(3850, 2448.375976, -1921.148559, 17.050127, 0.000004, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(3850, 2451.879394, -1921.148559, 17.050127, 0.000004, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(3850, 2455.382812, -1921.148559, 17.050127, 0.000004, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(3850, 2458.886230, -1921.148559, 17.050127, 0.000004, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(3850, 2462.389648, -1921.148559, 17.050127, 0.000004, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(3850, 2465.893066, -1921.148559, 17.050127, 0.000004, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(3850, 2469.396484, -1921.148559, 17.050127, 0.000004, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(3850, 2472.899902, -1921.148559, 17.050127, 0.000004, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(3850, 2476.403320, -1921.148559, 17.050127, 0.000004, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(1362, 2450.306884, -1907.424072, 17.150127, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(19632, 2450.289794, -1907.434814, 17.450128, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(3850, 2479.906738, -1921.148559, 17.050127, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(19786, 2467.488525, -1919.206298, 19.135957, 0.000000, 0.000000, 179.999984, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(1726, 2466.626953, -1916.083496, 16.635948, 0.000000, -0.000001, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(1726, 2469.229492, -1916.183471, 16.635948, 0.000000, -0.000001, -19.999996, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(1726, 2464.124511, -1916.783325, 16.635948, 0.000000, -0.000001, 19.999996, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(2311, 2466.744140, -1918.535278, 16.635948, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(1670, 2468.199707, -1918.526611, 17.235950, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(1670, 2467.198730, -1918.426635, 17.235950, 0.000000, 0.000000, -29.999998, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(11730, 2458.814697, -1908.122436, 16.635948, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(370, 2459.297119, -1911.481567, 19.135957, 0.000000, 0.000000, 109.999992, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(948, 2459.038574, -1918.765991, 16.635948, 0.000000, 0.000000, -39.999996, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(948, 2476.587402, -1918.673095, 16.635948, 0.000000, 0.000000, -49.999992, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(955, 2480.660156, -1905.046508, 16.950012, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(3850, 2444.895263, -1902.939697, 17.050127, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(3850, 2448.398681, -1902.939697, 17.050127, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(3850, 2451.902099, -1902.939697, 17.050127, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(3850, 2455.405517, -1902.939697, 17.050127, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(3850, 2458.908935, -1902.939697, 17.050127, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(3850, 2462.412353, -1902.939697, 17.050127, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(3850, 2465.915771, -1902.939697, 17.050127, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(3850, 2469.419189, -1902.939697, 17.050127, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(3850, 2472.922607, -1902.939697, 17.050127, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(355, 2453.466064, -1909.319091, 17.250127, 80.000000, 0.000000, 59.999996, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(355, 2453.365966, -1909.019165, 17.250127, 80.148925, -1.727939, -49.851081, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(356, 2453.348632, -1911.507690, 17.250127, 80.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(356, 2453.348632, -1912.007568, 17.250127, 80.000000, 0.000000, -10.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(356, 2453.348632, -1912.007568, 17.250127, 80.000000, 0.000000, 39.999996, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(1313, 2472.674560, -1907.012329, 20.350025, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(1362, 2457.187500, -1919.488281, 17.150127, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(1362, 2467.244140, -1901.830322, 13.046875, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(19632, 2467.135253, -1901.790405, 13.246876, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(2676, 2447.323974, -1914.150268, 16.650125, 0.000000, 0.000000, -29.999998, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(2676, 2447.323974, -1914.150268, 16.650125, 0.000000, 0.000000, -29.999998, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(2045, 2453.437011, -1913.992431, 17.250127, 0.000000, 0.000000, -20.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(2045, 2453.437011, -1914.392333, 17.250127, 0.000000, 0.000000, -169.999984, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(2045, 2453.136718, -1914.392333, 17.250127, 0.000000, 0.000000, -169.999984, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(2045, 2453.136718, -1914.392333, 17.250127, 0.000000, 0.000000, 170.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(19632, 2457.194335, -1919.551391, 17.450128, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(11730, 2458.814697, -1908.822265, 16.635948, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(11730, 2458.814697, -1908.822265, 16.635948, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_B13, CreateDynamicObject(11730, 2458.814697, -1909.522094, 16.635948, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	#pragma unused tmpobjid
+	return 1;
+}
+// QG Ballas - 230 objets, mapping de Naroto
+stock MapPack_Creer_BALLAS()
+{
+	new tmpobjid;
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19379, 2510.593994, -1489.541870, 23.000000, 0.000000, -89.999992, -179.999984, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 14479, "skuzzy_motelmain", "mp_CJ_Laminate1", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19379, 2521.104248, -1489.541870, 23.000000, 0.000000, -89.999992, -179.999984, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 14479, "skuzzy_motelmain", "mp_CJ_Laminate1", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19379, 2532.114990, -1489.541870, 23.000000, 0.000000, -89.999992, -179.999984, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 14479, "skuzzy_motelmain", "mp_CJ_Laminate1", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19379, 2535.418212, -1489.541870, 23.000000, 0.000000, -89.999992, -179.999984, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 14479, "skuzzy_motelmain", "mp_CJ_Laminate1", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19379, 2531.514404, -1489.541870, 23.000000, 0.000000, -89.999992, -179.999984, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 14479, "skuzzy_motelmain", "mp_CJ_Laminate1", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19379, 2510.193603, -1480.744018, 23.000000, 0.000000, -89.999992, -179.999984, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 14479, "skuzzy_motelmain", "mp_CJ_Laminate1", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19379, 2520.503662, -1480.744018, 23.000000, 0.000000, -89.999992, -179.999984, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 14479, "skuzzy_motelmain", "mp_CJ_Laminate1", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19379, 2530.913818, -1480.744018, 23.000000, 0.000000, -89.999992, -179.999984, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 14479, "skuzzy_motelmain", "mp_CJ_Laminate1", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19379, 2535.418212, -1478.844482, 18.299982, 0.000000, -89.999992, -179.999984, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 14479, "skuzzy_motelmain", "mp_CJ_Laminate1", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19379, 2540.796386, -1480.707153, 23.085937, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19379, 2540.796386, -1489.505004, 23.085937, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(18762, 2541.042236, -1475.574462, 25.427665, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightpurple2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(18762, 2541.042236, -1475.574462, 26.127668, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightpurple2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19379, 2535.991699, -1494.303833, 23.085937, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19379, 2526.382324, -1494.303833, 23.085937, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19379, 2516.873046, -1494.303833, 23.085937, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(18762, 2538.239501, -1493.969970, 28.227676, 90.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightpurple2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(18762, 2541.142333, -1493.969970, 23.527658, -179.999984, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightpurple2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(18762, 2541.142333, -1493.969970, 26.127668, -179.999984, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightpurple2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(18762, 2541.142333, -1477.573974, 28.227676, 90.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightpurple2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(18762, 2541.142333, -1482.472778, 28.227676, 90.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightpurple2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(18762, 2541.142333, -1487.271606, 28.227676, 90.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightpurple2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(18762, 2541.142333, -1491.970458, 28.227676, 90.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightpurple2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(1499, 2521.409423, -1475.585571, 22.985218, 0.000000, 0.000001, -179.999984, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightpurple2_32", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 1, 2755, "ab_dojowall", "ab_trellis", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(1499, 2518.406494, -1475.585571, 22.985218, 0.000000, -0.000001, -0.000009, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightpurple2_32", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 1, 2755, "ab_dojowall", "ab_trellis", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 2, 2755, "ab_dojowall", "ab_trellis", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19379, 2535.791503, -1475.608398, 23.085937, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(18762, 2538.339599, -1475.574462, 28.227676, 90.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightpurple2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(18762, 2533.134521, -1475.574462, 28.227676, 90.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightpurple2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(18762, 2533.534912, -1475.574462, 28.227676, 90.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightpurple2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19379, 2513.569824, -1475.608398, 23.085937, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(18762, 2538.639892, -1475.574462, 28.227676, 90.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightpurple2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19379, 2526.182128, -1475.608398, 23.085937, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19427, 2519.979736, -1475.693359, 26.286729, 90.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19427, 2519.979736, -1475.593383, 27.486734, 90.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(18762, 2528.229736, -1475.574462, 28.227676, 90.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightpurple2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(18762, 2527.529052, -1475.574462, 28.227676, 90.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightpurple2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(18762, 2523.825439, -1475.574462, 28.227676, 90.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightpurple2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(18762, 2519.020751, -1475.574462, 28.227676, 90.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightpurple2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19379, 2535.491210, -1489.505004, 27.985956, 0.000000, -89.999992, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19379, 2535.491210, -1480.807128, 27.985956, 0.000000, -89.999992, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19379, 2525.081054, -1480.807128, 27.985956, 0.000000, -89.999992, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19379, 2525.081054, -1488.805175, 27.985956, 0.000000, -89.999992, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19379, 2513.069335, -1475.608398, 23.085937, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19379, 2503.459960, -1475.608398, 23.085937, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(18762, 2517.919677, -1475.574462, 28.227676, 90.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightpurple2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(18762, 2513.014892, -1475.574462, 28.227676, 90.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightpurple2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(18762, 2508.810791, -1475.574462, 28.227676, 90.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightpurple2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(18762, 2507.309326, -1475.374511, 25.327665, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightpurple2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19359, 2526.739746, -1475.574462, 25.555709, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterialText(tmpobjid, 0, "Ballas", 20, "Ariel", 20, 1, 0xFFFFFFFF, 0x00000000, 0);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19379, 2535.418212, -1487.242431, 18.299982, 0.000000, -89.999992, -179.999984, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 14479, "skuzzy_motelmain", "mp_CJ_Laminate1", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19379, 2535.418212, -1492.141235, 18.199981, 90.000000, 0.000000, 90.000007, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19379, 2530.113037, -1487.042480, 18.199981, 90.000000, 0.000000, 0.000007, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19379, 2529.912841, -1480.943969, 18.199981, 90.000000, 0.000000, 0.000007, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19379, 2535.918701, -1475.745239, 18.199981, 90.000000, 0.000000, -89.999992, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19379, 2535.218017, -1475.645263, 18.199981, 90.000000, 0.000000, -89.999992, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(336, 2530.954589, -1487.680053, 19.385923, 0.000000, -89.999992, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 2755, "ab_dojowall", "ab_trellis", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19379, 2514.770996, -1489.005126, 27.985956, 0.000000, -89.999992, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(18762, 2533.334716, -1493.969970, 28.227676, 90.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightpurple2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(18762, 2528.429931, -1493.969970, 28.227676, 90.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightpurple2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(18762, 2523.525146, -1493.969970, 28.227676, 90.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightpurple2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(18762, 2518.620361, -1493.969970, 28.227676, 90.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightpurple2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(18762, 2513.715576, -1493.969970, 28.227676, 90.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightpurple2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19394, 2506.842285, -1494.379028, 24.800006, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19379, 2510.566894, -1489.005126, 27.985956, 0.000000, -89.999992, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19379, 2513.169433, -1494.303833, 23.085937, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(18762, 2508.810791, -1493.969970, 28.227676, 90.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightpurple2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(18762, 2507.709716, -1493.969970, 28.227676, 90.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightpurple2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(18762, 2504.706787, -1494.069946, 26.127668, -179.999984, 0.000004, 89.999992, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightpurple2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(18762, 2504.706787, -1494.069946, 25.027664, -179.999984, 0.000004, 89.999992, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightpurple2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(18762, 2504.706787, -1494.069946, 25.027664, -179.999984, 0.000004, 89.999992, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightpurple2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19444, 2506.688720, -1494.310424, 26.900014, 90.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(1499, 2506.111328, -1494.369873, 23.000000, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightpurple2_32", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 1, 2755, "ab_dojowall", "ab_trellis", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19444, 2506.688720, -1494.310424, 26.300012, 90.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19379, 2510.566894, -1479.907348, 27.985956, 0.000000, -89.999992, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19379, 2514.770996, -1479.907348, 27.985956, 0.000000, -89.999992, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(8615, 2510.372314, -1473.955932, 25.801019, 0.000000, 0.000000, 179.999984, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 1, 10765, "airportgnd_sfse", "white", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 2, 7650, "vgnusedcar", "lightpurple2_32", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 3, 7650, "vgnusedcar", "lightpurple2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19427, 2539.984619, -1489.729370, 24.985944, 0.000000, -89.999992, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 10765, "airportgnd_sfse", "white", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19359, 2539.131103, -1484.767578, 24.585943, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19359, 2537.729736, -1484.767578, 24.585943, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19359, 2536.228271, -1483.167968, 24.585943, 0.000000, 0.000000, 179.999984, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19359, 2536.228271, -1480.468627, 24.585943, 0.000000, 0.000000, 179.999984, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19359, 2536.228271, -1480.468627, 24.585943, 0.000000, 0.000000, 179.999984, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19359, 2536.228271, -1479.268920, 24.585943, 0.000000, 0.000000, 179.999984, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(1499, 2536.229003, -1475.788940, 23.085937, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightpurple2_32", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 1, 2755, "ab_dojowall", "ab_trellis", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19359, 2536.228271, -1478.869018, 24.585943, 0.000000, 0.000000, 179.999984, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19427, 2536.315429, -1477.413330, 26.385950, -90.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19359, 2536.228271, -1478.869018, 25.385946, 0.000000, 0.000000, 179.999984, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19359, 2536.228271, -1481.868286, 25.385946, 0.000000, 0.000000, 179.999984, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19359, 2536.228271, -1483.267944, 25.385946, 0.000000, 0.000000, 179.999984, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19359, 2537.729736, -1484.767578, 24.885944, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19359, 2537.729736, -1484.767578, 24.885944, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19359, 2539.131103, -1484.767578, 24.885944, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(3630, 2509.120361, -1477.125610, 24.585943, 0.000000, 0.000000, 179.999984, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18063, "ab_sfammuitems02", "gun_xtra1", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(3630, 2511.522705, -1477.125610, 24.585943, 0.000000, 0.000000, 179.999984, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18063, "ab_sfammuitems02", "gun_xtra1", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19359, 2538.621582, -1475.116943, 26.510026, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterialText(tmpobjid, 0, "By Blacky", 100, "Ariel", 20, 1, 0xFFFFFFFF, 0x00000000, 0);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(1215, 2520.955322, -1488.284912, 28.671894, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 1, 7650, "vgnusedcar", "lightpurple2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(1215, 2520.955322, -1480.486816, 28.671894, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 1, 7650, "vgnusedcar", "lightpurple2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(1215, 2513.447998, -1480.486816, 28.671894, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 1, 7650, "vgnusedcar", "lightpurple2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(1215, 2513.447998, -1488.184936, 28.671894, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 1, 7650, "vgnusedcar", "lightpurple2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(18762, 2506.708740, -1491.070678, 28.227676, 90.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightpurple2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(18762, 2506.708740, -1486.171875, 28.227676, 90.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightpurple2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(18762, 2506.708740, -1481.273071, 28.227676, 90.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightpurple2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(18762, 2506.708740, -1478.573730, 28.227676, 90.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightpurple2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(1215, 2529.363525, -1480.486816, 28.671894, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 1, 7650, "vgnusedcar", "lightpurple2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(1215, 2536.870849, -1480.486816, 28.671894, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 1, 7650, "vgnusedcar", "lightpurple2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(1215, 2536.870849, -1488.384887, 28.671894, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 1, 7650, "vgnusedcar", "lightpurple2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(1215, 2529.463623, -1488.384887, 28.671894, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 1, 7650, "vgnusedcar", "lightpurple2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(2650, 2536.024658, -1491.896606, 20.185926, 0.000000, 0.000000, -179.999984, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(1313, 2519.931152, -1475.501342, 25.886222, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(987, 2541.085449, -1475.013671, 22.515264, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(14409, 2538.082275, -1479.528076, 19.885925, 0.000000, 0.000000, -179.999984, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(14409, 2538.782958, -1479.528076, 19.885925, 0.000000, 0.000000, -179.999984, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(3409, 2532.125732, -1480.215087, 17.685916, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(3409, 2532.125732, -1478.415527, 17.685916, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(941, 2530.681884, -1490.559326, 18.885921, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(941, 2530.681884, -1488.059936, 18.885921, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(2025, 2540.419921, -1476.432495, 18.385919, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(372, 2530.266845, -1491.723876, 19.385923, -90.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(372, 2530.266845, -1491.323974, 19.385923, -90.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(372, 2530.266845, -1490.924072, 19.385923, -90.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(372, 2530.266845, -1490.524169, 19.385923, -90.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(372, 2530.266845, -1490.124267, 19.385923, -90.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(339, 2530.802978, -1491.630859, 19.485923, -99.851066, 1.727941, 9.851076, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(339, 2530.903076, -1491.630859, 19.485923, -99.846542, 0.050547, 8.439826, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(339, 2531.003173, -1491.630859, 19.485923, -99.846534, 0.001477, 8.398539, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(339, 2531.103271, -1491.630859, 19.485923, -99.846534, 0.000043, 8.397334, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(339, 2531.203369, -1490.631103, 19.485923, -99.846534, 0.000000, 8.397296, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(339, 2531.003173, -1490.631103, 19.485923, -99.846534, 0.000000, 8.397294, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(339, 2530.802978, -1490.631103, 19.485923, -99.846534, 0.000000, 8.397294, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(355, 2530.403564, -1488.613647, 19.485923, -90.000000, -0.000001, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(355, 2530.603759, -1488.613647, 19.485923, -90.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(355, 2530.803955, -1488.613647, 19.485923, -90.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(355, 2531.004150, -1488.613647, 19.485923, -90.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(336, 2530.954589, -1488.279907, 19.385923, 0.000000, -89.999992, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(336, 2530.954589, -1488.179931, 19.385923, 0.000000, -89.999992, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(336, 2530.954589, -1488.079956, 19.385923, 0.000000, -89.999992, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(336, 2530.954589, -1487.979980, 19.385923, 0.000000, -89.999992, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(336, 2530.954589, -1487.880004, 19.385923, 0.000000, -89.999992, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(336, 2530.954589, -1487.780029, 19.385923, 0.000000, -89.999992, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(1490, 2524.475341, -1475.471557, 24.468465, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(1490, 2513.564697, -1475.471557, 26.368473, 20.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19127, 2507.476318, -1465.313842, 23.520149, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19127, 2508.377197, -1465.313842, 23.520149, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(1723, 2528.270019, -1493.465454, 23.185937, 0.000000, 0.000000, 179.999984, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(1723, 2531.272949, -1493.465454, 23.185937, 0.000000, 0.000000, 179.999984, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(1723, 2534.275878, -1493.465454, 23.185937, 0.000000, 0.000000, 179.999984, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(1724, 2535.422851, -1491.126220, 23.085937, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(1723, 2532.173828, -1489.966308, 23.185937, 0.000000, 0.000000, 0.000009, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(1723, 2529.170898, -1489.966308, 23.185937, 0.000000, 0.000000, 0.000009, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(1723, 2526.167968, -1489.966308, 23.185937, 0.000000, 0.000000, 0.000009, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(2311, 2532.311767, -1491.605346, 23.085937, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(2311, 2530.009521, -1491.605346, 23.085937, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(2311, 2527.807373, -1491.605346, 23.085937, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(2311, 2526.205810, -1491.605346, 23.085937, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(355, 2526.729492, -1491.486572, 23.685939, -90.000000, 0.000000, -10.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(355, 2526.729492, -1491.786499, 23.685939, -90.000000, 0.000000, -10.000001, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(355, 2528.030761, -1491.786499, 23.685939, -90.000000, 0.000000, -10.000002, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(355, 2528.030761, -1491.486572, 23.685939, -90.000000, 0.000000, -10.000002, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(350, 2528.903564, -1491.551879, 23.085937, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(350, 2529.103759, -1491.451904, 23.685939, -99.999992, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(350, 2529.103759, -1491.651855, 23.685939, -99.999984, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(350, 2529.103759, -1491.851806, 23.685939, -99.999984, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(350, 2529.704345, -1491.851806, 23.685939, -99.999984, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(350, 2529.704345, -1491.651855, 23.685939, -99.999984, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(350, 2529.704345, -1491.451904, 23.685939, -99.999984, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(352, 2530.458496, -1491.770019, 23.685939, -90.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(352, 2530.458496, -1491.370117, 23.685939, -90.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(352, 2530.858886, -1491.370117, 23.685939, -90.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(352, 2530.858886, -1491.770019, 23.685939, -90.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(352, 2531.159179, -1491.770019, 23.685939, -90.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(352, 2531.159179, -1491.370117, 23.685939, -90.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(352, 2531.159179, -1491.370117, 23.685939, -90.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(1670, 2532.595214, -1491.566528, 23.785940, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(1670, 2531.894531, -1491.566528, 23.785940, 0.000000, 0.000000, -49.999992, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(3630, 2507.489013, -1487.382690, 24.485942, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(3630, 2507.525146, -1480.723876, 24.585943, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(948, 2539.989990, -1493.468139, 23.085937, 0.000000, 0.000000, -39.999996, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(359, 2536.159667, -1491.950317, 20.885929, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(370, 2540.752197, -1489.193481, 25.485946, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(370, 2540.752197, -1490.093261, 25.485946, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(370, 2540.251708, -1490.593139, 25.285945, -130.893402, -48.590385, 169.106597, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(370, 2539.951416, -1488.593627, 25.285945, -116.520233, -14.125516, -176.353027, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(359, 2536.159667, -1491.950317, 20.485927, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(359, 2536.159667, -1491.950317, 19.985925, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(359, 2536.159667, -1491.950317, 19.485923, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(2650, 2536.024658, -1491.896606, 20.185926, 0.000000, 0.000000, -179.999984, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(2650, 2537.926513, -1491.896606, 20.185926, 0.000000, 0.000000, -179.999984, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(357, 2537.668457, -1491.944458, 20.885929, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(357, 2537.668457, -1491.944458, 20.485927, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(357, 2537.668457, -1491.944458, 19.885925, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(357, 2537.668457, -1491.944458, 19.485923, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(2985, 2530.727783, -1486.652099, 18.385919, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(2985, 2530.727783, -1486.052246, 18.385919, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(2985, 2530.727783, -1485.552368, 18.385919, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(2985, 2530.727783, -1485.052490, 18.385919, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(2985, 2530.727783, -1484.552612, 18.385919, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(941, 2532.984130, -1491.459106, 18.885921, 0.000000, 0.000000, 179.999984, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(3409, 2534.828369, -1480.215087, 17.685916, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(3409, 2534.828369, -1478.515502, 17.685916, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(1310, 2539.722656, -1489.755493, 25.185945, 0.000000, 0.000000, -99.999992, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(1310, 2540.022949, -1489.355590, 25.185945, 0.000000, 0.000000, -99.999984, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(1310, 2539.722656, -1490.955200, 25.185945, 0.000000, 0.000000, -139.999969, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(1271, 2539.784912, -1485.493408, 23.385938, 0.000000, 0.000000, -29.999998, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(1271, 2538.783935, -1485.493408, 23.385938, 0.000000, 0.000000, -29.999998, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(1271, 2537.682861, -1485.493408, 23.385938, 0.000000, 0.000000, -29.999998, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(1271, 2538.283447, -1485.493408, 23.985940, 0.000000, 0.000000, -29.999998, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(1271, 2539.384521, -1485.493408, 23.985940, 0.000000, 0.000000, -29.999998, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(3026, 2538.246337, -1485.548461, 24.385942, 0.000000, -89.999992, -59.999996, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(3026, 2539.247314, -1485.548461, 24.385942, 0.000000, -89.999992, -59.999996, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(964, 2540.064208, -1486.987426, 23.085937, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(964, 2540.064208, -1488.387084, 23.085937, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(964, 2540.064208, -1489.786743, 23.085937, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(964, 2539.964111, -1491.286376, 23.085937, 0.000000, 0.000000, -119.999992, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(356, 2540.215087, -1486.695556, 24.085941, -90.000000, 0.000000, -59.999996, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(356, 2540.014892, -1486.995483, 24.085941, -90.000000, 0.000000, -59.999996, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(356, 2539.614501, -1487.095458, 24.085941, -90.000000, 0.000000, -59.999996, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(3124, 2539.165527, -1488.240356, 23.585939, 180.000000, -79.999992, -59.999992, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(3794, 2539.128906, -1490.926635, 18.685920, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(3794, 2539.028808, -1489.926879, 18.785921, 0.000000, -10.000000, -39.999996, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(2313, 2524.166503, -1492.224487, 23.085937, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(3928, 2533.240966, -1484.524780, 28.071893, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(3928, 2517.325439, -1484.524780, 28.071893, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(3804, 2508.739746, -1491.317260, 28.371894, 0.000000, 0.000000, 59.999996, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19786, 2524.006835, -1491.480102, 24.185941, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(3804, 2508.239257, -1489.417724, 28.371894, 0.000000, 0.000000, 59.999996, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19127, 2509.177978, -1465.313842, 23.520149, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19127, 2507.476318, -1455.316284, 23.520149, 0.000000, -0.000001, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19127, 2508.377197, -1455.316284, 23.520149, 0.000000, -0.000001, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(19127, 2509.177978, -1455.316284, 23.520149, 0.000000, -0.000001, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_BALLAS, CreateDynamicObject(987, 2541.085449, -1469.015136, 22.515264, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	#pragma unused tmpobjid
+	return 1;
+}
+// QG Vagos - 143 objets, mapping de Naroto
+stock MapPack_Creer_VAGOS()
+{
+	new tmpobjid;
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(3749, 2832.717041, -1579.605468, 15.493769, 0.000000, 0.000000, 59.999996, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 1, 7650, "vgnusedcar", "lightyellow2_32", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 2, 7650, "vgnusedcar", "lightyellow2_32", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 3, 7650, "vgnusedcar", "lightyellow2_32", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 4, 7650, "vgnusedcar", "lightyellow2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(19483, 2834.909179, -1580.898437, 16.150169, 0.000000, 0.000000, -29.999998, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterialText(tmpobjid, 0, "VAGOS", 20, "Ariel", 20, 1, 0xFEFEFEFF, 0x00000000, 0);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(987, 2822.997314, -1594.739746, 9.921875, 0.000000, 0.000000, 59.999996, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightyellow2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(987, 2836.633056, -1571.166381, 9.921875, 0.000000, 0.000000, 70.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightyellow2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(987, 2779.291259, -1599.804321, 12.043581, 0.000000, 0.000000, 179.999984, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightyellow2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(987, 2790.101806, -1599.804321, 12.043581, 0.000000, 0.000000, 179.999984, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightyellow2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(987, 2789.801513, -1587.807250, 12.043581, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightyellow2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(987, 2789.801513, -1575.610229, 14.143589, 0.000000, 10.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightyellow2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(987, 2789.801513, -1563.813110, 16.243597, 0.000000, 10.000001, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightyellow2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(987, 2789.801513, -1552.015991, 18.343605, 0.000000, 10.000002, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightyellow2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(987, 2789.801513, -1540.218872, 20.343612, 0.000000, 10.000002, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightyellow2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(987, 2789.801513, -1539.119140, 15.743595, 0.000000, 10.000002, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightyellow2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(987, 2789.801513, -1533.520507, 16.643598, 0.000000, 10.000002, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightyellow2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(987, 2789.801513, -1534.320312, 21.443616, 0.000000, 10.000002, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightyellow2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(987, 2823.299560, -1533.232421, 14.388961, 0.000000, -10.000002, 179.999984, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightyellow2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(987, 2811.488037, -1533.132446, 16.488969, 0.000000, -10.000001, 179.999984, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightyellow2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(987, 2800.477294, -1533.032470, 18.488977, 0.000000, -10.000002, 179.999984, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightyellow2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(987, 2800.277099, -1533.632324, 14.388960, 0.000000, -10.000002, 179.999984, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightyellow2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(987, 2829.205322, -1533.232421, 13.488959, 0.000000, -10.000002, 179.999984, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightyellow2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(987, 2828.404541, -1533.432373, 8.988942, 0.000000, -10.000002, 179.999984, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightyellow2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(19379, 2790.977783, -1638.811523, 20.067186, 0.000000, 0.000003, 179.999938, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(19379, 2790.977783, -1635.912353, 20.067186, 0.000000, 0.000003, 179.999938, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(18762, 2790.977539, -1631.197387, 23.167198, 0.000000, -0.000003, 0.000012, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightyellow2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(18762, 2790.977539, -1631.197387, 22.167194, 0.000000, -0.000003, 0.000012, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightyellow2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(19379, 2775.762939, -1638.811523, 20.067186, 0.000000, 0.000009, 179.999938, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(18762, 2775.962890, -1639.695190, 25.167205, -90.000000, -135.020660, -135.020645, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightyellow2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(18762, 2775.962890, -1640.695190, 25.167205, -90.000000, -135.020660, -135.020645, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightyellow2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(18762, 2775.962890, -1633.296752, 25.167205, -90.000000, -125.707733, -125.707695, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightyellow2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(19379, 2782.769775, -1643.610351, 20.067186, 0.000000, 0.000009, 89.999938, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18065, "ab_sfammumain", "shelf_glas", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(19379, 2775.762939, -1635.912353, 20.067186, 0.000000, 0.000009, 179.999938, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(18762, 2775.862792, -1631.197387, 23.167198, 0.000000, -0.000009, 0.000012, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightyellow2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(18762, 2775.862792, -1631.197387, 22.167194, 0.000000, -0.000009, 0.000012, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightyellow2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(19379, 2786.273193, -1643.610351, 20.067186, 0.000000, 0.000009, 89.999938, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18065, "ab_sfammumain", "shelf_glas", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(18762, 2790.977539, -1643.594360, 23.167198, 0.000000, -0.000006, 0.000012, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightyellow2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(18762, 2790.977539, -1643.594360, 22.167194, 0.000000, -0.000006, 0.000012, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightyellow2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(18762, 2775.962890, -1643.594360, 23.167198, 0.000000, -0.000011, 0.000012, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightyellow2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(18762, 2775.962890, -1643.594360, 22.167194, 0.000000, -0.000011, 0.000012, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightyellow2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(19379, 2780.567626, -1643.610351, 20.067186, 0.000000, 0.000009, 89.999938, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18065, "ab_sfammumain", "shelf_glas", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(18762, 2775.962890, -1634.296752, 25.167205, -90.000000, -125.707733, -125.707695, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightyellow2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(18762, 2775.962890, -1634.796630, 25.167205, -90.000000, 0.000000, 0.000041, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightyellow2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(18762, 2790.977539, -1639.695190, 25.167205, -90.000000, 9.705215, 9.705257, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightyellow2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(18762, 2790.977539, -1640.695190, 25.167205, -90.000000, 9.705215, 9.705257, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightyellow2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(18762, 2790.977539, -1633.296752, 25.167205, -90.000000, 24.022277, 24.022329, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightyellow2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(18762, 2790.977539, -1634.296752, 25.167205, -90.000000, 24.022277, 24.022329, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightyellow2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(18762, 2790.977539, -1634.796630, 25.167205, -90.000000, -135.000000, -134.999954, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightyellow2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(18762, 2787.170410, -1643.594360, 25.167205, -90.000000, -125.707733, -35.707710, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightyellow2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(18762, 2788.170410, -1643.594360, 25.167205, -90.000000, -125.707733, -35.707710, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightyellow2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(18762, 2780.771972, -1643.594360, 25.167205, -90.000000, -113.569564, -23.569513, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightyellow2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(18762, 2781.771972, -1643.594360, 25.167205, -90.000000, -113.569564, -23.569513, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightyellow2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(18762, 2782.271972, -1643.594360, 25.167205, -90.000000, 9.735626, 99.735671, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightyellow2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(18762, 2778.870117, -1643.594360, 25.167205, -89.999992, 0.000000, 90.000038, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightyellow2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(18762, 2787.170410, -1631.197387, 25.167205, -90.000000, -266.630981, -176.630935, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightyellow2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(18762, 2788.170410, -1631.197387, 25.167205, -90.000000, -266.630981, -176.630935, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightyellow2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(18762, 2780.771972, -1631.197387, 25.167205, -90.000000, -251.061950, -161.061889, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightyellow2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(18762, 2781.771972, -1631.197387, 25.167205, -90.000000, -251.061950, -161.061889, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightyellow2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(18762, 2782.271972, -1631.197387, 25.167205, -90.000000, 180.137527, -89.862411, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightyellow2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(18762, 2778.870117, -1631.197387, 25.167205, -90.000000, 0.000020, 90.000045, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightyellow2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(19379, 2780.215576, -1631.149169, 20.367187, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(19397, 2786.597412, -1631.142089, 22.067192, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18065, "ab_sfammumain", "shelf_glas", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(19359, 2789.803955, -1631.117797, 22.067192, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(19359, 2789.803955, -1631.117797, 23.267198, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(19427, 2786.682373, -1631.142456, 24.667203, 90.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(1499, 2785.852050, -1631.053955, 20.367187, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightyellow2_32", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 1, 2755, "ab_dojowall", "ab_trellis", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(19379, 2785.472412, -1635.912353, 25.067205, 0.000000, 89.999992, 179.999938, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(19379, 2781.468505, -1635.912353, 25.067205, 0.000000, 89.999992, 179.999938, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(19379, 2781.468505, -1638.211791, 25.067205, 0.000000, 89.999992, 179.999938, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(19379, 2785.272216, -1638.311767, 25.067205, 0.000000, 89.999992, 179.999938, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(19379, 2785.472412, -1636.312255, 20.367187, 0.000000, 89.999992, 179.999938, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(19379, 2781.468505, -1636.312255, 20.367187, 0.000000, 89.999992, 179.999938, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(19379, 2781.468505, -1638.611694, 20.367187, 0.000000, 89.999992, 179.999938, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(19379, 2785.272216, -1638.711669, 20.367187, 0.000000, 89.999992, 179.999938, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(19379, 2781.068115, -1636.012329, 20.367187, 0.000000, 89.999992, 179.999938, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(19379, 2781.068115, -1638.311767, 20.367187, 0.000000, 89.999992, 179.999938, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(19379, 2785.272216, -1638.711669, 20.367187, 0.000000, 89.999992, 179.999938, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(19379, 2785.672607, -1638.711669, 20.367187, 0.000000, 89.999992, 179.999938, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(19379, 2785.672607, -1636.012329, 20.367187, 0.000000, 89.999992, 179.999938, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(5817, 2773.869873, -1625.842651, 16.021898, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 10765, "airportgnd_sfse", "white", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(19379, 2778.220214, -1624.071044, 9.121870, -39.999992, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(19379, 2773.515625, -1624.071044, 13.021885, -39.999992, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(19379, 2770.712890, -1624.071044, 15.321894, -39.999992, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(19379, 2772.414550, -1624.071044, 9.121870, 0.000007, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(5817, 2775.371337, -1625.842651, 14.721893, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 10765, "airportgnd_sfse", "white", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(19379, 2765.708007, -1624.270996, 17.221902, 0.000007, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(19366, 2775.174560, -1624.001098, 11.421879, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterialText(tmpobjid, 0, "VAGOS", 30, "Ariel", 20, 0, 0xFEE00000, 0x00000000, 0);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(19359, 2775.602539, -1633.590942, 22.767196, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterialText(tmpobjid, 0, "By MODRITCH ", 130, "Ariel", 20, 1, 0xFFFFFFFF, 0x00000000, 0);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(941, 2790.260742, -1633.769165, 20.953126, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 10765, "airportgnd_sfse", "white", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 1, 7650, "vgnusedcar", "lightyellow2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(19483, 2835.009277, -1580.898437, 16.150169, 0.000000, 0.000000, -29.999998, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterialText(tmpobjid, 0, "VAGOS", 20, "Ariel", 20, 1, 0xFEFEFEFF, 0x00000000, 0);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(19483, 2834.909179, -1580.898437, 16.150169, 0.000000, 0.000000, -29.999998, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterialText(tmpobjid, 0, "VAGOS", 20, "Ariel", 20, 1, 0xFEFEFEFF, 0x00000000, 0);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(19379, 2775.762939, -1635.912353, 20.067186, 0.000000, 0.000009, 179.999938, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(19379, 2775.762939, -1635.912353, 20.067186, 0.000000, 0.000009, 179.999938, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(19125, 2841.305908, -1576.984741, 10.621876, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(19125, 2841.706298, -1576.184936, 10.621876, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(19125, 2842.106689, -1575.485107, 10.621876, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(19125, 2834.554687, -1589.305908, 10.658433, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(19125, 2834.154296, -1590.005737, 10.658433, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(19125, 2834.955078, -1588.606079, 10.658433, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(1215, 2811.406250, -1571.572143, 10.221876, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(1215, 2811.406250, -1570.972290, 10.221876, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(1215, 2811.406250, -1570.372436, 10.221876, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(1362, 2796.788330, -1613.910766, 10.621876, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(19632, 2796.816162, -1613.972900, 10.956930, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(1362, 2768.103759, -1616.063598, 10.521877, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(19632, 2768.093505, -1616.083251, 10.821878, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(19786, 2783.740722, -1643.530395, 22.667196, 0.000000, 0.000000, -179.999984, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(1726, 2782.754150, -1641.019897, 20.367187, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(1726, 2782.754150, -1641.019897, 20.367187, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(1726, 2785.356689, -1641.219848, 20.367187, 0.000000, 0.000000, -29.999998, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(1726, 2780.251708, -1641.719726, 20.367187, 0.000000, 0.000000, 20.000001, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(2311, 2783.163574, -1642.813842, 20.367187, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(11730, 2776.230224, -1632.285888, 20.453125, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(1670, 2783.673583, -1642.876342, 20.967189, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(1362, 2783.990234, -1623.421630, 10.421875, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(19632, 2783.960449, -1623.362670, 10.621876, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(3850, 2792.397949, -1627.571533, 20.867189, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(3850, 2788.894531, -1627.571533, 20.867189, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(3850, 2785.391113, -1627.571533, 20.867189, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(3850, 2781.887695, -1627.571533, 20.867189, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(3850, 2778.384277, -1627.571533, 20.867189, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(3850, 2774.880859, -1627.571533, 20.867189, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(3850, 2792.397949, -1645.767089, 20.867189, 0.000001, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(3850, 2788.894531, -1645.767089, 20.867189, 0.000001, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(3850, 2785.391113, -1645.767089, 20.867189, 0.000001, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(3850, 2781.887695, -1645.767089, 20.867189, 0.000001, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(3850, 2778.384277, -1645.767089, 20.867189, 0.000001, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(3850, 2774.880859, -1645.767089, 20.867189, 0.000001, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(3850, 2771.377441, -1645.767089, 20.867189, 0.000001, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(3850, 2767.874023, -1645.767089, 20.867189, 0.000001, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(1313, 2786.559814, -1630.997558, 24.067201, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(1362, 2793.760253, -1629.028564, 20.967189, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(19632, 2793.726074, -1629.053344, 21.167190, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(2045, 2790.320800, -1633.775634, 21.453128, 0.000000, 0.000000, 149.999984, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(2045, 2790.320800, -1633.975585, 21.453128, 0.000000, 0.000000, 39.999969, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(355, 2790.796630, -1632.946533, 22.153131, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(355, 2790.796630, -1633.546386, 22.653133, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(355, 2790.796630, -1633.946289, 21.853130, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(355, 2790.796630, -1633.946289, 21.853130, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(2676, 2775.176269, -1609.529052, 10.021875, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(2676, 2770.813964, -1618.333984, 10.021875, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(2676, 2793.264160, -1614.535888, 10.021875, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(19632, 2783.900878, -1623.662597, 10.621876, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(11730, 2776.230224, -1632.985717, 20.453125, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(11730, 2776.230224, -1633.685546, 20.453125, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VAGOS, CreateDynamicObject(11730, 2776.230224, -1634.385375, 20.453125, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	#pragma unused tmpobjid
+	return 1;
+}
+// QG Varios - 150 objets, mapping de Naroto
+stock MapPack_Creer_VARIOS()
+{
+	new tmpobjid;
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(3749, 1811.113647, -2112.919677, 18.182834, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 1, 7650, "vgnusedcar", "lightblue2_32", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 2, 7650, "vgnusedcar", "lightblue2_32", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 3, 7650, "vgnusedcar", "lightblue2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(19359, 1813.528686, -2112.162353, 18.382835, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterialText(tmpobjid, 0, "VARIOS", 50, "Ariel", 20, 1, 0xFFFFFFFF, 0x00000000, 0);
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(19379, 1709.162109, -2080.838867, 12.146873, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18065, "ab_sfammumain", "shelf_glas", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(19379, 1718.659790, -2080.838867, 12.146873, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18065, "ab_sfammumain", "shelf_glas", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(19379, 1723.458618, -2085.643554, 12.146873, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(19379, 1723.458618, -2089.547363, 12.146873, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(19379, 1704.363281, -2089.747558, 12.146873, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(19379, 1704.363281, -2085.843750, 12.146873, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(18762, 1723.475341, -2094.157958, 14.846882, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightblue2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(18762, 1723.475341, -2080.945068, 14.946884, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightblue2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(18762, 1704.380004, -2080.945068, 14.946884, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightblue2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(18762, 1704.380004, -2094.358154, 14.946884, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightblue2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(18762, 1723.475341, -2092.256103, 16.946891, -90.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightblue2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(18762, 1723.475341, -2083.847900, 16.946891, -90.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightblue2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(18762, 1723.475341, -2087.751708, 16.946891, -90.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightblue2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(18762, 1720.576049, -2080.945068, 16.946891, -90.000000, -0.000001, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightblue2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(18762, 1715.677246, -2080.945068, 16.946891, -90.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightblue2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(18762, 1710.878417, -2080.945068, 16.946891, -90.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightblue2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(18762, 1707.279296, -2080.945068, 16.946891, -90.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightblue2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(18762, 1704.380004, -2083.747802, 16.946891, -90.000000, 0.000000, 179.999984, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightblue2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(18762, 1704.380004, -2088.452392, 16.946891, -90.000000, 0.000000, 179.999984, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightblue2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(18762, 1704.380004, -2091.555419, 16.946891, -90.000000, 0.000000, 179.999984, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightblue2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(19379, 1708.762207, -2094.352050, 12.146873, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(1499, 1713.582397, -2094.327148, 12.546875, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightblue2_32", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 1, 2755, "ab_dojowall", "ab_trellis", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(1499, 1716.581665, -2094.327148, 12.546875, 0.000000, 0.000000, 179.999984, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightblue2_32", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 1, 2755, "ab_dojowall", "ab_trellis", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(19359, 1718.104492, -2094.241455, 14.246880, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(19359, 1718.104492, -2094.241455, 15.546886, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(19359, 1721.203735, -2094.241455, 15.546886, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(19359, 1721.203735, -2094.241455, 14.046879, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(18762, 1720.576049, -2094.358154, 16.946891, -90.000000, 0.000014, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightblue2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(18762, 1715.677246, -2094.358154, 16.946891, -90.000000, 0.000014, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightblue2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(18762, 1710.878417, -2094.358154, 16.946891, -90.000000, 0.000014, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightblue2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(18762, 1707.279296, -2094.358154, 16.946891, -90.000000, 0.000014, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightblue2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(18762, 1723.175415, -2094.157958, 14.846882, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7650, "vgnusedcar", "lightblue2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(19379, 1709.961914, -2089.747558, 16.846891, 0.000000, 89.999992, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(19379, 1717.760009, -2089.747558, 16.846891, 0.000000, 89.999992, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(19379, 1717.760009, -2086.144042, 16.846891, 0.000000, 89.999992, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(19379, 1710.161865, -2086.144042, 16.846891, 0.000000, 89.999992, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(19379, 1709.661987, -2085.743652, 12.546875, 0.000000, 89.999992, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(19379, 1709.661987, -2089.447265, 12.546875, 0.000000, 89.999992, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(19379, 1718.159912, -2089.447265, 12.546875, 0.000000, 89.999992, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(19379, 1718.159912, -2085.743652, 12.546875, 0.000000, 89.999992, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(941, 1704.967773, -2092.304199, 13.032814, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 10765, "airportgnd_sfse", "white", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 1, 7650, "vgnusedcar", "lightblue2_32", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(19427, 1715.005737, -2094.274902, 15.746887, 90.000000, 0.000001, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18646, "matcolours", "grey-90-percent", 0x00000000);
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(19359, 1813.628662, -2112.162353, 18.382835, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterialText(tmpobjid, 0, "VARIOS", 50, "Ariel", 20, 1, 0xFFFFFFFF, 0x00000000, 0);
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(19359, 1813.528686, -2106.857177, 19.182838, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterialText(tmpobjid, 0, "By MODRITCH", 130, "courier", 20, 1, 0xFFFFFFFF, 0x00000000, 0);
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(987, 1812.939208, -2134.518554, 12.546875, -0.000001, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(987, 1812.939208, -2146.530273, 12.546875, -0.000001, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(987, 1812.939208, -2156.740234, 12.546875, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(987, 1801.042114, -2156.640136, 12.546875, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(987, 1789.045043, -2156.640136, 12.546875, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(987, 1777.047973, -2156.640136, 12.546875, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(987, 1765.050903, -2156.640136, 12.546875, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(987, 1753.053833, -2156.640136, 12.546875, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(987, 1741.056762, -2156.640136, 12.546875, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(987, 1729.059692, -2156.640136, 12.546875, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(987, 1722.561279, -2156.640136, 12.546875, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(987, 1710.664184, -2156.239746, 12.746874, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(987, 1698.667114, -2156.239746, 12.746873, 0.000000, -0.000001, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(987, 1686.670043, -2156.239746, 12.746874, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(987, 1812.939208, -2156.740234, 12.546875, -0.000001, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(987, 1801.042114, -2156.640136, 12.546875, 0.000000, -0.000001, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(987, 1789.045043, -2156.640136, 12.546875, 0.000000, -0.000001, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(987, 1777.047973, -2156.640136, 12.546875, 0.000000, -0.000001, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(987, 1765.050903, -2156.640136, 12.546875, 0.000000, -0.000001, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(987, 1753.053833, -2156.640136, 12.546875, 0.000000, -0.000001, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(987, 1741.056762, -2156.640136, 12.546875, 0.000000, -0.000001, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(987, 1729.059692, -2156.640136, 12.546875, 0.000000, -0.000001, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(987, 1722.561279, -2156.640136, 12.546875, 0.000000, -0.000001, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(987, 1710.664184, -2156.239746, 12.746873, 0.000000, -0.000001, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(987, 1698.667114, -2156.239746, 12.746874, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(987, 1686.670043, -2156.239746, 12.746874, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(987, 1686.570190, -2077.162597, 12.346874, 0.000000, 0.000000, 179.999984, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(987, 1698.567260, -2077.162597, 12.346874, 0.000000, 0.000000, 179.999984, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(987, 1710.564331, -2077.162597, 12.346874, 0.000000, 0.000000, 179.999984, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(987, 1722.561401, -2077.162597, 12.346874, 0.000000, 0.000000, 179.999984, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(987, 1734.558471, -2077.162597, 12.346874, 0.000000, 0.000000, 179.999984, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(987, 1746.555541, -2077.162597, 12.346874, 0.000000, 0.000000, 179.999984, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(987, 1758.552612, -2077.162597, 12.346874, 0.000000, 0.000000, 179.999984, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(987, 1770.549682, -2077.162597, 12.346874, 0.000000, 0.000000, 179.999984, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(987, 1777.048095, -2077.162597, 12.346874, 0.000000, 0.000000, 179.999984, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(987, 1788.945190, -2077.562988, 12.546874, 0.000000, 0.000000, 179.999984, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(987, 1800.942260, -2077.562988, 12.546874, 0.000000, 0.000000, 179.999984, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(987, 1812.939331, -2077.562988, 12.546874, 0.000000, 0.000000, 179.999984, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(987, 1674.573120, -2077.162597, 12.346874, 0.000000, 0.000000, 179.999984, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(987, 1670.374145, -2077.162597, 12.346874, 0.000000, 0.000000, 179.999984, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(987, 1658.377075, -2077.162597, 12.346874, 0.000001, -0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(987, 1658.377075, -2089.174316, 12.346874, 0.000001, -0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(987, 1658.377075, -2101.186035, 12.346874, 0.000001, -0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(987, 1658.377075, -2113.197753, 12.346874, 0.000001, -0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(987, 1658.377075, -2125.209472, 12.346874, 0.000001, -0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(987, 1658.377075, -2137.221191, 12.346874, 0.000001, -0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(987, 1658.377075, -2144.628417, 12.346874, 0.000001, -0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(987, 1812.975585, -2103.138671, 12.382810, -0.000001, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(987, 1812.975585, -2089.325195, 12.382810, -0.000001, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(987, 1812.975585, -2091.227050, 12.382810, -0.000001, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(19126, 1816.066894, -2105.512939, 13.046875, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(19126, 1816.066894, -2105.012451, 13.046875, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(19126, 1816.066894, -2105.012451, 13.046875, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(19126, 1816.066894, -2104.511962, 13.046875, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(19126, 1816.066894, -2104.011474, 13.046875, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(19126, 1816.066894, -2103.510986, 13.046875, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(19126, 1815.701049, -2120.156982, 12.946875, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(19126, 1815.701049, -2120.657470, 12.946875, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(19126, 1815.701049, -2121.157958, 12.946875, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(19786, 1713.781860, -2080.919921, 15.032820, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(2311, 1713.030883, -2081.455078, 12.632811, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(1726, 1714.734985, -2083.774169, 12.632811, 0.000000, 0.000000, 179.999984, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(1726, 1712.135620, -2083.674072, 12.632811, 0.000000, 0.000000, 159.999969, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(1726, 1717.134399, -2083.073486, 12.632811, 0.000000, 0.000000, -160.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(2801, 1713.649658, -2081.281982, 12.732811, 0.000000, 0.000000, -39.999996, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(2045, 1705.050415, -2092.568847, 13.532814, 0.000000, 0.000000, -20.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(2045, 1705.050415, -2092.568847, 13.532814, 0.000000, 0.000000, 29.999998, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(355, 1704.611938, -2092.925048, 14.832819, 0.000000, 0.000000, 99.999992, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(355, 1704.611938, -2093.325439, 14.432819, 0.000000, 0.000000, 99.999984, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(355, 1704.611938, -2092.624755, 14.032816, 0.000000, 0.000000, 99.999984, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(347, 1704.556274, -2091.274169, 14.732819, 0.000000, 0.000000, -99.999992, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(347, 1704.556274, -2091.674560, 14.432819, 0.000000, 0.000000, -99.999984, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(347, 1704.556274, -2091.073974, 14.232816, 0.000001, 0.000000, -99.999984, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(11730, 1723.079467, -2092.991455, 12.632811, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(2011, 1705.379150, -2081.325195, 12.632811, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(2010, 1722.633911, -2081.238281, 12.632811, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(2676, 1720.467773, -2083.374755, 12.832813, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(1313, 1715.162109, -2094.455078, 15.446886, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(1728, 1730.813720, -2152.710693, 12.551568, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(1728, 1730.813720, -2149.907958, 12.551568, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(1728, 1735.312622, -2147.805908, 12.551568, 0.000001, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(1362, 1705.267944, -2095.801269, 13.146877, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(19632, 1705.215698, -2095.746337, 13.446878, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(1362, 1723.452758, -2103.944091, 13.146877, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(19632, 1723.444091, -2103.882324, 13.446878, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(1728, 1735.312622, -2150.608642, 12.551568, 0.000001, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(2315, 1733.013427, -2147.978027, 12.551536, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(2315, 1733.013427, -2150.880859, 12.551536, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(1670, 1732.976562, -2147.998535, 13.150629, 0.000000, 0.000000, -29.999998, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(1670, 1732.976562, -2148.899414, 13.150629, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(1670, 1732.976562, -2150.801269, 13.150629, 0.000000, 0.000000, 119.999992, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(1670, 1732.976562, -2151.802246, 13.150629, 0.000000, 0.000000, -139.999984, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(2676, 1732.845092, -2144.441406, 12.748778, 0.000000, 0.000000, -29.999998, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(2676, 1739.143554, -2145.842773, 12.748778, 0.000000, 0.000000, -70.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(2676, 1726.948852, -2151.103515, 12.551275, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(2676, 1726.948852, -2151.203613, 12.751276, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(1362, 1729.258911, -2143.481689, 13.148450, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(19632, 1729.249389, -2143.421386, 13.348132, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(1362, 1737.187622, -2155.304687, 13.151991, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(19632, 1737.135009, -2155.358154, 13.452280, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(14781, 1670.084838, -2146.847167, 13.646879, 0.000000, 0.000000, -29.999998, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(11730, 1723.079467, -2092.290771, 12.632811, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(19126, 1815.701049, -2121.658447, 12.946875, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_VARIOS, CreateDynamicObject(11730, 1723.079467, -2091.590087, 12.632811, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	#pragma unused tmpobjid
+	return 1;
+}
+// Magasin de vetements Wise - 224 objets, mapping de WISE_ENTERPRISE
+stock MapPack_Creer_WISE()
+{
+	new tmpobjid;
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(19939, 1670.738403, -1750.135864, 14.203300, -40.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18996, "mattextures", "sampblack", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(19939, 1674.193603, -1744.849609, 15.180000, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18996, "mattextures", "sampblack", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(19939, 1670.741333, -1751.009033, 14.521400, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18996, "mattextures", "sampblack", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(19939, 1670.742797, -1749.263549, 13.888330, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18996, "mattextures", "sampblack", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(3438, 1672.759887, -1750.355834, 15.338230, 0.000000, 0.000000, 69.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 19597, "lsbeachside", "ceilingtiles4-128x128", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18762, 1679.173095, -1757.809814, 12.420900, 90.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 6094, "canalsg_law", "sw_brewbrick01", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18766, 1671.982421, -1744.195800, 12.379199, 0.000000, 90.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 3314, "ce_burbhouse", "sw_wallbrick_06", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18765, 1674.617309, -1754.846191, 10.423600, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 3988, "civic06_lan", "LAcityhwal2", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18765, 1674.637817, -1749.536499, 10.425600, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 3988, "civic06_lan", "LAcityhwal2", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18766, 1669.964599, -1754.836669, 14.880200, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 6094, "canalsg_law", "sw_brewbrick01", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18766, 1673.992431, -1744.093139, 12.379199, 0.000000, 90.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 6094, "canalsg_law", "sw_brewbrick01", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18766, 1675.564575, -1759.695190, 12.377200, 0.000000, 90.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 3314, "ce_burbhouse", "sw_wallbrick_06", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18766, 1673.928710, -1744.196289, 12.377200, 0.000000, 90.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 3314, "ce_burbhouse", "sw_wallbrick_06", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18766, 1669.966186, -1749.533569, 14.882160, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 6094, "canalsg_law", "sw_brewbrick01", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18766, 1670.027709, -1754.813110, 14.872200, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 3314, "ce_burbhouse", "sw_wallbrick_06", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18766, 1671.965209, -1744.095214, 12.379199, 0.000000, 90.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 6094, "canalsg_law", "sw_brewbrick01", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18766, 1671.994628, -1759.696289, 12.377200, 0.000000, 90.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 3314, "ce_burbhouse", "sw_wallbrick_06", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18766, 1671.984619, -1759.784912, 12.379199, 0.000000, 90.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 6094, "canalsg_law", "sw_brewbrick01", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18766, 1675.655151, -1759.783569, 12.379199, 0.000000, 90.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 6094, "canalsg_law", "sw_brewbrick01", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18762, 1676.002441, -1750.653442, 14.875100, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 6094, "canalsg_law", "sw_brewbrick01", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18762, 1675.998046, -1745.184936, 14.877099, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 6094, "canalsg_law", "sw_brewbrick01", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18762, 1676.001831, -1746.179809, 14.877099, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 6094, "canalsg_law", "sw_brewbrick01", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18762, 1671.781494, -1743.921386, 17.623600, 0.000000, 90.000000, 180.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 6094, "canalsg_law", "sw_brewbrick01", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2412, 1675.756835, -1749.149169, 12.931500, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 19076, "xmastree1", "goldplate", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18762, 1676.002807, -1751.649169, 14.877099, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 6094, "canalsg_law", "sw_brewbrick01", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18766, 1670.026245, -1749.535034, 14.872200, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 3314, "ce_burbhouse", "sw_wallbrick_06", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18766, 1673.984741, -1748.608032, 17.649999, 90.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 19597, "lsbeachside", "tiles7-128x128", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18766, 1671.984375, -1748.617919, 17.673997, 90.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 19597, "lsbeachside", "tiles7-128x128", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18762, 1676.528442, -1752.506347, 16.660589, 0.000000, 90.000000, 298.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 6094, "canalsg_law", "sw_brewbrick01", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18762, 1677.640625, -1756.985351, 16.657569, 0.000000, 90.000000, 270.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 6094, "canalsg_law", "sw_brewbrick01", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18762, 1669.752441, -1758.100708, 17.641599, 0.000000, 90.000000, 270.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 6094, "canalsg_law", "sw_brewbrick01", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18762, 1669.992431, -1756.049438, 17.605600, 0.000000, 90.000000, 270.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 6094, "canalsg_law", "sw_brewbrick01", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18762, 1675.579833, -1756.643432, 17.673599, 0.000000, 90.000000, 180.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 6094, "canalsg_law", "sw_brewbrick01", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18762, 1673.004028, -1759.751831, 17.623600, 0.000000, 90.000000, 180.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 6094, "canalsg_law", "sw_brewbrick01", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18762, 1676.528442, -1752.506347, 17.647899, 0.000000, 90.000000, 298.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 6094, "canalsg_law", "sw_brewbrick01", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18762, 1677.640625, -1756.985351, 17.641599, 0.000000, 90.000000, 270.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 6094, "canalsg_law", "sw_brewbrick01", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18762, 1676.221313, -1749.376220, 17.641599, 0.000000, 90.000000, 270.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 6094, "canalsg_law", "sw_brewbrick01", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18762, 1675.641601, -1759.753906, 17.623600, 0.000000, 90.000000, 180.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 6094, "canalsg_law", "sw_brewbrick01", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18762, 1675.643920, -1760.304199, 17.617599, 0.000000, 90.000000, 180.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 6094, "canalsg_law", "sw_brewbrick01", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18762, 1676.222534, -1745.962036, 17.643600, 0.000000, 90.000000, 270.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 6094, "canalsg_law", "sw_brewbrick01", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18762, 1669.777221, -1745.955688, 17.643600, 0.000000, 90.000000, 270.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 6094, "canalsg_law", "sw_brewbrick01", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18762, 1669.753784, -1750.947631, 17.643600, 0.000000, 90.000000, 270.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 6094, "canalsg_law", "sw_brewbrick01", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18762, 1676.574707, -1752.297241, 17.643600, 0.000000, 90.000000, 118.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 6094, "canalsg_law", "sw_brewbrick01", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18762, 1674.208251, -1743.961547, 17.623600, 0.000000, 90.000000, 180.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 6094, "canalsg_law", "sw_brewbrick01", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18762, 1671.737304, -1760.302368, 17.615600, 0.000000, 90.000000, 180.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 6094, "canalsg_law", "sw_brewbrick01", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18762, 1669.752807, -1755.913208, 17.643600, 0.000000, 90.000000, 270.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 6094, "canalsg_law", "sw_brewbrick01", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18762, 1677.665527, -1758.310302, 17.643600, 0.000000, 90.000000, 270.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 6094, "canalsg_law", "sw_brewbrick01", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18762, 1677.682861, -1756.766601, 17.643600, 0.000000, 90.000000, 270.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 6094, "canalsg_law", "sw_brewbrick01", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18762, 1669.994262, -1757.759399, 17.607599, 0.000000, 90.000000, 270.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 6094, "canalsg_law", "sw_brewbrick01", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18762, 1673.623657, -1755.508056, 17.663600, 0.000000, 90.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 6094, "canalsg_law", "sw_brewbrick01", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18762, 1672.906005, -1756.637573, 17.667600, 0.000000, 90.000000, 180.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 6094, "canalsg_law", "sw_brewbrick01", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18762, 1673.622802, -1757.066162, 17.673601, 0.000000, 90.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 6094, "canalsg_law", "sw_brewbrick01", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18762, 1680.659790, -1744.504394, 12.674110, 90.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7509, "vgwestretail1", "hedge2_256", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18762, 1680.694335, -1760.848022, 12.674110, 90.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7509, "vgwestretail1", "hedge2_256", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18765, 1674.606567, -1755.274902, 10.421600, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 3988, "civic06_lan", "LAcityhwal2", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(19369, 1678.001953, -1760.177368, 12.634960, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 3820, "boxhses_sfsx", "ws_ irongate", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18762, 1680.632568, -1754.750122, 12.674110, 90.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7509, "vgwestretail1", "hedge2_256", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(3438, 1672.966552, -1749.330444, 15.338230, 0.000000, 0.000000, 69.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 19597, "lsbeachside", "ceilingtiles4-128x128", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(3438, 1672.832519, -1749.884399, 15.338230, 0.000000, 0.000000, 69.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 19597, "lsbeachside", "ceilingtiles4-128x128", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18762, 1677.091552, -1742.432983, 12.674099, 90.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 7509, "vgwestretail1", "hedge2_256", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18762, 1677.129028, -1745.005249, 12.420900, 90.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 6094, "canalsg_law", "sw_brewbrick01", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18762, 1679.162353, -1747.010375, 12.420900, 90.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 6094, "canalsg_law", "sw_brewbrick01", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18762, 1679.164184, -1751.945556, 12.420900, 90.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 6094, "canalsg_law", "sw_brewbrick01", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18762, 1679.169433, -1756.909912, 12.420900, 90.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 6094, "canalsg_law", "sw_brewbrick01", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 2, 3314, "ce_burbhouse", "sw_wallbrick_06", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18880, 1679.500366, -1760.202392, 14.395001, 180.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 2, 3314, "ce_burbhouse", "sw_wallbrick_06", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(19939, 1670.741455, -1748.277465, 13.888330, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18996, "mattextures", "sampblack", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(19939, 1671.679931, -1744.890014, 15.182040, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18996, "mattextures", "sampblack", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(19939, 1672.684204, -1744.871093, 15.182040, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18996, "mattextures", "sampblack", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(19939, 1673.685302, -1744.852539, 15.182040, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18996, "mattextures", "sampblack", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18762, 1675.988037, -1745.034790, 14.877099, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 6094, "canalsg_law", "sw_brewbrick01", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(19369, 1679.522338, -1758.506469, 12.634960, 0.000000, 0.000000, 180.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 3820, "boxhses_sfsx", "ws_ irongate", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(19369, 1678.001953, -1760.177368, 12.634960, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 3820, "boxhses_sfsx", "ws_ irongate", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18880, 1679.500366, -1756.851806, 14.395001, 180.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 2, 3314, "ce_burbhouse", "sw_wallbrick_06", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(19369, 1679.522338, -1755.136230, 12.634960, 0.000000, 0.000000, 180.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 3820, "boxhses_sfsx", "ws_ irongate", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18880, 1679.500366, -1751.609985, 14.395001, 180.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 2, 3314, "ce_burbhouse", "sw_wallbrick_06", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(19369, 1679.532348, -1753.105712, 12.634960, 0.000000, 0.000000, 180.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 3820, "boxhses_sfsx", "ws_ irongate", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18880, 1679.500366, -1753.620727, 14.395001, 180.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 2, 3314, "ce_burbhouse", "sw_wallbrick_06", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(19369, 1679.532348, -1746.145263, 12.634960, 0.000000, 0.000000, 180.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 3820, "boxhses_sfsx", "ws_ irongate", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18880, 1679.500366, -1747.619140, 14.395001, 180.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 2, 3314, "ce_burbhouse", "sw_wallbrick_06", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(18880, 1679.500366, -1744.659301, 14.395001, 180.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 2, 3314, "ce_burbhouse", "sw_wallbrick_06", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(19369, 1677.811279, -1744.624511, 12.634960, 0.000000, 0.000000, 270.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 3820, "boxhses_sfsx", "ws_ irongate", 0x00000000);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2722, 1678.214111, -1758.294311, 17.609838, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterialText(tmpobjid, 0, "{FFFFFF}A", 50, "Ariel", 90, 1, 0x00000000, 0x00000000, 1);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2722, 1678.214111, -1757.234252, 17.609838, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterialText(tmpobjid, 0, "{FFFFFF}CTION", 50, "Ariel", 50, 1, 0x00000000, 0x00000000, 1);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2722, 1678.164062, -1757.863891, 16.659824, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterialText(tmpobjid, 0, "{FFFFFF}M", 50, "Ariel", 90, 1, 0x00000000, 0x00000000, 1);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2722, 1678.184082, -1756.723999, 16.659837, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterialText(tmpobjid, 0, "{FFFFFF}ODAS", 50, "Ariel", 50, 1, 0x00000000, 0x00000000, 1);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2722, 1669.244873, -1743.493408, 18.019834, 0.000000, 0.000000, 270.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterialText(tmpobjid, 0, "{FFFFFF}WISE MAP 5 ANOS", 120, "Ariel", 30, 1, 0x00000000, 0x00000000, 1);
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(1897, 1679.303955, -1744.691528, 11.706899, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(1897, 1675.976196, -1746.010009, 14.953100, 90.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(1897, 1677.953125, -1758.603881, 11.706899, 0.000000, 0.000000, -180.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(1897, 1676.001708, -1746.593139, 13.987460, 0.000000, 0.000000, -180.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(1897, 1675.979370, -1750.242553, 13.877400, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(1897, 1676.006591, -1747.702148, 15.878060, 90.000000, 0.000000, -180.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(1897, 1671.964233, -1745.676391, 12.748299, 0.000000, 163.000000, -180.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(1897, 1679.331298, -1752.643066, 11.706899, 0.000000, 0.000000, -180.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(1897, 1676.330688, -1754.112670, 11.706899, 0.000000, 0.000000, -140.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(1897, 1677.942138, -1756.054199, 11.706899, 0.000000, 0.000000, -180.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(19087, 1678.067626, -1759.192138, 16.286979, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(1897, 1675.999389, -1746.994018, 13.969659, 0.000000, 0.000000, -180.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(1737, 1671.674560, -1746.207641, 13.428199, 0.000000, 90.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(1897, 1670.743164, -1745.865234, 12.718299, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(1737, 1670.967651, -1746.203613, 13.047200, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(1737, 1670.969970, -1745.881591, 13.338199, 90.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2345, 1676.163452, -1749.092163, 15.743080, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2719, 1675.274780, -1758.981567, 14.133700, 0.000000, 0.000000, 180.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2369, 1671.118286, -1746.114624, 13.818799, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2390, 1670.852050, -1752.174072, 14.012109, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2406, 1674.515502, -1759.088867, 14.988499, 26.000000, -90.000000, 180.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2391, 1670.871704, -1752.818969, 14.012100, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2399, 1675.300903, -1751.937377, 14.012100, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2398, 1670.839965, -1753.438598, 14.012100, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2396, 1672.950805, -1758.824584, 14.415100, 0.000000, 0.000000, 180.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2389, 1670.678833, -1755.989868, 14.012100, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2345, 1674.246093, -1756.516723, 12.712699, 40.000000, 0.000000, -271.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2412, 1675.740356, -1746.920532, 12.931500, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2387, 1673.554687, -1755.078857, 11.886230, 0.000000, 0.000000, 88.854301, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2345, 1672.518432, -1756.489135, 12.704700, 40.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2345, 1672.524658, -1755.385375, 12.704700, 40.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2345, 1674.259277, -1755.438842, 12.712699, 40.000000, 0.000000, -271.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2376, 1673.676635, -1757.137207, 12.642800, 0.000000, 0.000000, 88.854301, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2386, 1670.607177, -1751.248535, 14.624699, 0.000000, 0.000000, 88.854301, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2387, 1673.526489, -1756.112792, 11.886230, 0.000000, 0.000000, 88.854301, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2387, 1673.505737, -1757.146240, 11.886230, 0.000000, 0.000000, 88.854301, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2386, 1673.376586, -1755.680175, 13.623700, 0.000000, 0.000000, 88.854301, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2386, 1673.347900, -1756.684814, 13.623700, 0.000000, 0.000000, 88.854301, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2384, 1673.332153, -1756.195556, 13.623700, 0.000000, 0.000000, 88.854301, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2399, 1670.807006, -1756.674682, 14.012100, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2372, 1674.220336, -1758.538818, 12.841899, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2399, 1670.808959, -1757.349243, 14.012100, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2392, 1676.831909, -1754.182983, 13.548999, 0.000000, 0.000000, 40.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2381, 1675.831909, -1758.729736, 13.548999, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2372, 1677.702514, -1754.815429, 12.841899, 0.000000, 0.000000, 41.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2381, 1673.272827, -1752.828735, 13.548999, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(948, 1676.751953, -1751.969726, 12.862469, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(1734, 1673.679565, -1756.464721, 17.222200, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2071, 1676.479614, -1753.540527, 14.093899, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2071, 1672.156127, -1759.099853, 14.093899, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2071, 1677.336059, -1758.870483, 14.093899, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2371, 1672.905151, -1753.385620, 12.841899, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2372, 1678.046630, -1758.041748, 12.841899, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2381, 1677.881469, -1757.411132, 13.548999, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2372, 1676.474487, -1758.547973, 12.841899, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2382, 1672.597900, -1753.336059, 13.512999, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2392, 1672.589721, -1752.433349, 13.548999, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2406, 1670.628662, -1754.894409, 14.988499, 26.000000, -90.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2396, 1670.734375, -1755.291137, 14.012100, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2396, 1676.583007, -1758.909912, 14.415100, 0.000000, 0.000000, 180.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2394, 1673.565917, -1758.738769, 13.545700, 0.000000, 0.000000, 180.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2399, 1676.008056, -1758.896484, 14.415100, 0.000000, 0.000000, 180.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2729, 1673.860229, -1759.140625, 14.033709, 0.000000, 0.000000, 180.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2730, 1670.599731, -1748.948242, 14.235710, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2707, 1674.279541, -1744.861450, 15.155400, 0.000000, 0.000000, 78.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2345, 1673.646484, -1745.119506, 14.923399, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2387, 1673.107788, -1749.633422, 12.878549, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2071, 1673.007812, -1751.630249, 14.093899, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2384, 1673.388793, -1755.207275, 13.623700, 0.000000, 0.000000, 88.854301, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2731, 1670.599487, -1751.096923, 13.731749, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2384, 1670.690307, -1748.108764, 13.996700, 0.000000, 0.000000, 88.854301, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2384, 1670.616210, -1750.782592, 14.624699, 0.000000, 0.000000, 88.854301, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2401, 1670.808471, -1754.059082, 14.012100, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2401, 1675.246704, -1751.366210, 14.012100, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2690, 1675.427368, -1750.260498, 13.124899, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(1716, 1671.780761, -1745.062500, 12.872280, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2247, 1671.263549, -1746.456298, 14.144100, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2698, 1674.760620, -1746.200683, 13.814800, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2654, 1670.721069, -1749.111816, 14.089099, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2698, 1677.355346, -1754.961669, 12.562190, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2654, 1673.317260, -1756.203369, 14.138500, 0.000000, 0.000000, -1.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2654, 1671.756225, -1758.735595, 13.093400, 0.000000, 0.000000, 105.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2698, 1671.350830, -1758.357788, 13.821900, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2698, 1670.954711, -1754.862304, 12.562190, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2654, 1677.493652, -1757.428588, 13.093400, 0.000000, 0.000000, -180.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2654, 1670.871215, -1755.964599, 13.093400, 0.000000, 0.000000, -4.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2654, 1674.392944, -1745.161743, 13.093400, 0.000000, 0.000000, -112.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2654, 1670.894531, -1757.459838, 13.093400, 0.000000, 0.000000, 13.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2654, 1676.014892, -1752.791259, 13.093400, 0.000000, 0.000000, -135.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2654, 1675.306762, -1746.176025, 13.093400, 0.000000, 0.000000, -180.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2852, 1672.041259, -1746.233276, 13.841600, 0.000000, 0.000000, 113.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(19325, 1676.860229, -1753.442260, 12.919199, 90.000000, 0.000000, 36.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(19087, 1678.057006, -1755.112304, 16.224300, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(19325, 1678.070312, -1757.164794, 12.919199, 90.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(19087, 1678.069580, -1759.192138, 13.882149, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(19087, 1675.915161, -1752.145263, 16.247100, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(19087, 1678.057006, -1755.112304, 13.882149, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(19087, 1675.915161, -1752.145263, 13.882149, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(1897, 1675.979370, -1750.242553, 16.099899, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(1897, 1676.001708, -1746.593139, 16.097839, 0.000000, 0.000000, -180.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(1897, 1675.999389, -1746.994018, 16.104900, 0.000000, 0.000000, -180.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(1897, 1675.977905, -1749.795166, 16.099399, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(1897, 1675.982910, -1749.573974, 15.878310, 90.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(1897, 1675.980590, -1750.780029, 14.899100, 90.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(1897, 1676.006591, -1747.702148, 17.020990, 90.000000, 0.000000, -180.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(1897, 1675.982910, -1749.573974, 17.020170, 90.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2345, 1676.192138, -1747.754394, 15.734880, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(948, 1676.745117, -1744.877563, 12.862469, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(19325, 1675.338134, -1756.865356, 17.828819, 0.000000, 90.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(19325, 1671.647583, -1756.770751, 17.828819, 0.000000, 90.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(948, 1670.746582, -1747.310913, 12.862469, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(948, 1676.399902, -1746.931396, 12.862469, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(1897, 1675.977905, -1749.795166, 13.913319, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(14411, 1681.671142, -1749.612304, 9.722399, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(19466, 1675.996215, -1745.966674, 12.283300, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(19466, 1676.023437, -1749.541381, 16.965099, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(19466, 1675.996215, -1745.966674, 14.213500, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(19466, 1675.984008, -1750.836059, 13.279800, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(19466, 1676.021850, -1748.198730, 16.965099, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(19466, 1675.996215, -1745.966674, 16.141899, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(19466, 1675.984008, -1750.836059, 15.209289, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(1734, 1674.371582, -1747.076782, 17.222200, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(1734, 1671.603881, -1746.911987, 17.222200, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(1734, 1671.354125, -1751.347045, 17.222200, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(1734, 1673.990600, -1751.493286, 17.222200, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(1734, 1673.066406, -1750.434448, 17.222200, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2707, 1671.518432, -1744.922485, 15.155400, 0.000000, 0.000000, 78.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2707, 1672.125244, -1744.903686, 15.155400, 0.000000, 0.000000, 78.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2707, 1672.836059, -1744.881591, 15.155400, 0.000000, 0.000000, 78.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2345, 1672.228027, -1745.184570, 14.905400, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(2707, 1673.451049, -1744.862426, 15.155400, 0.000000, 0.000000, 78.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(948, 1676.416259, -1749.899047, 12.862469, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(948, 1675.266479, -1750.896118, 12.862469, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(948, 1672.781250, -1746.318847, 12.862469, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(19087, 1678.089599, -1759.232177, 13.882149, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(19087, 1678.089599, -1759.232177, 16.102148, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(19087, 1678.089599, -1759.262207, 16.102148, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_WISE, CreateDynamicObject(19087, 1678.089599, -1759.262207, 13.732148, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	#pragma unused tmpobjid
+	return 1;
+}
+
 stock MapPack_CreerCarte(carte)
 {
 	switch(carte)
@@ -3651,6 +5042,11 @@ stock MapPack_CreerCarte(carte)
 		case MP_MECANO: return MapPack_Creer_MECANO();
 		case MP_BANQUE2: return MapPack_Creer_BANQUE2();
 		case MP_LSPD: return MapPack_Creer_LSPD();
+		case MP_B13: return MapPack_Creer_B13();
+		case MP_BALLAS: return MapPack_Creer_BALLAS();
+		case MP_VAGOS: return MapPack_Creer_VAGOS();
+		case MP_VARIOS: return MapPack_Creer_VARIOS();
+		case MP_WISE: return MapPack_Creer_WISE();
 	}
 	return 0;
 }
