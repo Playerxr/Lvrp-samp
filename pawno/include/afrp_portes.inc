@@ -22,9 +22,18 @@
 	  /portail creer <nom>      pose l'ENTREE ici, la porte attend sa sortie
 	  /portail sortie <id>      pose la SORTIE ici (va d'abord a l'interieur)
 	  /portail faction <id> <n> reserve la porte a une faction (0 = tout le monde)
+	  /portail proprietaire <id> <joueur>  reserve la porte a UN joueur (0 = vider)
 	  /portail liste            toutes les portes et leur etat
 	  /portail aller <id>       te teleporte a l'entree
 	  /portail suppr <id>
+
+	=== PORTE RESERVEE A UN JOUEUR ===
+	Une porte peut aussi etre reservee a une seule personne plutot qu'a une
+	faction entiere : utile pour une residence privee. Le nom du joueur est
+	enregistre (pas son id, qui change a chaque connexion), comme le fait deja
+	le systeme de maisons du gamemode pour son proprietaire. Un proprietaire
+	et une faction ne se cumulent pas sur la meme porte : des qu'un joueur est
+	assigne, la faction est ignoree.
 
 	=== COMMENT ON S'EN SERT AVEC UN MAPPING ===
 	  1. /mappack, on allume la carte et on va voir
@@ -69,6 +78,7 @@ new porteEnInt[PORTE_MAX], porteEnVw[PORTE_MAX];
 new Float:porteSoX[PORTE_MAX], Float:porteSoY[PORTE_MAX], Float:porteSoZ[PORTE_MAX];
 new porteSoInt[PORTE_MAX], porteSoVw[PORTE_MAX];
 new porteFaction[PORTE_MAX];        // 0 = ouverte a tous, sinon pMember requis
+new porteProprio[PORTE_MAX][MAX_PLAYER_NAME];  // "" = pas de proprietaire unique
 new portePris[PORTE_MAX];           // 1 = porte existante
 new porteComplete[PORTE_MAX];       // 1 = la sortie est posee
 
@@ -121,10 +131,12 @@ stock Portes_CreerVisuels(k)
 	Portes_DetruireVisuels(k);
 
 	new txt[128];
-	if(porteComplete[k] == 1)
-		format(txt, sizeof(txt), "{FFFF00}%s\n{FFFFFF}/traverser", porteNom[k]);
-	else
+	if(porteComplete[k] != 1)
 		format(txt, sizeof(txt), "{FFFF00}%s\n{FF8888}porte inachevee : /portail sortie %d", porteNom[k], k + 1);
+	else if(strlen(porteProprio[k]) > 0)
+		format(txt, sizeof(txt), "{FFFF00}%s\n{FF8888}Propriete privee de %s\n{FFFFFF}/traverser", porteNom[k], porteProprio[k]);
+	else
+		format(txt, sizeof(txt), "{FFFF00}%s\n{FFFFFF}/traverser", porteNom[k]);
 
 	// Le label est visible dans le monde virtuel et l'interieur enregistres :
 	// une porte posee dans un appartement ne doit pas flotter dans la rue.
@@ -154,10 +166,10 @@ stock Portes_Save()
 	for(new k = 0; k < PORTE_MAX; k++)
 	{
 		if(portePris[k] != 1) continue;
-		format(line, sizeof(line), "%s|%.4f|%.4f|%.4f|%d|%d|%.4f|%.4f|%.4f|%d|%d|%d|%d\n",
+		format(line, sizeof(line), "%s|%.4f|%.4f|%.4f|%d|%d|%.4f|%.4f|%.4f|%d|%d|%d|%d|%s\n",
 			porteNom[k], porteEnX[k], porteEnY[k], porteEnZ[k], porteEnInt[k], porteEnVw[k],
 			porteSoX[k], porteSoY[k], porteSoZ[k], porteSoInt[k], porteSoVw[k],
-			porteFaction[k], porteComplete[k]);
+			porteFaction[k], porteComplete[k], porteProprio[k]);
 		fwrite(f, line);
 	}
 	fclose(f);
@@ -204,6 +216,9 @@ stock Portes_Load()
 		Portes_Champ(line, i, buf, sizeof(buf)); porteSoVw[n]     = strval(buf);
 		Portes_Champ(line, i, buf, sizeof(buf)); porteFaction[n]  = strval(buf);
 		Portes_Champ(line, i, buf, sizeof(buf)); porteComplete[n] = strval(buf);
+		// Champ ajoute apres coup : un fichier plus ancien s'arrete simplement
+		// avant, et Portes_Champ renvoie une chaine vide (aucun proprietaire).
+		Portes_Champ(line, i, porteProprio[n], MAX_PLAYER_NAME);
 		if(!strlen(porteNom[n])) continue;
 		portePris[n] = 1;
 		Portes_CreerVisuels(n);
@@ -247,8 +262,15 @@ stock Portes_SortieProche(playerid)
 
 stock Portes_Autorise(playerid, k)
 {
-	if(porteFaction[k] == 0) return 1;
 	if(AdminDuty[playerid] == 1) return 1;
+
+	// Un proprietaire unique prime sur la faction : une residence privee ne
+	// doit pas s'ouvrir a toute une faction sous pretexte que le proprietaire
+	// en fait partie.
+	if(strlen(porteProprio[k]) > 0)
+		return (strcmp(PlayerInfo[playerid][pName], porteProprio[k], true) == 0);
+
+	if(porteFaction[k] == 0) return 1;
 	if(PlayerInfo[playerid][pMember] == porteFaction[k]) return 1;
 	return 0;
 }
@@ -279,7 +301,15 @@ stock Portes_Entrer(playerid)
 		return Portes_Msg(playerid, s);
 	}
 	if(!Portes_Autorise(playerid, k))
+	{
+		if(strlen(porteProprio[k]) > 0)
+		{
+			new s[144];
+			format(s, sizeof(s), "{FF4444}Propriete privee de %s. Tu n'es pas autorise a entrer.", porteProprio[k]);
+			return Portes_Msg(playerid, s);
+		}
 		return Portes_Msg(playerid, "{FF4444}Cette porte est reservee a une faction.");
+	}
 
 	SafeTeleportPlayer(playerid, porteSoX[k], porteSoY[k], porteSoZ[k] + 0.4, porteSoInt[k], porteSoVw[k]);
 	new s[144];
@@ -302,6 +332,7 @@ stock Portes_Creer(playerid, const nom[])
 	porteSoX[k]      = 0.0; porteSoY[k] = 0.0; porteSoZ[k] = 0.0;
 	porteSoInt[k]    = 0;   porteSoVw[k] = 0;
 	porteFaction[k]  = 0;
+	porteProprio[k][0] = 0;
 	porteComplete[k] = 0;
 	portePris[k]     = 1;
 	Portes_CreerVisuels(k);
@@ -349,6 +380,34 @@ stock Portes_Faction(playerid, num, faction)
 	return Portes_Msg(playerid, s);
 }
 
+stock Portes_Proprietaire(playerid, num, cible)
+{
+	new k = num - 1;
+	if(k < 0 || k >= PORTE_MAX || portePris[k] != 1)
+		return Portes_Msg(playerid, "{FF4444}Numero de porte invalide. /portail liste");
+
+	if(cible == 0)
+	{
+		porteProprio[k][0] = 0;
+		Portes_CreerVisuels(k);
+		Portes_Save();
+		new s0[144];
+		format(s0, sizeof(s0), "{FFFF00}%s n'a plus de proprietaire unique.", porteNom[k]);
+		return Portes_Msg(playerid, s0);
+	}
+
+	if(!IsPlayerConnected(cible) || IsPlayerNPC(cible))
+		return Portes_Msg(playerid, "{FF4444}Ce joueur n'est pas connecte.");
+
+	format(porteProprio[k], MAX_PLAYER_NAME, "%s", PlayerInfo[cible][pName]);
+	Portes_CreerVisuels(k);
+	Portes_Save();
+
+	new s[190];
+	format(s, sizeof(s), "{00FF00}%s appartient maintenant a %s uniquement.", porteNom[k], porteProprio[k]);
+	return Portes_Msg(playerid, s);
+}
+
 stock Portes_Supprimer(playerid, num)
 {
 	new k = num - 1;
@@ -384,9 +443,13 @@ stock Portes_Liste(playerid)
 	{
 		if(portePris[k] != 1) continue;
 		if(n >= 40) break;
+		new acces[24];
+		if(strlen(porteProprio[k]) > 0) format(acces, sizeof(acces), "%s", porteProprio[k]);
+		else if(porteFaction[k] == 0)   format(acces, sizeof(acces), "tous");
+		else                             format(acces, sizeof(acces), "faction");
 		format(line, sizeof(line), "%d\t%s\t%s\t%s\n", k + 1, porteNom[k],
 			(porteComplete[k] == 1) ? ("{00FF00}complete") : ("{FF8888}sans sortie"),
-			(porteFaction[k] == 0) ? ("tous") : ("faction"));
+			acces);
 		strcat(body, line);
 		n++;
 	}
@@ -423,6 +486,7 @@ stock Portes_Aide(playerid)
 	Portes_Msg(playerid, "{FFFFFF}/portail creer <nom> {AAAAAA}: pose l'entree ici");
 	Portes_Msg(playerid, "{FFFFFF}/portail sortie <id> {AAAAAA}: pose la sortie ici (va d'abord a l'interieur)");
 	Portes_Msg(playerid, "{FFFFFF}/portail faction <id> <numero> {AAAAAA}: reserve la porte (0 = tous)");
+	Portes_Msg(playerid, "{FFFFFF}/portail proprietaire <id> <joueur> {AAAAAA}: reserve a UN joueur (0 = vider)");
 	Portes_Msg(playerid, "{FFFFFF}/portail liste | aller <id> | suppr <id>");
 	Portes_Msg(playerid, "{AAAAAA}Pour relier un mapping : allume la carte, pose l'entree devant la porte, va dans l'interieur, pose la sortie.");
 	return Portes_Liste(playerid);
@@ -475,6 +539,13 @@ stock Portes_Cmd(playerid, const cmdline[])
 		if(Portes_Tok(cmdline, pos2, arg, sizeof(arg)) == 0 || Portes_Tok(cmdline, pos2, arg2, sizeof(arg2)) == 0)
 			return Portes_Msg(playerid, "{FFFFFF}Usage : {FFFF00}/portail faction <id> <numero de faction, 0 = tous>");
 		return Portes_Faction(playerid, strval(arg), strval(arg2));
+	}
+	if(strcmp(sub, "proprietaire", true) == 0)
+	{
+		new arg2[24];
+		if(Portes_Tok(cmdline, pos2, arg, sizeof(arg)) == 0 || Portes_Tok(cmdline, pos2, arg2, sizeof(arg2)) == 0)
+			return Portes_Msg(playerid, "{FFFFFF}Usage : {FFFF00}/portail proprietaire <id> <id du joueur, 0 = vider>");
+		return Portes_Proprietaire(playerid, strval(arg), strval(arg2));
 	}
 	if(strcmp(sub, "aller", true) == 0)
 	{

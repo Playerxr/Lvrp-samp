@@ -5295,6 +5295,8 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 #include <afrp_nouveautes>
 // [MAPEDIT] editeur de mapping en jeu
 #include <afrp_mapedit>
+// [RESIDENCE] residence privee pour un joueur special (complexe LV)
+#include <afrp_residence>
 // [PORTES] relier un mapping au jeu : entrees/sorties posees en jeu
 #include <afrp_portes>
 // [TELAPPS] contenu des 8 applications du smartphone (apres vibe_phone)
@@ -30083,6 +30085,8 @@ public OnGameModeInit()
     MapPack_Init();
     // [PORTES] recharge les portes reliant les mappings au jeu
     Portes_Init();
+    // [RESIDENCE] recharge le proprietaire et les points de la residence
+    Residence_Init();
     // [SPEEDO2] cree le timer du tableau de bord moderne
     Sp2_Init();
     // [BASKET] charge les paniers poses en jeu
@@ -30615,6 +30619,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     if(MapPack_OnDialog(playerid, dialogid, response, listitem)) return 1;
     if(SacV_OnDialog(playerid, dialogid, response, inputtext)) return 1;
     if(Portes_OnDialog(playerid, dialogid, response, listitem)) return 1;
+    if(Residence_OnDialog(playerid, dialogid, response, listitem, inputtext)) return 1;
     if(TelApp_OnDialog(playerid, dialogid, response, listitem, inputtext)) return 1;
 
     // [MOBILE INLINE] Dispatch vers mobile_system pour ses dialogs (MARKET, SETTINGS)
@@ -53319,6 +53324,11 @@ public OnPlayerCommandText(playerid, cmdtext[])
 	else if(strcmp(cmd, "/compteur", true) == 0)
 	{
 	    return Sp2_Cmd(playerid);
+	}
+	// [RESIDENCE] residence privee pour un joueur special
+	else if(strcmp(cmd, "/maisonvip", true) == 0)
+	{
+	    return Residence_Cmd(playerid, cmdtext);
 	}
 	// [PORTES] relier un mapping au jeu : franchir une porte posee
 	else if(strcmp(cmd, "/traverser", true) == 0)

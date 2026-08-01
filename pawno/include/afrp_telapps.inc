@@ -187,11 +187,19 @@ stock TelApp_Contacts(playerid)
 // ============================================================================
 // BANQUE
 // ============================================================================
+// [LIEN REEL] Ouvre le dialogue 86, exactement celui du PNJ de banque (voir
+// OnPlayerClickPlayer, actor[tmpId][variable] == 5) : aucune verification de
+// proximite n'y est faite cote serveur, donc le rouvrir depuis le telephone
+// est sans risque et evite un deuxieme systeme de banque qui divergerait du
+// vrai (depot/retrait/virement/chequier au lieu d'un simple solde en lecture
+// seule comme avant).
 stock TelApp_Banque(playerid)
 {
+	phone_Close(playerid);
+	player_Variable[playerid] = 0;
 	new body[400];
-	format(body, sizeof(body), "{FFFFFF}Compte en banque : {32D74B}%d${FFFFFF}\nLiquide sur toi : {32D74B}%d${FFFFFF}\n\n{AAAAAA}Les depots et retraits se font dans une banque ou a un distributeur : le telephone ne consulte que le solde.", PlayerInfo[playerid][pAccount], PlayerInfo[playerid][pCash]);
-	return ShowPlayerDialog(playerid, DIALOG_TA_BANQUE, DIALOG_STYLE_MSGBOX, "Banque", body, "Retour", "");
+	format(body, sizeof(body), "Infos sur le compte \nDeposer du liquide (MAX:$%d) \nRetirer du liquide (MAX:$%d)\nVirement Bancaire\nDemander un chequier", PlayerInfo[playerid][pCash], PlayerInfo[playerid][pAccount]);
+	return ShowPlayerDialog(playerid, 86, DIALOG_STYLE_LIST, "{AADD66} Banque {FFFFFF} Operations disponibles", body, "Valider", "Quitter");
 }
 
 // ============================================================================
@@ -274,7 +282,7 @@ stock TelApp_OnDialog(playerid, dialogid, response, listitem, const inputtext[])
 	if(dialogid < DIALOG_TA_TEL || dialogid > DIALOG_TA_INFOS) return 0;
 
 	// Bouton droit : on remonte a l'accueil du telephone, jamais dans le vide.
-	if(!response && dialogid != DIALOG_TA_BANQUE && dialogid != DIALOG_TA_INFOS)
+	if(!response && dialogid != DIALOG_TA_INFOS)
 	{
 		TelApp_Accueil(playerid);
 		return 1;
@@ -282,7 +290,7 @@ stock TelApp_OnDialog(playerid, dialogid, response, listitem, const inputtext[])
 
 	switch(dialogid)
 	{
-		case DIALOG_TA_BANQUE, DIALOG_TA_INFOS:
+		case DIALOG_TA_INFOS:
 		{
 			TelApp_Accueil(playerid);
 			return 1;

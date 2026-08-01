@@ -52,7 +52,7 @@
 #define SV_CASES          20        // 5 colonnes x 4 lignes
 #define SV_COLS           5
 #define SV_LIGNES         4
-#define SV_BOUTONS        5
+#define SV_BOUTONS        7
 #define DIALOG_SV_JETER   9639
 #define DIALOG_SV_DONNER  9640
 
@@ -72,10 +72,12 @@
 
 // Boutons du panneau de droite.
 #define SV_BTN_DETAILS    0
-#define SV_BTN_DONNER     1
-#define SV_BTN_JETER      2
-#define SV_BTN_PAGE       3
-#define SV_BTN_FERMER     4
+#define SV_BTN_UTILISER   1
+#define SV_BTN_DONNER     2
+#define SV_BTN_JETER      3
+#define SV_BTN_DEPLACER   4
+#define SV_BTN_PAGE       5
+#define SV_BTN_FERMER     6
 
 new PlayerText:svFondP[MAX_PLAYERS][5];
 new PlayerText:svModele[MAX_PLAYERS][SV_CASES];
@@ -87,6 +89,20 @@ new svOuvert[MAX_PLAYERS];          // 1 = grille affichee
 new svPage[MAX_PLAYERS];            // page courante
 new svSel[MAX_PLAYERS];             // case selectionnee (0..19), -1 si aucune
 new svSlotDe[MAX_PLAYERS][SV_CASES];// case -> emplacement reel dans le sac
+new svDeplaceSrc[MAX_PLAYERS];      // case en attente d'echange, -1 si aucune
+
+// Objets consommables directement depuis le sac (boissons et aliments vendus
+// a l'epicerie). Verifie contre /utiliser aliment, la seule commande du
+// gamemode qui consomme deja ces modeles precis.
+stock SacV_EstAlimentBoisson(modelid)
+{
+	switch(modelid)
+	{
+		case 1668, 2601, 19569, 19563, 1486:  return 1;  // eau, soda, lait, jus, biere
+		case 19811, 19571, 2769, 2663, 2821:  return 1;  // burger, pizza, sandwich, chips, cereales
+	}
+	return 0;
+}
 
 // Les objets ranges dans le sac sont de vrais modeles GTA : ils s'affichent
 // donc directement en 3D. Les armes, elles, sont stockees par leur numero
@@ -264,7 +280,7 @@ stock SacV_Creer(playerid)
 	PlayerTextDrawFont(playerid, svPanneau[playerid], 4);
 	PlayerTextDrawSetProportional(playerid, svPanneau[playerid], 1);
 
-	new libelles[SV_BOUTONS][12] = { "Details", "Donner", "Jeter", "Page", "Fermer" };
+	new libelles[SV_BOUTONS][12] = { "Details", "Utiliser", "Donner", "Jeter", "Deplacer", "Page", "Fermer" };
 	for(new b = 0; b < SV_BOUTONS; b++)
 	{
 		y = 174.0 + (float(b) * 21.0);
@@ -388,6 +404,7 @@ stock SacV_Ouvrir(playerid)
 	svOuvert[playerid] = 1;
 	svPage[playerid]   = 0;
 	svSel[playerid]    = -1;
+	svDeplaceSrc[playerid] = -1;
 
 	for(new k = 0; k < 5; k++) PlayerTextDrawShow(playerid, svFondP[playerid][k]);
 	PlayerTextDrawShow(playerid, svPanneau[playerid]);
@@ -404,6 +421,7 @@ stock SacV_Fermer(playerid)
 	if(svOuvert[playerid] != 1) return 0;
 	svOuvert[playerid] = 0;
 	svSel[playerid]    = -1;
+	svDeplaceSrc[playerid] = -1;
 	SacV_Detruire(playerid);
 	CancelSelectTextDraw(playerid);
 	return 1;
@@ -429,6 +447,64 @@ stock SacV_Details(playerid)
 	new s[144], modelid = PlayerInfo[playerid][pInvModel][slot];
 	format(s, sizeof(s), "{FFFF00}%s{FFFFFF} : %d en stock (modele %d).", GetItemName(modelid), PlayerInfo[playerid][pInvQuant][slot], modelid);
 	return SacV_Msg(playerid, s);
+}
+
+// [LIEN REEL] /utiliser aliment existe deja dans le gamemode (dialogue 147)
+// et consomme exactement ces memes modeles depuis le meme inventaire : on
+// l'appelle au lieu de refaire la consommation ici. Pour tout le reste
+// (drogues, outils...), chaque objet a deja sa propre commande dediee dans le
+// gamemode ; en inventer une nouvelle ici aurait fait deux chemins pour la
+// meme action, avec le risque qu'ils divergent.
+stock SacV_Utiliser(playerid)
+{
+	new slot = SacV_SlotSel(playerid);
+	if(slot == -1) return SacV_Msg(playerid, "{FF8888}Clique d'abord un objet.");
+	new modelid = PlayerInfo[playerid][pInvModel][slot];
+
+	if(SacV_EstAlimentBoisson(modelid))
+	{
+		SacV_Fermer(playerid);
+		return CallLocalFunction("OnPlayerCommandText", "is", playerid, "/utiliser aliment");
+	}
+
+	new s[190];
+	format(s, sizeof(s), "{FF8888}%s ne se consomme pas depuis le sac. Tape {FFFFFF}/utiliser{FF8888} pour voir les commandes dediees.", GetItemName(modelid));
+	return SacV_Msg(playerid, s);
+}
+
+// Reorganiser le sac : selectionner un objet, presser Deplacer, puis cliquer
+// la case avec laquelle l'echanger.
+stock SacV_Deplacer(playerid)
+{
+	new slot = SacV_SlotSel(playerid);
+	if(slot == -1) return SacV_Msg(playerid, "{FF8888}Clique d'abord un objet a deplacer.");
+	svDeplaceSrc[playerid] = svSel[playerid];
+	return SacV_Msg(playerid, "{FFFF00}Clique maintenant la case ou tu veux le mettre.");
+}
+
+stock SacV_TerminerDeplacement(playerid, k)
+{
+	new srcCase = svDeplaceSrc[playerid];
+	svDeplaceSrc[playerid] = -1;
+
+	if(k == srcCase)
+		return SacV_Msg(playerid, "{FFFF00}Deplacement annule.");
+	if(svSlotDe[playerid][k] == -1)
+		return SacV_Msg(playerid, "{FF8888}Cette case est vide, rien a echanger. Deplacement annule.");
+
+	new slotA = svSlotDe[playerid][srcCase];
+	new slotB = svSlotDe[playerid][k];
+
+	new tmpModel = PlayerInfo[playerid][pInvModel][slotA];
+	new tmpQuant = PlayerInfo[playerid][pInvQuant][slotA];
+	PlayerInfo[playerid][pInvModel][slotA] = PlayerInfo[playerid][pInvModel][slotB];
+	PlayerInfo[playerid][pInvQuant][slotA] = PlayerInfo[playerid][pInvQuant][slotB];
+	PlayerInfo[playerid][pInvModel][slotB] = tmpModel;
+	PlayerInfo[playerid][pInvQuant][slotB] = tmpQuant;
+
+	svSel[playerid] = k;
+	SacV_Remplir(playerid);
+	return SacV_Msg(playerid, "{00FF00}Objets echanges.");
 }
 
 stock SacV_DemanderJeter(playerid)
@@ -569,6 +645,7 @@ stock SacV_OnClick(playerid, PlayerText:playertextid)
 	for(new k = 0; k < SV_CASES; k++)
 	{
 		if(playertextid != svModele[playerid][k]) continue;
+		if(svDeplaceSrc[playerid] != -1) return SacV_TerminerDeplacement(playerid, k);
 		if(svSlotDe[playerid][k] == -1) return 1;   // case vide : clic ignore
 		svSel[playerid] = k;
 		SacV_Remplir(playerid);
@@ -580,9 +657,11 @@ stock SacV_OnClick(playerid, PlayerText:playertextid)
 		if(playertextid != svBtn[playerid][b]) continue;
 		switch(b)
 		{
-			case SV_BTN_DETAILS: SacV_Details(playerid);
-			case SV_BTN_DONNER:  SacV_DemanderDonner(playerid);
-			case SV_BTN_JETER:   SacV_DemanderJeter(playerid);
+			case SV_BTN_DETAILS:  SacV_Details(playerid);
+			case SV_BTN_UTILISER: SacV_Utiliser(playerid);
+			case SV_BTN_DONNER:   SacV_DemanderDonner(playerid);
+			case SV_BTN_JETER:    SacV_DemanderJeter(playerid);
+			case SV_BTN_DEPLACER: SacV_Deplacer(playerid);
 			case SV_BTN_PAGE:
 			{
 				svPage[playerid]++;
@@ -617,6 +696,7 @@ stock SacV_OnConnect(playerid)
 	svOuvert[playerid] = 0;
 	svPage[playerid]   = 0;
 	svSel[playerid]    = -1;
+	svDeplaceSrc[playerid] = -1;
 	for(new k = 0; k < SV_CASES; k++) svSlotDe[playerid][k] = -1;
 	return 1;
 }
@@ -627,5 +707,6 @@ stock SacV_OnDisconnect(playerid)
 	svOuvert[playerid] = 0;
 	svSel[playerid]    = -1;
 	svPage[playerid]   = 0;
+	svDeplaceSrc[playerid] = -1;
 	return 1;
 }
