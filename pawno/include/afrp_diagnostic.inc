@@ -89,6 +89,7 @@ static const DiagDialogs[][e_DiagDlg] = {
 	{9645, "telapps"},      {9646, "telapps"},
 	{9647, "telapps"},      {9648, "telapps"},
 	{9649, "telapps"},
+	{9650, "portes"},
 	{9800, "factionmenu"},       {9801, "factionmenu"},
 	{9802, "factionmenu"},       {9803, "factionmenu"},
 	{9940, "justice"},           {9941, "justice"},

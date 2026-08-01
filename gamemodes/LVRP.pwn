@@ -5295,6 +5295,8 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 #include <afrp_nouveautes>
 // [MAPEDIT] editeur de mapping en jeu
 #include <afrp_mapedit>
+// [PORTES] relier un mapping au jeu : entrees/sorties posees en jeu
+#include <afrp_portes>
 // [TELAPPS] contenu des 8 applications du smartphone (apres vibe_phone)
 #include <afrp_telapps>
 // [SAC VISUEL] le sac en grille d'images au lieu d'une liste de texte
@@ -23535,6 +23537,7 @@ public OnPlayerConnect(playerid)
     ArmNiv_OnConnect(playerid); // [ARMES / NIVEAU] reset anti-spam du message
     MapEd_OnConnect(playerid); // [MAPEDIT] reset de l'objet selectionne
     MapPack_OnConnect(playerid); // [MAPPACK] retire les batiments remplaces par les cartes allumees
+    Portes_OnConnect(playerid); // [PORTES] rien a reinitialiser, garde le crochet pret
     Sp2_OnConnect(playerid); // [SPEEDO2] sinon le slot garde la preference du precedent occupant
     Bsk_OnConnect(playerid); // [BASKET] libere un ballon reste au nom du precedent occupant
     SacV_OnConnect(playerid); // [SAC VISUEL] sinon le slot croit sa grille encore ouverte
@@ -30078,6 +30081,8 @@ public OnGameModeInit()
     MapEd_Init();
     // [MAPPACK] recree les cartes importees qui sont allumees
     MapPack_Init();
+    // [PORTES] recharge les portes reliant les mappings au jeu
+    Portes_Init();
     // [SPEEDO2] cree le timer du tableau de bord moderne
     Sp2_Init();
     // [BASKET] charge les paniers poses en jeu
@@ -30609,6 +30614,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     if(MapEd_OnDialog(playerid, dialogid, response, listitem)) return 1;
     if(MapPack_OnDialog(playerid, dialogid, response, listitem)) return 1;
     if(SacV_OnDialog(playerid, dialogid, response, inputtext)) return 1;
+    if(Portes_OnDialog(playerid, dialogid, response, listitem)) return 1;
     if(TelApp_OnDialog(playerid, dialogid, response, listitem, inputtext)) return 1;
 
     // [MOBILE INLINE] Dispatch vers mobile_system pour ses dialogs (MARKET, SETTINGS)
@@ -53313,6 +53319,16 @@ public OnPlayerCommandText(playerid, cmdtext[])
 	else if(strcmp(cmd, "/compteur", true) == 0)
 	{
 	    return Sp2_Cmd(playerid);
+	}
+	// [PORTES] relier un mapping au jeu : franchir une porte posee
+	else if(strcmp(cmd, "/traverser", true) == 0)
+	{
+	    return Portes_Entrer(playerid);
+	}
+	// [PORTES] admin : poser des entrees/sorties liees a un mapping
+	else if(strcmp(cmd, "/portail", true) == 0)
+	{
+	    return Portes_Cmd(playerid, cmdtext);
 	}
 	// [MAPPACK] cartes importees : liste, apercu, allumer / eteindre (admin)
 	else if(strcmp(cmd, "/mappack", true) == 0 || strcmp(cmd, "/cartes", true) == 0)

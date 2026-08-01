@@ -21,6 +21,13 @@
 	   cuisine laisse par l'editeur de textdraws. Ils affichent maintenant le
 	   vehicule reellement conduit.
 
+	=== LISIBILITE ===
+	Le pack dessinait le vehicule QUATRE fois : deux grands apercus superposes a
+	quelques pixels d'ecart, et deux minuscules laisses par l'editeur. Le
+	panneau paraissait flou. Un seul apercu est conserve. Les chiffres de la
+	vitesse, le libelle d'essence et les temoins etaient en police fine sur fond
+	sombre : leurs tailles et leurs fonds ont ete revus pour etre lus en roulant.
+
 	=== UN ELEMENT AJOUTE ===
 	Le pack n'avait pas de place pour l'etat du vehicule ni le kilometrage, que
 	l'ancien compteur affichait. Les perdre en gagnant du style aurait ete un
@@ -65,6 +72,12 @@
 #define SP2_JAUGE_X      518.0017
 #define SP2_JAUGE_W_MAX  57.0    // largeur de la barre pleine, cf. le pack
 
+// Elements decoratifs du pack qui ne sont jamais affiches : le pack posait
+// DEUX grands apercus 3D l'un sur l'autre, decales de quelques pixels, plus
+// deux minuscules. Le vehicule etait donc dessine quatre fois, ce qui rendait
+// le panneau flou et illisible. On n'en garde qu'un, le plus grand.
+#define SP2_TD_APERCU    3
+
 new PlayerText:spTD[MAX_PLAYERS][SP2_NB_TD];
 new spCree[MAX_PLAYERS];        // 1 = textdraws crees pour ce joueur
 new spVisible[MAX_PLAYERS];     // 1 = panneau affiche
@@ -77,6 +90,15 @@ forward Sp2_Tick();
 // ============================================================================
 // CREATION
 // ============================================================================
+// 1 = element du pack volontairement laisse de cote.
+stock Sp2_Decoratif(k)
+{
+	if(k == 1)  return 1;   // second grand apercu, superpose au premier
+	if(k == 12) return 1;   // apercu minuscule
+	if(k == 16) return 1;   // apercu minuscule, retourne
+	return 0;
+}
+
 stock Sp2_Creer(playerid)
 {
 	if(spCree[playerid] == 1) return 0;
@@ -322,10 +344,35 @@ stock Sp2_Creer(playerid)
 	PlayerTextDrawSetProportional(playerid, spTD[playerid][28], 1);
 	PlayerTextDrawSetShadow(playerid, spTD[playerid][28], 0);
 
+	// --- LISIBILITE ---
+	// Les tailles du pack etaient calibrees pour faire joli sur la capture de
+	// son auteur, pas pour etre lues en conduisant : les chiffres de la vitesse
+	// et le libelle d'essence sortaient en police fine sur fond sombre.
+	PlayerTextDrawLetterSize(playerid, spTD[playerid][SP2_TD_VITESSE], 0.4200, 2.2000);
+	PlayerTextDrawColor(playerid, spTD[playerid][SP2_TD_VITESSE], 0xFFFFFFFF);
+	PlayerTextDrawSetOutline(playerid, spTD[playerid][SP2_TD_VITESSE], 1);
+	PlayerTextDrawSetShadow(playerid, spTD[playerid][SP2_TD_VITESSE], 0);
+	PlayerTextDrawBackgroundColor(playerid, spTD[playerid][SP2_TD_VITESSE], 0x000000CC);
+
+	PlayerTextDrawLetterSize(playerid, spTD[playerid][SP2_TD_ESSENCE], 0.2000, 1.1000);
+	PlayerTextDrawColor(playerid, spTD[playerid][SP2_TD_ESSENCE], 0xFFFFFFFF);
+	PlayerTextDrawBackgroundColor(playerid, spTD[playerid][SP2_TD_ESSENCE], 0x000000CC);
+
+	PlayerTextDrawLetterSize(playerid, spTD[playerid][25], 0.1900, 1.1000);   // KM/H
+	PlayerTextDrawColor(playerid, spTD[playerid][25], 0xFFFFFFFF);
+	PlayerTextDrawBackgroundColor(playerid, spTD[playerid][25], 0x000000CC);
+
+	// Temoins moteur / phares / portieres : police trop fine pour etre lue.
+	for(new k = SP2_TD_LOCK; k <= SP2_TD_LIGHT; k++)
+	{
+		PlayerTextDrawLetterSize(playerid, spTD[playerid][k], 0.1900, 1.1000);
+		PlayerTextDrawBackgroundColor(playerid, spTD[playerid][k], 0x000000CC);
+	}
+
 	// [AJOUT] Etat du vehicule et kilometrage : absents du pack, presents dans
 	// l'ancien compteur. Places sous le panneau, dans l'espace libre.
 	spTD[playerid][SP2_TD_INFO] = CreatePlayerTextDraw(playerid, 516.0000, 403.5000, "_");
-	PlayerTextDrawLetterSize(playerid, spTD[playerid][SP2_TD_INFO], 0.1400, 1.0000);
+	PlayerTextDrawLetterSize(playerid, spTD[playerid][SP2_TD_INFO], 0.1900, 1.1000);
 	PlayerTextDrawAlignment(playerid, spTD[playerid][SP2_TD_INFO], 1);
 	PlayerTextDrawColor(playerid, spTD[playerid][SP2_TD_INFO], -1);
 	PlayerTextDrawBackgroundColor(playerid, spTD[playerid][SP2_TD_INFO], 255);
@@ -369,14 +416,8 @@ stock Sp2_Rafraichir(playerid)
 	if(model >= 400 && model <= 611 && spDernierModel[playerid] != model)
 	{
 		spDernierModel[playerid] = model;
-		PlayerTextDrawSetPreviewModel(playerid, spTD[playerid][1],  model);
-		PlayerTextDrawSetPreviewModel(playerid, spTD[playerid][3],  model);
-		PlayerTextDrawSetPreviewModel(playerid, spTD[playerid][12], model);
-		PlayerTextDrawSetPreviewModel(playerid, spTD[playerid][16], model);
-		PlayerTextDrawShow(playerid, spTD[playerid][1]);
-		PlayerTextDrawShow(playerid, spTD[playerid][3]);
-		PlayerTextDrawShow(playerid, spTD[playerid][12]);
-		PlayerTextDrawShow(playerid, spTD[playerid][16]);
+		PlayerTextDrawSetPreviewModel(playerid, spTD[playerid][SP2_TD_APERCU], model);
+		PlayerTextDrawShow(playerid, spTD[playerid][SP2_TD_APERCU]);
 	}
 
 	// Essence. La valeur n'est pas toujours plafonnee a la source (mecano,
@@ -447,7 +488,11 @@ stock Sp2_Show(playerid)
 
 	Sp2_Creer(playerid);
 	spDernierModel[playerid] = 0;
-	for(new k = 0; k < SP2_NB_TD; k++) PlayerTextDrawShow(playerid, spTD[playerid][k]);
+	for(new k = 0; k < SP2_NB_TD; k++)
+	{
+		if(Sp2_Decoratif(k)) continue;
+		PlayerTextDrawShow(playerid, spTD[playerid][k]);
+	}
 	spVisible[playerid] = 1;
 	Sp2_Rafraichir(playerid);
 	return 1;
