@@ -55787,8 +55787,18 @@ public OnPlayerCommandText(playerid, cmdtext[])
 			{result[idx - offset] = cmdtext[idx];idx++;}
 		result[idx - offset] = EOS;
 		if(!strlen(result))
-			{return msg_Client(playerid, COLOR_WHITE, "{A98500} Usage {FFFFB2} /r(adio) <texte>");}
-			
+		{
+			// [FIX COLLISION] /radio sans texte basculait sur un deuxieme "else
+			// if(strcmp(cmd, "/radio"...)" plus bas (mode VOIP) qui n'etait en
+			// realite JAMAIS atteint : ce premier bloc, place avant, captait
+			// toujours la commande. Fusionne ici le comportement des deux :
+			// /radio seul = bascule le micro en mode radio, /radio <texte> =
+			// message ecrit sur la frequence de la faction.
+			SetPVarInt(playerid, "talkstats", 3);
+			msg_Client(playerid, COLOR_WHITE, "{8B8B00}\xbb VOIP \xab{FFFFFF} Mode radio active.");
+			return 1;
+		}
+
         format(string, sizeof(string), "[Radio] %s %s : %s",GetFactionRank(PlayerInfo[playerid][pMember],PlayerInfo[playerid][pRank]), PlayerInfo[playerid][pRealName], result);
         ProxDetector(20.0, playerid, string,COLOR_FADE1,COLOR_FADE2,COLOR_FADE3,COLOR_FADE4,COLOR_FADE5,false);
 		msg_Radio(PlayerInfo[playerid][pMember], 0x0062FFFF, string);
@@ -70246,12 +70256,9 @@ public OnPlayerCommandText(playerid, cmdtext[])
 		}
 		return 1;
 	}
-	else if(strcmp(cmd, "/radio", true) == 0)
-	{
-		SetPVarInt(playerid, "talkstats", 3);
-		msg_Client(playerid, COLOR_WHITE, "{8B8B00}\xbb VOIP \xab{FFFFFF} Mode radio activ\xe9.");
-		return 1;
-	}
+	// [FIX COLLISION] Code mort : ce /radio n'etait jamais atteint (un autre
+	// /radio, plus haut dans la chaine, captait toujours la commande avant).
+	// Fusionne dans ce premier bloc, voir plus haut.
 	else if(strcmp(cmd, "/local", true) == 0)
 	{
 		SetPVarInt(playerid, "talkstats", 0);
