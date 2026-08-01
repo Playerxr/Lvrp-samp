@@ -5313,6 +5313,8 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 #include <afrp_sacvisuel>
 // [RACCOURCIS] menu qui regroupe /sac, /job, /emotes, /maison, /vehicule
 #include <afrp_raccourcis>
+// [RADIO WIDGET] icone affichee pendant qu'on parle en mode radio
+#include <afrp_radiowidget>
 // [BASKET] dribble, paniers et points (remet en marche le basket existant)
 #include <afrp_basket>
 // [SPEEDO2] tableau de bord moderne (habillage alternatif du compteur)
@@ -24182,6 +24184,7 @@ public OnPlayerDisconnect(playerid, reason)
     Bsk_OnDisconnect(playerid); // [BASKET] rend le ballon qu'il tenait
     SacV_OnDisconnect(playerid); // [SAC VISUEL] detruit les textdraws de la grille
     Raccourcis_OnDisconnect(playerid); // [RACCOURCIS] annule un maintien en cours
+    RadioWidget_OnDisconnect(playerid); // [RADIO WIDGET] evite un affichage fantome a la reconnexion
     TopJour_OnDisconnect(playerid); // [TOP DU JOUR] detruit le panneau
     Annonce_OnDisconnect(playerid); // [ANNONCE] detruit le bandeau
     Cv_OnDisconnect(playerid); // [CONVOI] retire de l'escorte / du braquage
@@ -30134,6 +30137,8 @@ public OnGameModeInit()
     Portes_Init();
     // [RESIDENCE] recharge le proprietaire et les points de la residence
     Residence_Init();
+    // [RADIO WIDGET] cree l'icone (une seule fois, affichee/cachee par joueur)
+    RadioWidget_Init();
     // [SPEEDO2] cree le timer du tableau de bord moderne
     Sp2_Init();
     // [BASKET] charge les paniers poses en jeu
@@ -49718,6 +49723,9 @@ public OnVehiclePaintjob(playerid, vehicleid, paintjobid)
 public OnPlayerVoiceStart(playerid)
 {
     if(!IsPlayerConnected(playerid) || IsPlayerNPC(playerid)) return 0;
+    // [RADIO WIDGET] avant le "return" vehicule ci-dessous : la radio marche
+    // aussi bien au volant qu'a pied.
+    RadioWidget_OnVoiceStart(playerid);
     // FIX BUG : pas d'animation si le joueur est dans un vehicule (sinon il sort tout seul)
     if(IsPlayerInAnyVehicle(playerid)) return 1;
     // pvarTalkStats : utilise dans les conditions ci-dessous
@@ -49741,6 +49749,8 @@ public OnPlayerVoiceStart(playerid)
 public OnPlayerVoiceStop(playerid)
 {
     if(!IsPlayerConnected(playerid) || IsPlayerNPC(playerid)) return 0;
+    // [RADIO WIDGET] avant le "return" vehicule ci-dessous, meme raison qu'au demarrage.
+    RadioWidget_OnVoiceStop(playerid);
     // FIX : si en vehicule, on ne touche pas aux animations (sinon ejection)
     if(IsPlayerInAnyVehicle(playerid)) return 1;
     // En appel telephonique : on garde l'anim phone_in (main a l'oreille statique)
@@ -55794,7 +55804,7 @@ public OnPlayerCommandText(playerid, cmdtext[])
 			// toujours la commande. Fusionne ici le comportement des deux :
 			// /radio seul = bascule le micro en mode radio, /radio <texte> =
 			// message ecrit sur la frequence de la faction.
-			SetPVarInt(playerid, "talkstats", 3);
+			SetPVarInt(playerid, "talkStats", 3);
 			msg_Client(playerid, COLOR_WHITE, "{8B8B00}\xbb VOIP \xab{FFFFFF} Mode radio active.");
 			return 1;
 		}
@@ -70261,7 +70271,7 @@ public OnPlayerCommandText(playerid, cmdtext[])
 	// Fusionne dans ce premier bloc, voir plus haut.
 	else if(strcmp(cmd, "/local", true) == 0)
 	{
-		SetPVarInt(playerid, "talkstats", 0);
+		SetPVarInt(playerid, "talkStats", 0);
 		msg_Client(playerid, COLOR_WHITE, "{8B8B00}\xbb VOIP \xab{FFFFFF} Mode local activ\xe9.");
 		return 1;
 	}
