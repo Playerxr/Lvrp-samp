@@ -13,6 +13,12 @@
 	                    ne faisait qu'afficher un message d'aide)
 	  /sac voir         garde la liste de texte, pour qui la prefere
 	  /sac arme / poser / prendre / afficher : inchanges
+	  /sac ramasser     nouveau : reprend un objet jete au sol (bouton Jeter)
+
+	Boutons du panneau : Details, Utiliser, Donner, Jeter (fait tomber l'objet
+	au sol, ramassable par n'importe qui via /sac ramasser), Deplacer (echange
+	deux cases), Sac (pose/reprend le sac entier, rappelle /sac poser|prendre),
+	Page, Fermer.
 
 	=== IL NE TOUCHE PAS AUX DONNEES ===
 	La grille lit PlayerInfo[playerid][pInvModel] et [pInvQuant], les memes
@@ -52,9 +58,16 @@
 #define SV_CASES          20        // 5 colonnes x 4 lignes
 #define SV_COLS           5
 #define SV_LIGNES         4
-#define SV_BOUTONS        7
+#define SV_BOUTONS        8
 #define DIALOG_SV_JETER   9639
 #define DIALOG_SV_DONNER  9640
+
+// Objets jetes et retrouves au sol : 55055-55152 dans LVRP.pwn gere deja un
+// objet pose/repris pour le SAC ENTIER (/sac poser, /sac prendre). Ceci est
+// different : un OBJET a l'interieur du sac, depose au sol individuellement,
+// que n'importe qui peut ramasser avec /sac ramasser.
+#define SV_DROP_MAX         40       // objets simultanement au sol sur tout le serveur
+#define SV_DROP_DIST        2.5
 
 // Coordonnees reprises du pack de textdraws fourni.
 #define SV_PANEL_X        118.0
@@ -76,8 +89,9 @@
 #define SV_BTN_DONNER     2
 #define SV_BTN_JETER      3
 #define SV_BTN_DEPLACER   4
-#define SV_BTN_PAGE       5
-#define SV_BTN_FERMER     6
+#define SV_BTN_SAC        5
+#define SV_BTN_PAGE       6
+#define SV_BTN_FERMER     7
 
 new PlayerText:svFondP[MAX_PLAYERS][5];
 new PlayerText:svModele[MAX_PLAYERS][SV_CASES];
@@ -90,6 +104,18 @@ new svPage[MAX_PLAYERS];            // page courante
 new svSel[MAX_PLAYERS];             // case selectionnee (0..19), -1 si aucune
 new svSlotDe[MAX_PLAYERS][SV_CASES];// case -> emplacement reel dans le sac
 new svDeplaceSrc[MAX_PLAYERS];      // case en attente d'echange, -1 si aucune
+
+// --- objets deposes au sol (tableaux globaux, pas par joueur) ---
+new svDropUtilise[SV_DROP_MAX];             // 1 = case occupee
+new svDropModel[SV_DROP_MAX];
+new svDropQuant[SV_DROP_MAX];
+new Float:svDropX[SV_DROP_MAX];
+new Float:svDropY[SV_DROP_MAX];
+new Float:svDropZ[SV_DROP_MAX];
+new svDropVW[SV_DROP_MAX];
+new svDropInt[SV_DROP_MAX];
+new svDropObjet[SV_DROP_MAX];
+new Text3D:svDropLabel[SV_DROP_MAX];
 
 // Objets consommables directement depuis le sac (boissons et aliments vendus
 // a l'epicerie). Verifie contre /utiliser aliment, la seule commande du
@@ -270,8 +296,11 @@ stock SacV_Creer(playerid)
 	}
 
 	// --- panneau d'actions ---
+	// Hauteur alignee sur le bas de la grille de cases (y=339, cf SV_CASE_Y0 +
+	// 3*SV_LIGNE_PAS + SV_CASE_H) : la colonne de droite peut ainsi accueillir
+	// 8 boutons sans deborder sur une zone d'ecran deja utilisee ailleurs.
 	svPanneau[playerid] = CreatePlayerTextDraw(playerid, 347.0, 168.0, "LD_SPAC:white");
-	PlayerTextDrawTextSize(playerid, svPanneau[playerid], 402.0, 285.0);
+	PlayerTextDrawTextSize(playerid, svPanneau[playerid], 402.0, 339.0);
 	PlayerTextDrawAlignment(playerid, svPanneau[playerid], 1);
 	PlayerTextDrawColor(playerid, svPanneau[playerid], 690964479);
 	PlayerTextDrawSetShadow(playerid, svPanneau[playerid], 0);
@@ -280,7 +309,7 @@ stock SacV_Creer(playerid)
 	PlayerTextDrawFont(playerid, svPanneau[playerid], 4);
 	PlayerTextDrawSetProportional(playerid, svPanneau[playerid], 1);
 
-	new libelles[SV_BOUTONS][12] = { "Details", "Utiliser", "Donner", "Jeter", "Deplacer", "Page", "Fermer" };
+	new libelles[SV_BOUTONS][12] = { "Details", "Utiliser", "Donner", "Jeter", "Deplacer", "Sac", "Page", "Fermer" };
 	for(new b = 0; b < SV_BOUTONS; b++)
 	{
 		y = 174.0 + (float(b) * 21.0);
@@ -512,9 +541,105 @@ stock SacV_DemanderJeter(playerid)
 	new slot = SacV_SlotSel(playerid);
 	if(slot == -1) return SacV_Msg(playerid, "{FF8888}Clique d'abord un objet.");
 	new body[190];
-	format(body, sizeof(body), "{FFFFFF}Combien de {FFFF00}%s{FFFFFF} veux-tu jeter ?\n{AAAAAA}Tu en as %d. Ce qui est jete est perdu.",
+	format(body, sizeof(body), "{FFFFFF}Combien de {FFFF00}%s{FFFFFF} veux-tu jeter ?\n{AAAAAA}Tu en as %d. Ce qui est jete tombe au sol : n'importe qui peut le ramasser avec /sac ramasser.",
 		GetItemName(PlayerInfo[playerid][pInvModel][slot]), PlayerInfo[playerid][pInvQuant][slot]);
 	return ShowPlayerDialog(playerid, DIALOG_SV_JETER, DIALOG_STYLE_INPUT, "Jeter un objet", body, "Jeter", "Annuler");
+}
+
+// --- objets deposes/ramasses au sol ---
+stock SacV_DropSlotLibre()
+{
+	for(new i = 0; i < SV_DROP_MAX; i++) if(!svDropUtilise[i]) return i;
+	return -1;
+}
+
+// Fait vraiment tomber l'objet au sol (visuel + label), plutot que de le
+// detruire : n'importe qui, y compris le joueur lui-meme, peut le ramasser
+// ensuite avec /sac ramasser.
+stock SacV_DeposerAuSol(playerid, modelid, qte)
+{
+	new i = SacV_DropSlotLibre();
+	if(i == -1)
+	{
+		SacV_Msg(playerid, "{FF8888}Trop d'objets deja au sol sur le serveur, impossible d'en jeter un de plus pour l'instant.");
+		return 0;
+	}
+
+	new Float:x, Float:y, Float:z;
+	GetPlayerPos(playerid, x, y, z);
+
+	svDropUtilise[i] = 1;
+	svDropModel[i] = modelid;
+	svDropQuant[i] = qte;
+	svDropX[i] = x;
+	svDropY[i] = y;
+	svDropZ[i] = z;
+	svDropVW[i] = GetPlayerVirtualWorld(playerid);
+	svDropInt[i] = GetPlayerInterior(playerid);
+
+	new visuel = SacV_ModeleAffiche(modelid);
+	if(visuel == 0) visuel = 1211;   // modele generique de secours, jamais cense arriver
+	svDropObjet[i] = CreateDynamicObject(visuel, x, y, z - 0.9, 0.0, 0.0, 0.0, svDropVW[i], svDropInt[i], -1, STREAM_DISTANCE);
+
+	new svLibelle[80];
+	format(svLibelle, sizeof(svLibelle), "{FFFF00}%s x%d\n{AAAAAA}/sac ramasser", GetItemName(modelid), qte);
+	svDropLabel[i] = CreateDynamic3DTextLabel(svLibelle, 0xFFFF00F6, x, y, z + 0.3, LABEL_STREAM_DISTANCE, INVALID_PLAYER_ID, INVALID_VEHICLE_ID, 0, svDropVW[i], svDropInt[i], -1, LABEL_STREAM_DISTANCE);
+	return 1;
+}
+
+stock SacV_LibererDrop(i)
+{
+	if(IsValidDynamicObject(svDropObjet[i])) DestroyDynamicObject(svDropObjet[i]);
+	if(IsValidDynamic3DTextLabel(svDropLabel[i])) DestroyDynamic3DTextLabel(svDropLabel[i]);
+	svDropUtilise[i] = 0;
+	return 1;
+}
+
+// /sac ramasser : prend l'objet au sol le plus proche, s'il y a la place.
+stock SacV_Ramasser(playerid)
+{
+	new Float:d, Float:meilleure = SV_DROP_DIST + 1.0, meilleurI = -1;
+	new vw = GetPlayerVirtualWorld(playerid), itr = GetPlayerInterior(playerid);
+
+	for(new i = 0; i < SV_DROP_MAX; i++)
+	{
+		if(!svDropUtilise[i]) continue;
+		if(svDropVW[i] != vw || svDropInt[i] != itr) continue;
+		d = GetPlayerDistanceFromPoint(playerid, svDropX[i], svDropY[i], svDropZ[i]);
+		if(d > SV_DROP_DIST || d >= meilleure) continue;
+		meilleure = d; meilleurI = i;
+	}
+
+	if(meilleurI == -1)
+		return SacV_Msg(playerid, "{FF8888}Rien a ramasser a moins de 2.5 metres.");
+	if(PlayerInfo[playerid][pBag] == 0)
+		return SacV_Msg(playerid, "{FF8888}Tu n'as pas de sac pour ramasser quoi que ce soit.");
+	if(!SacV_APlace(playerid, svDropModel[meilleurI]))
+		return SacV_Msg(playerid, "{FF8888}Ton sac est plein.");
+
+	new modelid = svDropModel[meilleurI], qte = svDropQuant[meilleurI];
+	inventory_UpdateItem(playerid, modelid, qte);
+	SacV_LibererDrop(meilleurI);
+
+	new s[144];
+	format(s, sizeof(s), "{00FF00}Ramasse : %d %s.", qte, GetItemName(modelid));
+	SacV_Msg(playerid, s);
+	if(svOuvert[playerid] == 1) SacV_Remplir(playerid);
+	return 1;
+}
+
+// Bouton "Sac" : pose ou reprend le sac ENTIER, en rappelant les commandes
+// existantes /sac poser et /sac prendre (deja fonctionnelles) plutot que de
+// dupliquer leur logique.
+stock SacV_ToggleSac(playerid)
+{
+	if(bag[playerid][statut] == 1)
+	{
+		SacV_Fermer(playerid);
+		return CallLocalFunction("OnPlayerCommandText", "is", playerid, "/sac prendre");
+	}
+	SacV_Fermer(playerid);
+	return CallLocalFunction("OnPlayerCommandText", "is", playerid, "/sac poser");
 }
 
 stock SacV_DemanderDonner(playerid)
@@ -578,7 +703,10 @@ stock SacV_OnDialog(playerid, dialogid, response, const inputtext[])
 	if(dialogid == DIALOG_SV_JETER)
 	{
 		inventory_UpdateItem(playerid, modelid, -qte);
-		format(s, sizeof(s), "{FFFF00}Jete : %d %s.", qte, GetItemName(modelid));
+		if(SacV_DeposerAuSol(playerid, modelid, qte))
+			format(s, sizeof(s), "{FFFF00}Jete au sol : %d %s. (/sac ramasser pour le reprendre)", qte, GetItemName(modelid));
+		else
+			format(s, sizeof(s), "{FFFF00}Jete : %d %s.", qte, GetItemName(modelid));
 		SacV_Msg(playerid, s);
 	}
 	else
@@ -662,6 +790,7 @@ stock SacV_OnClick(playerid, PlayerText:playertextid)
 			case SV_BTN_DONNER:   SacV_DemanderDonner(playerid);
 			case SV_BTN_JETER:    SacV_DemanderJeter(playerid);
 			case SV_BTN_DEPLACER: SacV_Deplacer(playerid);
+			case SV_BTN_SAC:      SacV_ToggleSac(playerid);
 			case SV_BTN_PAGE:
 			{
 				svPage[playerid]++;

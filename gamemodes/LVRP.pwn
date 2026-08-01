@@ -13014,7 +13014,7 @@ stock job_UpdateTexts(playerid)
 
 // [FIX ESSENCE] Reparation UNIQUE des reservoirs vides par l'ancien bug.
 // La consommation tournait aussi pour les voitures garees moteur allume, et
-// Gas est sauvegarde en base : les vehicules vidés avant le correctif sont
+// Gas est sauvegarde en base : les vehicules vidï¿½s avant le correctif sont
 // donc restes a 0 en DB. Le correctif arrete l'hemorragie mais ne les remplit
 // pas. On les refait une fois, puis on pose un marqueur pour ne jamais
 // recommencer (sinon vider son reservoir + attendre un restart = plein gratuit).
@@ -55047,7 +55047,7 @@ public OnPlayerCommandText(playerid, cmdtext[])
 		{
 			// [SAC VISUEL] /sac sans argument ouvre la grille d'images. Les
 			// sous-commandes existantes ne changent pas.
-			msg_Client(playerid, COLOR_USAGE, "{FFFFB2} Aussi : /sac voir - arme - poser - prendre - afficher");
+			msg_Client(playerid, COLOR_USAGE, "{FFFFB2} Aussi : /sac voir - arme - poser - prendre - ramasser - afficher");
 			return SacV_Ouvrir(playerid);
 		}
 		if(strcmp(tmp,"voir",true) == 0)
@@ -55157,10 +55157,16 @@ public OnPlayerCommandText(playerid, cmdtext[])
 			bag_Load(playerid);
 			msg_Client(playerid,COLOR_STATS,"{969696} Sac {FFFFFF} Vous avez ramass votre sac.");
 		}
+		else if(strcmp(tmp,"ramasser",true) == 0)
+		{
+			// [SAC VISUEL] Reprend un objet jete au sol individuellement depuis
+			// la grille (bouton Jeter) : voir SacV_Ramasser.
+			SacV_Ramasser(playerid);
+		}
 		else
 		{
 			msg_Client(playerid, COLOR_USAGE, "{A98500} Usage {FFFFB2} /sac <nom>");
-			return msg_Client(playerid, COLOR_USAGE, "{FFFFB2} voir - arme - poser - prendre");
+			return msg_Client(playerid, COLOR_USAGE, "{FFFFB2} voir - arme - poser - prendre - ramasser");
 		}
     }
 	else if(strcmp(cmd, "/ceinture", true) == 0)
