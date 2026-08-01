@@ -24181,6 +24181,7 @@ public OnPlayerDisconnect(playerid, reason)
     Sp2_OnDisconnect(playerid); // [SPEEDO2] detruit les textdraws du tableau de bord
     Bsk_OnDisconnect(playerid); // [BASKET] rend le ballon qu'il tenait
     SacV_OnDisconnect(playerid); // [SAC VISUEL] detruit les textdraws de la grille
+    Raccourcis_OnDisconnect(playerid); // [RACCOURCIS] annule un maintien en cours
     TopJour_OnDisconnect(playerid); // [TOP DU JOUR] detruit le panneau
     Annonce_OnDisconnect(playerid); // [ANNONCE] detruit le bandeau
     Cv_OnDisconnect(playerid); // [CONVOI] retire de l'escorte / du braquage
@@ -47296,6 +47297,11 @@ public OnPlayerKeyStateChange(playerid, newkeys, oldkeys)
 
     // [VIBE PHONE P1] Deverrouillage par ENTREE depuis lockscreen
     if(phone_OnKey(playerid, newkeys)) return 1;
+
+    // [RACCOURCIS] Maintenir "regarder en arriere" a pied ouvre le menu
+    // /raccourcis. Ne retourne jamais 1 : le comportement natif de la
+    // touche (gere cote client) n'est jamais bloque.
+    Raccourcis_OnKeyStateChange(playerid, newkeys, oldkeys);
 
     // [MINIJEU] TIR / SPRINT sont captes tant qu'un minijeu est affiche,
     // sinon le joueur tirerait en essayant de valider sa manche.
