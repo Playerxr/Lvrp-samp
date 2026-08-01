@@ -1332,9 +1332,16 @@ new RunStyle[MAX_PLAYERS];
 
 // Zone Anti DM
 new Text:zone_Text;
-new Text:tdLogoAFRP;
-new Text:tdLogoAFRPGlow; // [LOGO COOL] couche d'ombre/glow derriere le texte principal
 new Text:tdLogoBar;
+// [LOGO] Monogramme "AFRP" en haut au centre, adapte du logo fourni par
+// l'utilisateur (fichier "NICK MIRAGE CITY.txt" du pack utilitaire) : 4
+// etincelles LD_BEAT:chit decoratives, 2 grandes lettres en monogramme, le
+// nom complet en dessous. Remplace l'ancien texte "AFRP" simple en haut a
+// gauche.
+new Text:tdLogoDeco[4];
+new Text:tdLogoLettreA;
+new Text:tdLogoLettreF;
+new Text:tdLogoNom;
 
 
 
@@ -25741,8 +25748,10 @@ public OnPlayerSpawn(playerid)
 		return 1;
 	}
 	TextDrawShowForPlayer(playerid, tdLogoBar);
-	TextDrawShowForPlayer(playerid, tdLogoAFRPGlow); // [LOGO COOL] glow derriere
-	TextDrawShowForPlayer(playerid, tdLogoAFRP);     // texte principal devant
+	for(new dLog = 0; dLog < 4; dLog++) TextDrawShowForPlayer(playerid, tdLogoDeco[dLog]);
+	TextDrawShowForPlayer(playerid, tdLogoLettreA);
+	TextDrawShowForPlayer(playerid, tdLogoLettreF);
+	TextDrawShowForPlayer(playerid, tdLogoNom);
 
 	if(IsPlayerNPC(playerid))
 	{
@@ -29864,26 +29873,60 @@ public OnGameModeInit()
 	TextDrawUseBox(tdLogoBar, 1);
 	TextDrawBoxColor(tdLogoBar, 0x00000088);
 	TextDrawTextSize(tdLogoBar, 640.0, 0.0);
-	// [LOGO COOL] Couche glow : meme texte, legerement decale, couleur sombre,
-	// plus epais (letterY plus grand) -> simule un effet relief/neon en dessous.
-	tdLogoAFRPGlow = TextDrawCreate(6.3, 4.3, "AFRP");
-	TextDrawAlignment(tdLogoAFRPGlow, 1);
-	TextDrawBackgroundColor(tdLogoAFRPGlow, 0x00000000);
-	TextDrawFont(tdLogoAFRPGlow, 3);
-	TextDrawLetterSize(tdLogoAFRPGlow, 0.52, 1.95);
-	TextDrawColor(tdLogoAFRPGlow, 0x804000FF);
-	TextDrawSetOutline(tdLogoAFRPGlow, 0);
-	TextDrawSetShadow(tdLogoAFRPGlow, 0);
+	// [LOGO] Monogramme adapte du fichier "NICK MIRAGE CITY.txt" fourni par
+	// l'utilisateur : meme mise en forme (4 etincelles + 2 grandes lettres +
+	// nom en dessous), recolore aux couleurs AFRP (ambre/or) au lieu du
+	// rose/blanc d'origine, et le nom complet "AFRP" remplace les 2 mots
+	// separes ("Mirage" / "City") de la source.
+	new dLogY, dLogX;
+	new dLogPosX[4] = { 383, 387, 436, 428 };
+	new dLogPosY[4] = { 20, 23, 20, 23 };
+	new Float:dLogSize[4][2] = { {6.0, 6.0}, {10.0, 11.0}, {6.0, 6.0}, {10.0, 11.0} };
+	for(new dLog = 0; dLog < 4; dLog++)
+	{
+		dLogX = dLogPosX[dLog]; dLogY = dLogPosY[dLog];
+		tdLogoDeco[dLog] = TextDrawCreate(float(dLogX), float(dLogY), "LD_BEAT:chit");
+		TextDrawTextSize(tdLogoDeco[dLog], dLogSize[dLog][0], dLogSize[dLog][1]);
+		TextDrawAlignment(tdLogoDeco[dLog], 1);
+		TextDrawColor(tdLogoDeco[dLog], 0xFFB300FF);
+		TextDrawSetShadow(tdLogoDeco[dLog], 0);
+		TextDrawSetOutline(tdLogoDeco[dLog], 0);
+		TextDrawBackgroundColor(tdLogoDeco[dLog], 255);
+		TextDrawFont(tdLogoDeco[dLog], 4);
+		TextDrawSetProportional(tdLogoDeco[dLog], 1);
+	}
 
-	tdLogoAFRP = TextDrawCreate(5.0, 3.0, "AFRP");
-	TextDrawAlignment(tdLogoAFRP, 1);
-	TextDrawBackgroundColor(tdLogoAFRP, 0x00000099);
-	TextDrawFont(tdLogoAFRP, 3);
-	// [LOGO COOL] Plus grand + outline + shadow pour un rendu "embossé/neon"
-	TextDrawLetterSize(tdLogoAFRP, 0.52, 1.95);
-	TextDrawColor(tdLogoAFRP, 0xFFB300FF);
-	TextDrawSetOutline(tdLogoAFRP, 1);
-	TextDrawSetShadow(tdLogoAFRP, 1);
+	tdLogoLettreA = TextDrawCreate(395.0, 21.0, "A");
+	TextDrawLetterSize(tdLogoLettreA, 0.749, 4.300);
+	TextDrawAlignment(tdLogoLettreA, 1);
+	TextDrawColor(tdLogoLettreA, 0xFFB300FF);
+	TextDrawSetShadow(tdLogoLettreA, 1);
+	TextDrawSetOutline(tdLogoLettreA, 0);
+	TextDrawBackgroundColor(tdLogoLettreA, 150);
+	TextDrawFont(tdLogoLettreA, 2);
+	TextDrawSetProportional(tdLogoLettreA, 1);
+
+	tdLogoLettreF = TextDrawCreate(412.0, 21.0, "F");
+	TextDrawLetterSize(tdLogoLettreF, 0.749, 4.300);
+	TextDrawAlignment(tdLogoLettreF, 1);
+	TextDrawColor(tdLogoLettreF, -1);
+	TextDrawSetShadow(tdLogoLettreF, 1);
+	TextDrawSetOutline(tdLogoLettreF, 0);
+	TextDrawBackgroundColor(tdLogoLettreF, 150);
+	TextDrawFont(tdLogoLettreF, 2);
+	TextDrawSetProportional(tdLogoLettreF, 1);
+
+	// Un seul mot centre "AFRP" a la place des 2 mots separes de la source
+	// ("Mirage" / "City") : l'acronyme ne se coupe pas naturellement en deux.
+	tdLogoNom = TextDrawCreate(417.0, 56.0, "AFRP");
+	TextDrawLetterSize(tdLogoNom, 0.300, 1.500);
+	TextDrawAlignment(tdLogoNom, 2);
+	TextDrawColor(tdLogoNom, 0xFFB300FF);
+	TextDrawSetShadow(tdLogoNom, 0);
+	TextDrawSetOutline(tdLogoNom, 0);
+	TextDrawBackgroundColor(tdLogoNom, 150);
+	TextDrawFont(tdLogoNom, 1);
+	TextDrawSetProportional(tdLogoNom, 1);
 	// ===== FIN LOGO =====
 	mysql_pquery(MYSQL,"SELECT * FROM lvrp_server_bizz ORDER BY id ASC","bizz_Load");
 	mysql_pquery(MYSQL,"SELECT * FROM lvrp_server_uniquebizz ORDER BY id ASC","uniquebizz_Load");
