@@ -330,6 +330,8 @@ stock phone_Open(playerid)
     // [BUDGET TEXTDRAWS] La grille du sac et le smartphone ne tiennent pas
     // ensemble dans les 256 textdraws d'un client : on ferme la grille.
     SacV_Fermer(playerid);
+    // [TABLECRAFT] meme raison de budget avec le panneau de craft.
+    TC_Fermer(playerid);
     if(hasPhone[playerid] != 1)
     {
         SendClientMessage(playerid, 0xFF4444FF, "{FF4444}[Telephone]{FFFFFF} Vous n'avez pas de telephone. Achetez-en un au 24/7 ou via /market.");

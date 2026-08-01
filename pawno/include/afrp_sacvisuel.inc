@@ -426,6 +426,9 @@ stock SacV_Ouvrir(playerid)
 	if(phone_State[playerid] != PHONE_STATE_CLOSED) phone_Close(playerid);
 	if(usingPhone[playerid] == 1)
 		return SacV_Msg(playerid, "{FF8888}Ferme d'abord ton telephone.");
+	// [TABLECRAFT] meme raison de budget : le panneau de craft partage lui
+	// aussi l'ecran avec la grille du sac.
+	TC_Fermer(playerid);
 
 	if(svOuvert[playerid] == 1) SacV_Fermer(playerid);
 

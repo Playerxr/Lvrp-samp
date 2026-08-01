@@ -5332,6 +5332,7 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 #include <afrp_armeniveau>
 #include <afrp_portarme>
 #include <afrp_gangcreation>
+#include <afrp_tablecraft>
 
 // [NGG COMPAT] DESACTIVE - suspect du hang pawncc (test bisect)
 //#include <ngg_compat>
@@ -23555,6 +23556,7 @@ public OnPlayerConnect(playerid)
     Sp2_OnConnect(playerid); // [SPEEDO2] sinon le slot garde la preference du precedent occupant
     Bsk_OnConnect(playerid); // [BASKET] libere un ballon reste au nom du precedent occupant
     SacV_OnConnect(playerid); // [SAC VISUEL] sinon le slot croit sa grille encore ouverte
+    TC_OnConnect(playerid); // [TABLECRAFT] sinon le slot croit son panneau encore ouvert
     TelApp_OnConnect(playerid); // [TELAPPS] reset du numero en cours de saisie
     ArmeePaie_Time[playerid] = 0; // [ARMEE] sinon le slot garde le compteur du precedent occupant
     Ent_OnPlayerConnect(playerid); // [ENTREPRISE] reset compteur minutes accumulees
@@ -24183,6 +24185,7 @@ public OnPlayerDisconnect(playerid, reason)
     Sp2_OnDisconnect(playerid); // [SPEEDO2] detruit les textdraws du tableau de bord
     Bsk_OnDisconnect(playerid); // [BASKET] rend le ballon qu'il tenait
     SacV_OnDisconnect(playerid); // [SAC VISUEL] detruit les textdraws de la grille
+    TC_OnDisconnect(playerid); // [TABLECRAFT] detruit les textdraws du panneau de craft
     Raccourcis_OnDisconnect(playerid); // [RACCOURCIS] annule un maintien en cours
     RadioWidget_OnDisconnect(playerid); // [RADIO WIDGET] evite un affichage fantome a la reconnexion
     TopJour_OnDisconnect(playerid); // [TOP DU JOUR] detruit le panneau
@@ -48706,6 +48709,8 @@ public OnPlayerClickPlayerTextDraw(playerid, PlayerText:playertextid)
     // peuvent pas etre ouverts en meme temps, et ses clics ne concernent
     // aucun autre systeme.
     if(SacV_OnClick(playerid, playertextid)) return 1;
+    // [TABLECRAFT] etabli de craft d'armes (/craft), meme exclusivite que le sac.
+    if(TC_OnClick(playerid, playertextid)) return 1;
     // [MOBILE APPS] Intercepte clics sur les 3 nouvelles tiles (GPS/M�t�o/News) AVANT mobile_system
     if(usingPhone[playerid] == 1 && MobileApps_OnClick(playerid, playertextid)) return 1;
     // [MOBILE INLINE] Dispatch clics vers mobile_system (apps Notes/SMS/Banque/Appels/Twitter)
@@ -48767,6 +48772,8 @@ public OnPlayerClickTextDraw(playerid, Text:clickedid)
 	new string[256];
 	// [SAC VISUEL] Echap pendant la selection : sinon la grille reste a l'ecran.
 	if(SacV_OnClickHorsZone(playerid, clickedid)) return 1;
+	// [TABLECRAFT] meme mecanisme pour le panneau de craft.
+	if(TC_OnClickHorsZone(playerid, clickedid)) return 1;
 	// Fermer le telephone AFRP si clic hors zone
 	if(clickedid == Text:INVALID_TEXT_DRAW && usingPhone[playerid] == 1)
 	{
@@ -53397,6 +53404,11 @@ public OnPlayerCommandText(playerid, cmdtext[])
 	else if(strcmp(cmd, "/raccourcis", true) == 0 || strcmp(cmd, "/rapide", true) == 0)
 	{
 	    return Raccourcis_Ouvrir(playerid);
+	}
+	// [TABLECRAFT] etabli de craft d'armes, reserve aux gangs/mafias
+	else if(strcmp(cmd, "/craft", true) == 0)
+	{
+	    return TC_Cmd(playerid);
 	}
 	// [PORTES] relier un mapping au jeu : franchir une porte posee
 	else if(strcmp(cmd, "/traverser", true) == 0)
