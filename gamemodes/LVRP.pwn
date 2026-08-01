@@ -4878,10 +4878,12 @@ public chargement(playerid)
 // ============================================================================
 
 
-// [ARMEE] Solde de l'etat-major : montant, periode, et QUELLE faction.
+// [ARMEE] Solde de la Marine : montant, periode, et QUELLE faction.
 // ARMEE_PAIE_MEMBER = 13 : la Marine uniquement. L'Armee de Terre (11) et
 // l'Armee de l'Air (12) ne touchent rien. Changer ce seul nombre suffit a
 // deplacer la solde sur une autre faction.
+// Payee a TOUS les rangs (pas seulement le rang 6) depuis la demande du
+// proprietaire du serveur.
 #define ARMEE_PAIE_MEMBER  13
 #define ARMEE_PAIE_RANG6   300000
 #define ARMEE_PAIE_MINUTES 30
@@ -4916,14 +4918,13 @@ public PaieAuto_Tick()
         if(!IsPlayerConnected(i) || IsPlayerNPC(i)) continue;
         if(gPlayerLogged[i] != 1) continue;
 
-        // [ARMEE] Solde du rang 6 de la MARINE uniquement : 300.000$ / 30 min.
-        // Placee AVANT le "continue" des jobs : un amiral n'a pas de job civil,
-        // sinon il ne serait jamais paye.
-        // Le rang est teste avec == et non >= : seul le rang 6 est concerne.
-        if(PlayerInfo[i][pMember] == ARMEE_PAIE_MEMBER && PlayerInfo[i][pRank] == 6)
+        // [ARMEE] Solde de TOUS les rangs de la MARINE : 300.000$ / 30 min.
+        // Placee AVANT le "continue" des jobs : un militaire n'a pas de job
+        // civil, sinon il ne serait jamais paye.
+        if(PlayerInfo[i][pMember] == ARMEE_PAIE_MEMBER)
         {
             // Seul le temps passe EN SERVICE compte : sans cette condition, un
-            // amiral touchait 300.000$ en restant gare chez lui.
+            // militaire touchait 300.000$ en restant gare chez lui.
             // Sortir du service met le compteur en PAUSE au lieu de le remettre
             // a zero : le grade se perd, pas les minutes deja servies. Un
             // aller-retour hors service ne fait donc ni gagner ni perdre de
@@ -4934,14 +4935,14 @@ public PaieAuto_Tick()
                 if(ArmeePaie_Time[i] >= ARMEE_PAIE_MINUTES)
                 {
                     ArmeePaie_Time[i] = 0;
-                    SafeGivePlayerMoney(i, ARMEE_PAIE_RANG6, "Solde etat-major marine");
+                    SafeGivePlayerMoney(i, ARMEE_PAIE_RANG6, "Solde marine");
                     new astring[200];
-                    format(astring, sizeof(astring), "{00CED1} Marine {FFFFFF} Solde d'etat-major : ${FFFF00}%d{FFFFFF} (%d minutes de service).", ARMEE_PAIE_RANG6, ARMEE_PAIE_MINUTES);
+                    format(astring, sizeof(astring), "{00CED1} Marine {FFFFFF} Solde : ${FFFF00}%d{FFFFFF} (%d minutes de service).", ARMEE_PAIE_RANG6, ARMEE_PAIE_MINUTES);
                     msg_Client(i, COLOR_WHITE, astring);
                 }
             }
         }
-        // Quitter la Marine ou perdre le rang 6 remet bien le compteur a zero.
+        // Quitter la Marine remet bien le compteur a zero.
         else ArmeePaie_Time[i] = 0;
 
         new currentJob = PlayerInfo[i][pJob];
