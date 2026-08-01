@@ -5311,6 +5311,8 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 #include <afrp_telapps>
 // [SAC VISUEL] le sac en grille d'images au lieu d'une liste de texte
 #include <afrp_sacvisuel>
+// [RACCOURCIS] menu qui regroupe /sac, /job, /emotes, /maison, /vehicule
+#include <afrp_raccourcis>
 // [BASKET] dribble, paniers et points (remet en marche le basket existant)
 #include <afrp_basket>
 // [SPEEDO2] tableau de bord moderne (habillage alternatif du compteur)
@@ -30664,6 +30666,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     if(SacV_OnDialog(playerid, dialogid, response, inputtext)) return 1;
     if(Portes_OnDialog(playerid, dialogid, response, listitem)) return 1;
     if(Residence_OnDialog(playerid, dialogid, response, listitem, inputtext)) return 1;
+    if(Raccourcis_OnDialog(playerid, dialogid, response, listitem)) return 1;
     if(TelApp_OnDialog(playerid, dialogid, response, listitem, inputtext)) return 1;
 
     // [MOBILE INLINE] Dispatch vers mobile_system pour ses dialogs (MARKET, SETTINGS)
@@ -53374,6 +53377,11 @@ public OnPlayerCommandText(playerid, cmdtext[])
 	{
 	    return Residence_Cmd(playerid, cmdtext);
 	}
+	// [RACCOURCIS] menu qui regroupe /sac, /job, /emotes, /maison, /vehicule
+	else if(strcmp(cmd, "/raccourcis", true) == 0 || strcmp(cmd, "/rapide", true) == 0)
+	{
+	    return Raccourcis_Ouvrir(playerid);
+	}
 	// [PORTES] relier un mapping au jeu : franchir une porte posee
 	else if(strcmp(cmd, "/traverser", true) == 0)
 	{
@@ -67047,8 +67055,24 @@ public OnPlayerCommandText(playerid, cmdtext[])
 						{SetPlayerMarkerForPlayer(playerid, i, COLOR_PINK);}
 				}
 			}
+			// [FIX MESSAGE] Le message "vous devez etre dans un vehicule" etait
+			// affiche pour TOUS les autres jobs sans distinction, y compris ceux
+			// (13 a 18, 20, 21) qui n'ont tout simplement aucune mission codee -
+			// un joueur avec ce metier ne pouvait jamais savoir pourquoi rien ne
+			// se passait. On distingue maintenant les deux cas.
 			else
-			    {return msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous devez tre dans un vhicule pour travailler.");}
+			{
+				switch(PlayerInfo[playerid][pJob])
+				{
+					// Ces metiers demarrent en montant dans leur vehicule dedie
+					// (message affiche automatiquement), pas via /job debut.
+					case 1, 2, 4, 5, 6, 7, 8, 10, 12, 19:
+						return msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Montez dans le vehicule de votre metier pour commencer, pas besoin de /job debut.");
+					// Aucune mission codee pour ces metiers pour l'instant.
+					default:
+						return msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Ce metier n'a pas encore de mission jouable, contactez l'administration.");
+				}
+			}
 		}
 		else if(strcmp(tmp,"localiser", true) == 0)
 		{
