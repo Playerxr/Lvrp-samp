@@ -12720,13 +12720,19 @@ stock armee_Save(id)
     mysql_escape_string(ArmeeInfo[id][ar_rank4], er4, sizeof(er4), MYSQL);
     mysql_escape_string(ArmeeInfo[id][ar_rank5], er5, sizeof(er5), MYSQL);
     mysql_escape_string(ArmeeInfo[id][ar_rank6], er6, sizeof(er6), MYSQL);
-    format(sql,sizeof(sql),"UPDATE lvrp_factions_armee SET rank1='%s',rank2='%s',rank3='%s',rank4='%s',rank5='%s',rank6='%s',skin1=%d,skin2=%d,skin3=%d,skin4=%d,skin5=%d,skin6=%d,Interior=%d,Spawn_x=%f,Spawn_y=%f,Spawn_z=%f,Spawn_a=%f,Exit_x=%f,Exit_y=%f,Exit_z=%f,Exit_a=%f WHERE id=%d",
+    format(sql,sizeof(sql),"UPDATE lvrp_factions_armee SET rank1='%s',rank2='%s',rank3='%s',rank4='%s',rank5='%s',rank6='%s',skin1=%d,skin2=%d,skin3=%d,skin4=%d,skin5=%d,skin6=%d,Interior=%d,Spawn_x=%f,Spawn_y=%f,Spawn_z=%f,Spawn_a=%f,Entrance_x=%f,Entrance_y=%f,Entrance_z=%f,Entrance_a=%f,Exit_x=%f,Exit_y=%f,Exit_z=%f,Exit_a=%f WHERE id=%d",
         er1, er2, er3, er4, er5, er6,
         ArmeeInfo[id][ar_skin][0],ArmeeInfo[id][ar_skin][1],ArmeeInfo[id][ar_skin][2],
         ArmeeInfo[id][ar_skin][3],ArmeeInfo[id][ar_skin][4],ArmeeInfo[id][ar_skin][5],
         ArmeeInfo[id][ar_Interior],
         ArmeeInfo[id][ar_Spawn][0],ArmeeInfo[id][ar_Spawn][1],
         ArmeeInfo[id][ar_Spawn][2],ArmeeInfo[id][ar_Spawn][3],
+        // [FIX QG ARMEE] Entrance_* n'etait PAS sauvegarde : les colonnes
+        // existaient et armee_Load les lisait, mais rien ne les ecrivait
+        // jamais. L'entree du QG restait donc a 0,0,0 pour toujours - d'ou
+        // l'absence d'icone et le "QG non configure" de /armee qg.
+        ArmeeInfo[id][ar_Entrance][0],ArmeeInfo[id][ar_Entrance][1],
+        ArmeeInfo[id][ar_Entrance][2],ArmeeInfo[id][ar_Entrance][3],
         // [ARMEE BASE] ar_Exit doit suivre l'interieur, sinon apres un
         // redemarrage /armee qg ressortirait aux coordonnees de l'ANCIENNE
         // caserne et les soldats se retrouveraient hors du decor.
@@ -28762,6 +28768,12 @@ public armee_Load()
         cache_get_value_name_float(i,"Exit_z", ArmeeInfo[i][ar_Exit][2]);
         cache_get_value_name_float(i,"Exit_a", ArmeeInfo[i][ar_Exit][3]);
     }
+    // [FIX QG ARMEE] armee_Update() cree le pickup + le panneau flottant de
+    // l'entree du QG, exactement comme house_UpdateInfos() le fait pour les
+    // maisons. La fonction existait deja, entierement ecrite, mais n'etait
+    // appelee de NULLE PART : aucune icone n'apparaissait donc jamais devant
+    // une caserne, et rien n'indiquait ou taper /armee qg.
+    for(new i=0; i<3; i++) armee_Update(i);
     printf("    .. Arm\xe9e charg\xe9e (Terre/Air/Marine).");
     return 1;
 }
@@ -68902,12 +68914,34 @@ public OnPlayerCommandText(playerid, cmdtext[])
 	        if(PlayerInfo[playerid][pRank] >= 5)
 	            msg_Client(playerid, COLOR_USAGE, "{A98500}Rang 5+{FFFFB2}: inviter - virer - grade - vrang - gestion - retirer");
 	        if(PlayerInfo[playerid][pRank] >= 6)
-	            msg_Client(playerid, COLOR_USAGE, "{A98500}Rang 6{FFFFB2}: base (choisir la caserne)");
+	            msg_Client(playerid, COLOR_USAGE, "{A98500}Rang 6{FFFFB2}: base (choisir la caserne) - entree (poser l'entree)");
 	        return 1;
 	    }
 	    // [ARMEE BASE] Choix de l'interieur du QG (rang 6 ou admin)
 	    if(strcmp(tmp,"base",true) == 0 || strcmp(tmp,"interieur",true) == 0)
 	        {return ArmBase_Cmd(playerid);}
+	    // [FIX QG ARMEE] Pose l'entree du QG la ou se tient le chef. Sans cette
+	    // commande, ar_Entrance ne pouvait etre rempli que directement en base
+	    // de donnees : il restait a 0,0,0, donc aucune icone et /armee qg
+	    // repondait toujours "QG non configure".
+	    if(strcmp(tmp,"entree",true) == 0)
+	    {
+	        if(PlayerInfo[playerid][pRank] < 6 && PlayerInfo[playerid][pAdmin] < 4)
+	            {return msg_Client(playerid,COLOR_INFO,"{CF9756}\xbb Info \xab{FFFFFF} Rang 6 (chef d'etat-major) ou admin 4 requis.");}
+	        if(GetPlayerInterior(playerid) != 0)
+	            {return msg_Client(playerid,COLOR_INFO,"{CF9756}\xbb Info \xab{FFFFFF} L'entree se pose DEHORS : c'est le point ou l'on entre depuis la rue.");}
+	        new armId = PlayerInfo[playerid][pMember] - 11;
+	        new Float:ex, Float:ey, Float:ez, Float:ea;
+	        GetPlayerPos(playerid, ex, ey, ez);
+	        GetPlayerFacingAngle(playerid, ea);
+	        ArmeeInfo[armId][ar_Entrance][0] = ex;
+	        ArmeeInfo[armId][ar_Entrance][1] = ey;
+	        ArmeeInfo[armId][ar_Entrance][2] = ez;
+	        ArmeeInfo[armId][ar_Entrance][3] = ea;
+	        armee_Save(armId);
+	        armee_Update(armId);   // recree l'icone et le panneau tout de suite
+	        return msg_Client(playerid,COLOR_ARMEE,"{5B7A3A}\xbb Arme \xab{FFFFFF} Entree du QG posee ici. L'icone et le panneau sont en place, tape /armee qg pour entrer.");
+	    }
 	    if(strcmp(tmp,"service",true) == 0 || strcmp(tmp,"duty",true) == 0)
 	    {
 	        if(armee_Duty[playerid] == 0)
