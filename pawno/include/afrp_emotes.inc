@@ -5,13 +5,22 @@
 	NB: "/anim" n'est PAS un alias valide, deja pris par /anim(ateur) (staff).
 	Dialog : 9500 (menu categories) + 9501 (sous-liste)
 
-	~40 anims reparties en 6 categories :
-	- Vie courante (manger, boire, fumer, telephone, etc.)
-	- Posture (s'asseoir, s'allonger, accroupir, etc.)
-	- Salutations (bras leve, poignee, salut militaire, etc.)
-	- Reactions (rire, pleurer, applaudir, etc.)
-	- Combat (provocation, victoire, defaite, etc.)
-	- Stop : annule l'anim en cours
+	~72 anims reparties en 9 categories (Vie courante, Posture, Salutations,
+	Reactions, Combat/Gang, Police RP, Armes RP, Militaire/Protocole, VIP).
+
+	[4e passe de fix] Les 3 tentatives precedentes n'ont jamais ete verifiees
+	contre une preuve concrete que la paire (librairie, nom d'anim) existe
+	vraiment cote client GTA:SA - juste des relectures de code. Cette passe
+	croise CHAQUE entree contre les ~140 autres appels ApplyAnimation deja
+	prouves fonctionnels ailleurs dans LVRP.pwn/les .inc du projet (walk
+	styles, jobs, /parler, etc.) : cf script de cross-reference dans le
+	rapport de session. Toute entree non retrouvee ailleurs dans le
+	codebase a ete remplacee par une paire prouvee, meme si moins "fancy",
+	plutot que laisser une supposition non verifiee en place (ex: la
+	librairie "UZI" n'existe nulle part ailleurs -> "WUZI", "GYM_SHADOWBOX"
+	avec underscore n'existe nulle part -> "GYMshadowbox" sans underscore,
+	preuve directe ligne LVRP.pwn ~54446). Emotes_Play() envoie desormais un
+	message de confirmation apres chaque ApplyAnimation reussi (diagnostic).
 */
 
 #if defined AFRP_EMOTES_INCLUDED
@@ -53,7 +62,7 @@ static const emotes_Posture[][eEmote] = {
 	{"S'allonger (dos)",       "BEACH",    "bather",             4.0, 1, 1, 1, 0, 0},
 	{"S'allonger (ventre)",    "BEACH",    "Lay_Bac_loop",       4.0, 1, 1, 1, 0, 0},
 	{"S'accroupir",            "PED",      "crouch_roll_l",      4.0, 1, 1, 1, 0, 0},
-	{"S'appuyer (mur)",        "GANGS",    "leanIDLE",           4.0, 1, 1, 1, 0, 0},
+	{"S'appuyer (mur)",        "DEALER",   "DEALER_IDLE",        4.0, 1, 1, 1, 0, 0},
 	{"Mains derriere la tete", "PED",      "endchat_03",         4.0, 1, 0, 0, 0, 0},
 	{"Bras croises",           "DEALER",   "DEALER_IDLE_01",     4.0, 1, 0, 0, 0, 0}
 };
@@ -65,7 +74,7 @@ static const emotes_Salutations[][eEmote] = {
 	{"Faire signe (taxi)",     "ON_LOOKERS","wave_loop",         4.0, 1, 0, 0, 0, 0},
 	{"Hochement de tete",      "PED",      "gang_gunstand",      4.0, 0, 0, 0, 0, 2000},
 	{"Salut militaire",        "PED",      "facsurp",            4.0, 0, 0, 0, 0, 2000},
-	{"Hausser les epaules",    "PED",      "Idle_chat",          4.0, 0, 0, 0, 0, 1500},
+	{"Hausser les epaules",    "PED",      "IDLE_chat",          4.0, 0, 0, 0, 0, 1500},
 	{"Pointer du doigt",       "ON_LOOKERS","Point_In",          4.0, 0, 0, 0, 0, 2000}
 };
 
@@ -82,7 +91,7 @@ static const emotes_Reactions[][eEmote] = {
 
 // CATEGORIE 4 : COMBAT/GANG
 static const emotes_Combat[][eEmote] = {
-	{"Provocation gang 1",     "GANGS",    "hndshkfa_swt",       4.0, 0, 0, 0, 0, 2500},
+	{"Provocation gang 1",     "GANGS",    "hndshkfa",           4.0, 0, 0, 0, 0, 2500},
 	{"Provocation gang 2",     "GANGS",    "hndshkda",           4.0, 0, 0, 0, 0, 2500},
 	{"Frapper du pied",        "GHANDS",   "gsign1LH",           4.0, 0, 0, 0, 0, 2000},
 	{"Croiser doigts",         "GHANDS",   "gsign4",             4.0, 0, 0, 0, 0, 2000},
@@ -96,8 +105,8 @@ static const emotes_Police[][eEmote] = {
 	{"Mains en l'air",         "PED",      "handsup",            4.0, 1, 1, 1, 0, 0},
 	{"Reddition (a genoux)",   "PED",      "HANDSCOWER",         4.0, 1, 1, 1, 0, 0},
 	{"Menottage (gestes)",     "PED",      "ARRESTgun",          4.0, 0, 0, 0, 0, 3500},
-	{"Diriger circulation",    "POLICE",   "COPTRAF_STOP",       4.0, 1, 0, 0, 0, 0},
-	{"Surveiller (jumelles)",  "COP_AMBIENT","COPBROWSE_loop",   4.0, 1, 1, 1, 0, 0},
+	{"Diriger circulation",    "ON_LOOKERS","wave_loop",         4.0, 1, 0, 0, 0, 0},
+	{"Observer (regarder)",    "COP_AMBIENT","Coplook_watch",    4.0, 1, 1, 1, 0, 0},
 	{"Inspection (regarde)",   "COP_AMBIENT","Coplook_loop",     4.0, 1, 0, 0, 0, 0},
 	{"Donner ordres",          "ON_LOOKERS","wave_loop",         4.0, 1, 0, 0, 0, 0},
 	{"Tap-frisk (fouille)",    "GANGS",    "Invite_Yes",         4.0, 0, 0, 0, 0, 2500},
@@ -107,14 +116,14 @@ static const emotes_Police[][eEmote] = {
 // CATEGORIE 6 : ARMES RP
 static const emotes_Armes[][eEmote] = {
 	{"Recharger (pistolet)",   "COLT45",   "colt45_reload",      4.0, 0, 0, 0, 0, 1500},
-	{"Recharger (Uzi)",        "UZI",      "UZI_reload",         4.0, 0, 0, 0, 0, 1500},
+	{"Recharger (Uzi)",        "WUZI",     "WUZI_reload",        4.0, 0, 0, 0, 0, 1500},
 	{"Recharger (AK/M4)",      "RIFLE",    "RIFLE_load",         4.0, 0, 0, 0, 0, 1500},
 	{"Recharger (Sniper)",     "RIFLE",    "RIFLE_load",         4.0, 0, 0, 0, 0, 1500},
 	{"Verifier arme",          "PED",      "Idle_Gang1",         4.0, 1, 0, 0, 0, 0},
-	{"Holster (ranger)",       "WEAPONS",  "SHP_1H_RET",         4.0, 0, 0, 0, 0, 2000},
-	{"Sortir arme (lent)",     "SHOP",     "SHP_GUN_AIM",        4.0, 0, 0, 0, 0, 1500},
+	{"Holster (ranger)",       "PED",      "gang_gunstand",      4.0, 0, 0, 0, 0, 2000},
+	{"Sortir arme (lent)",     "SHOP",     "ROB_Shifty",         4.0, 0, 0, 0, 0, 1500},
 	{"Tir en l'air",           "RIFLE",    "RIFLE_fire",         4.0, 0, 0, 0, 0, 1500},
-	{"Lancer (cocktail)",      "GRENADE",  "WEAPON_throw",       4.0, 0, 0, 0, 0, 2200}
+	{"Lancer (cocktail)",      "GRENADE",  "WEAPON_throwu",      4.0, 0, 0, 0, 0, 2200}
 };
 
 // CATEGORIE 7 : MILITAIRE / PROTOCOLE
@@ -124,8 +133,8 @@ static const emotes_Militaire[][eEmote] = {
 	{"Salut militaire",        "PED",      "facsurp",            4.0, 0, 0, 0, 0, 2000},
 	{"Presenter armes",        "RIFLE",    "RIFLE_load",         4.0, 0, 0, 0, 0, 2000},
 	{"Marche militaire",       "PED",      "WALK_armed",         4.0, 1, 0, 0, 0, 0},
-	{"Faire rapport",          "PED",      "Idle_chat",          4.0, 1, 1, 1, 0, 0},
-	{"S'incliner (respect)",   "COP_AMBIENT","Coplook_nod",      4.0, 0, 1, 1, 0, 2500},
+	{"Faire rapport",          "PED",      "IDLE_chat",          4.0, 1, 1, 1, 0, 0},
+	{"S'incliner (respect)",   "GANGS",    "hndshkaa",           4.0, 0, 1, 1, 0, 2500},
 	{"Porter drapeau (lever)", "CARRY",    "liftup",             4.0, 0, 0, 0, 0, 2500},
 	{"Decoration (recevoir)",  "PED",      "endchat_02",         4.0, 0, 0, 0, 0, 2500},
 	{"Tomber au sol (KO)",     "PED",      "FLOOR_hit",          4.0, 0, 1, 1, 0, 3000},
@@ -138,8 +147,8 @@ static const emotes_Vip[][eEmote] = {
 	{"Danse robot",            "DANCING",  "dnce_M_b",           4.0, 1, 1, 1, 0, 0},
 	{"Danse funky",            "DANCING",  "dnce_M_c",           4.0, 1, 1, 1, 0, 0},
 	{"Danse energique",        "DANCING",  "dnce_M_d",           4.0, 1, 1, 1, 0, 0},
-	{"Boxe (sac de frappe)",   "GYMNASIUM","GYM_SHADOWBOX",      4.0, 1, 1, 1, 0, 0},
-	{"Jogging (tapis)",        "GYMNASIUM","GYM_TREAD_JOG",      4.0, 1, 1, 1, 0, 0}
+	{"Boxe (sac de frappe)",   "GYMNASIUM","GYMshadowbox",       4.0, 1, 1, 1, 0, 0},
+	{"Tai-chi (parc)",         "PARK",     "Tai_Chi_Loop",       4.0, 1, 1, 1, 0, 0}
 };
 
 // Header table avec nombre d'emotes par categorie
@@ -329,6 +338,16 @@ stock Emotes_Play(playerid, cat, idx)
 	// probable du "aucune emote ne se joue" - le code appelait bien
 	// ApplyAnimation, mais sans forcesync l'anim ne se voyait jamais.
 	ApplyAnimation(playerid, lib, anim, speed, loop, lockx, locky, freeze, etime, 1);
+	// [DIAGNOSTIC 4e passe] Confirmation systematique que ce code est bien
+	// atteint et que ApplyAnimation a ete appele avec ces lib/anim precises.
+	// Objectif : si le joueur revoit encore un echec apres ce fix, ce message
+	// permet de trancher entre "le code ne s'execute jamais" (message absent)
+	// et "le code s'execute mais l'anim precise ne rend rien cote client"
+	// (message present, mais le perso ne bouge pas) - au lieu de repartir de
+	// zero sur la 5e tentative.
+	new diagMsg[96];
+	format(diagMsg, sizeof(diagMsg), "{00FF00}[Emotes]{FFFFFF} Animation lancee : %s/%s", lib, anim);
+	SendClientMessage(playerid, -1, diagMsg);
 	return 1;
 }
 
