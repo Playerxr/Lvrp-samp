@@ -3187,6 +3187,7 @@ enum e_Player
 	pAccount,       		// Compte en banque du joueur
 	pCheck,                 // A un chquier
 	pCheckNumber,           // Nombre de check restant
+	pLoanAmount,            // [BANQUE] Total du au titre d'un emprunt, 0 = aucun emprunt en cours
 	probbank,       		// Temps avant que le joueur puisse re-braquer la banque
 	pHotel,         		// SI le joueur est  l'hotel
 	pPointPermis,   		// Le nombre de point de permis que dtient le joueur
@@ -5274,6 +5275,8 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 #include <afrp_raccourcis>
 // [RADIO WIDGET] icone affichee pendant qu'on parle en mode radio
 #include <afrp_radiowidget>
+// [BANQUE] panneau visuel bancoverde.pwn + emprunt (remplace le menu liste dialog 86)
+#include <afrp_banque>
 // [RADIO VOICE] vrai canal vocal SampVoice derriere /radio et /local
 #include <afrp_radiovoice>
 // [BASKET] dribble, paniers et points (remet en marche le basket existant)
@@ -10558,6 +10561,7 @@ public OnPlayerLogin(playerid,pass[])
 		    cache_get_value_name_int(0,"Respect", PlayerInfo[playerid][pExp]);
 		    cache_get_value_name_int(0,"Cash", PlayerInfo[playerid][pCash]);
 		    cache_get_value_name_int(0,"Bank", PlayerInfo[playerid][pAccount]);
+		    cache_get_value_name_int(0,"Loan", PlayerInfo[playerid][pLoanAmount]); // [BANQUE]
 		    cache_get_value_name_int(0,"Deaths", PlayerInfo[playerid][pDeaths]);
 
 			SafeResetPlayerMoney(playerid,PlayerInfo[playerid][pCash]);
@@ -19744,9 +19748,10 @@ stock player_CheckInteraction(playerid)
         }
         else if(actor[tmpId][variable] == 5)
         {
-            player_Variable[playerid] = 0;
-	 		format(string,sizeof(string),"Infos sur le compte \nDposer du liquide (MAX:$%d) \nRetirer du liquide (MAX:$%d)\nVirement Bancaire\nDemander un chquier",PlayerInfo[playerid][pCash],PlayerInfo[playerid][pAccount]);
-			ShowPlayerDialog(playerid,86,DIALOG_STYLE_LIST,"{AADD66} Banque {FFFFFF} Oprations disponibles",string,"Valider","Quitter");
+            // [BANQUE] L'ancien menu liste (dialog 86) est remplace par le panneau
+            // visuel bancoverde.pwn. Le handler du dialog 86 reste plus bas dans
+            // OnDialogResponse mais n'est plus jamais atteint depuis ce PNJ.
+            Banque_Ouvrir(playerid);
         }
         else if(actor[tmpId][variable] == 6)
         {
@@ -23400,6 +23405,7 @@ public OnPlayerConnect(playerid)
     Bsk_OnConnect(playerid); // [BASKET] libere un ballon reste au nom du precedent occupant
     SacV_OnConnect(playerid); // [SAC VISUEL] sinon le slot croit sa grille encore ouverte
     TC_OnConnect(playerid); // [TABLECRAFT] sinon le slot croit son panneau encore ouvert
+    Banque_OnConnect(playerid); // [BANQUE] sinon le slot croit le panneau encore ouvert
     TelApp_OnConnect(playerid); // [TELAPPS] reset du numero en cours de saisie
     ArmeePaie_Time[playerid] = 0; // [ARMEE] sinon le slot garde le compteur du precedent occupant
     Ent_OnPlayerConnect(playerid); // [ENTREPRISE] reset compteur minutes accumulees
@@ -24030,6 +24036,7 @@ public OnPlayerDisconnect(playerid, reason)
     Bsk_OnDisconnect(playerid); // [BASKET] rend le ballon qu'il tenait
     SacV_OnDisconnect(playerid); // [SAC VISUEL] detruit les textdraws de la grille
     TC_OnDisconnect(playerid); // [TABLECRAFT] detruit les textdraws du panneau de craft
+    Banque_OnDisconnect(playerid); // [BANQUE] reset des flags (textdraws globaux, rien a detruire)
     Raccourcis_OnDisconnect(playerid); // [RACCOURCIS] annule un maintien en cours
     RadioWidget_OnDisconnect(playerid); // [RADIO WIDGET] evite un affichage fantome a la reconnexion
     RadioVoice_OnDisconnect(playerid); // [RADIO VOICE] detache du canal vocal en cours
@@ -29997,6 +30004,8 @@ public OnGameModeInit()
     Residence_Init();
     // [RADIO WIDGET] cree l'icone (une seule fois, affichee/cachee par joueur)
     RadioWidget_Init();
+    // [BANQUE] cree le panneau bancoverde.pwn (une seule fois, affiche/cache par joueur)
+    Banque_Init();
     // [RADIO VOICE] cree un canal vocal SampVoice par faction legale
     RadioVoice_Init();
     // [ANNOUNCE] cree le bandeau de /a an (une seule fois, affiche/cache pour tous)
@@ -30532,6 +30541,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     if(MapEd_OnDialog(playerid, dialogid, response, listitem)) return 1;
     if(MapPack_OnDialog(playerid, dialogid, response, listitem)) return 1;
     if(SacV_OnDialog(playerid, dialogid, response, inputtext)) return 1;
+    if(Banque_OnDialog(playerid, dialogid, response, inputtext)) return 1;
     if(Portes_OnDialog(playerid, dialogid, response, listitem)) return 1;
     if(Residence_OnDialog(playerid, dialogid, response, listitem, inputtext)) return 1;
     if(Raccourcis_OnDialog(playerid, dialogid, response, listitem)) return 1;
@@ -48633,6 +48643,8 @@ public OnPlayerClickTextDraw(playerid, Text:clickedid)
 	if(SacV_OnClickHorsZone(playerid, clickedid)) return 1;
 	// [TABLECRAFT] meme mecanisme pour le panneau de craft.
 	if(TC_OnClickHorsZone(playerid, clickedid)) return 1;
+	// [BANQUE] clics du panneau bancoverde.pwn + Echap pour fermer.
+	if(Banque_OnClick(playerid, clickedid)) return 1;
 	// Fermer le telephone AFRP si clic hors zone
 	if(clickedid == Text:INVALID_TEXT_DRAW && usingPhone[playerid] == 1)
 	{
@@ -53268,6 +53280,11 @@ public OnPlayerCommandText(playerid, cmdtext[])
 	else if(strcmp(cmd, "/craft", true) == 0)
 	{
 	    return TC_Cmd(playerid);
+	}
+	// [BANQUE] bancoverde.pwn n'a aucun visuel pour le chequier : commande de secours
+	else if(strcmp(cmd, "/chequier", true) == 0)
+	{
+	    return Banque_CommandeChequier(playerid);
 	}
 	// [PORTES] relier un mapping au jeu : franchir une porte posee
 	else if(strcmp(cmd, "/traverser", true) == 0)

@@ -1590,6 +1590,7 @@ CREATE TABLE IF NOT EXISTS `lvrp_users` (
   `Respect` int(11) NOT NULL DEFAULT '4',
   `Cash` int(11) NOT NULL DEFAULT '2000',
   `Bank` int(11) NOT NULL DEFAULT '4000',
+  `Loan` int(11) NOT NULL DEFAULT '0',
   `Deaths` int(11) NOT NULL DEFAULT '0',
   `Wanted` smallint(5) NOT NULL DEFAULT '0',
   `Phonebook` smallint(5) NOT NULL DEFAULT '0',
