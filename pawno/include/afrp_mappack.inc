@@ -165,6 +165,19 @@ stock MapPack_Activer(playerid, carte)
 	if(carte < 0 || carte >= MP_MAX_CARTES) return 0;
 	if(mpActif[carte] == 1) return MapPack_Msg(playerid, "{FFFF00}Cette carte est deja allumee.");
 
+	// [COMMERCES] Trois cartes du pack sont exactement les memes maps que celles
+	// desormais posees en dur par afrp_commerces_map.inc / afrp_postepolice.inc,
+	// aux memes coordonnees. Les allumer poserait un deuxieme jeu d'objets par
+	// dessus le premier : rien de visible au premier coup d'oeil, mais toutes
+	// les surfaces se mettent a clignoter et le decor devient impossible a
+	// deplacer proprement. On refuse plutot que de laisser le piege ouvert.
+	if(carte == MP_WISE || carte == MP_MARKET || carte == MP_PRF)
+	{
+		MapPack_Msg(playerid, "{FF4444}Cette carte est deja installee en permanence par le serveur.");
+		MapPack_Msg(playerid, "{AAAAAA}L'allumer ici la poserait une deuxieme fois au meme endroit. Utilise /a deplacer pour la bouger.");
+		return 1;
+	}
+
 	mpActif[carte] = 1;
 	new n = MapPack_Creer(carte);
 	MapPack_Save();
@@ -349,6 +362,13 @@ stock MapPack_Init()
 {
 	for(new i = 0; i < MAX_PLAYERS; i++) mpCarteSel[i] = -1;
 	new n = MapPack_Load();
+	// Meme raison que dans MapPack_Activer : ces trois cartes sont maintenant
+	// posees en permanence ailleurs. Si un ancien mappack.cfg les avait laissees
+	// allumees, on les eteint au chargement plutot que de doubler le decor.
+	if(mpActif[MP_WISE] == 1)   { mpActif[MP_WISE] = 0;   n--; }
+	if(mpActif[MP_MARKET] == 1) { mpActif[MP_MARKET] = 0; n--; }
+	if(mpActif[MP_PRF] == 1)    { mpActif[MP_PRF] = 0;    n--; }
+	if(n < 0) n = 0;
 	for(new c = 0; c < MP_MAX_CARTES; c++) if(mpActif[c] == 1) MapPack_Creer(c);
 	printf("[MapPack] %d carte(s) allumee(s) sur %d disponibles.", n, MP_MAX_CARTES);
 	return 1;

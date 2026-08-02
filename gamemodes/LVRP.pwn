@@ -5151,6 +5151,12 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 // Hopital_ToggleDuty() via HOPITAL_MAP_ZONE_* (definis dans ce fichier).
 #include <afrp_hopital_map>
 
+// [COMMERCES] Decors des trois commerces communautaires (24/7, mini market,
+// vetements) + le batiment Project_1 rendu accessible. Le decor seul : les
+// boutiques se creent en jeu avec /a creer bizz + /bizz edit (type 1 = 24/7,
+// type 2 = Binco), aucun SQL a ecrire - voir afrp_commerces_map.inc.
+#include <afrp_commerces_map>
+
 // [PARRAINAGE] R�compense le parrain quand un nouveau joueur s'inscrit avec son nom
 #include <afrp_referral>
 
@@ -19387,6 +19393,9 @@ stock player_CheckEnter(playerid)
     server_Link(playerid,1.0,2290.1350,-1795.9376,13.5469,270.0,0,0,1,"~w~HLM Ganton",2246.7029, -1815.1901, 2021.5798,0.0,0,0,1,"~w~Los Santos",1);
     server_Link(playerid,1.0,1958.7234,-1560.5118,13.5947,223.9503,0,0,1,"~w~HLM Idlewood",1796.7156,-1299.4781,2132.6875,270.0,0,0,1,"~w~Los Santos",1);
     server_Link(playerid,1.0,943.1296, -2406.0750, 13.2669,0.9503,0,0,0,"~w~Cours",940.5402, -2407.4331, 13.2669,0.0,0,0,0,"~w~Garage",1);
+    // [COMMERCES] Project_1 : le batiment fourni est clos, ce lien est le seul
+    // moyen d'entrer/sortir. Points deduits de la geometrie, a verifier en jeu.
+    Projet1_CheckEnter(playerid);
     if(PlayerInfo[playerid][pMember] >= 1 && PlayerInfo[playerid][pMember] <= 4 || AdminDuty[playerid] == 1)
     {
 	    server_Link(playerid,1.0,1524.4834,-1677.8984,6.2188,0.0,6,0,1,"~w~L.S.P.D",210.1814,62.0021,1105.6499,0.0,-1,-1,0,"~w~San Andreas",0);
@@ -23429,6 +23438,7 @@ public OnPlayerConnect(playerid)
     MapEd_OnConnect(playerid); // [MAPEDIT] reset de l'objet selectionne
     MapPack_OnConnect(playerid); // [MAPPACK] retire les batiments remplaces par les cartes allumees
     Hopital_MapRemoveBuildings(playerid); // [HOPITAL] retire les 7 batiments GTA remplaces par le QG (par joueur, exige par RemoveBuildingForPlayer)
+    Commerces_MapRemoveBuildings(playerid); // [COMMERCES] idem pour les 11 batiments remplaces par le 24/7, le mini market et le magasin de vetements
     Portes_OnConnect(playerid); // [PORTES] rien a reinitialiser, garde le crochet pret
     Sp2_OnConnect(playerid); // [SPEEDO2] sinon le slot garde la preference du precedent occupant
     Bsk_OnConnect(playerid); // [BASKET] libere un ballon reste au nom du precedent occupant
@@ -29888,6 +29898,10 @@ public OnGameModeInit()
 	// [HOPITAL] Decor du QG faction (map communautaire fournie par le
 	// proprio) - voir afrp_hopital_map.inc et Hopital_ToggleDuty (4e zone).
 	Hopital_CreateMap();
+	// [COMMERCES] Decors du 24/7, du mini market, du magasin de vetements et de
+	// Project_1. Aucune boutique n'est creee ici : le proprietaire les pose en
+	// jeu avec /a creer bizz puis /bizz edit, sur le systeme bizz deja en place.
+	Commerces_CreateMaps();
 	init_MapIcon();
 	init_PickupsAndLabels();
 	init_Actors();
