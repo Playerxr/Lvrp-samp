@@ -292,3 +292,95 @@ stock Concession_CreateMap()
 	#pragma unused tmpobjid
 	return 1;
 }
+
+// ============================================================================
+// VEHICULES D'EXPOSITION
+// ============================================================================
+/*
+	Le proprietaire voulait des voitures garees dans la concession, purement
+	pour l'ambiance : pas conduisibles, pas achetables, jamais melangees aux
+	vehicules des joueurs.
+
+	POURQUOI DE VRAIS VEHICULES ET PAS DES OBJETS : on peut donner un modele de
+	vehicule a CreateDynamicObject, c'est meme la ruse habituelle pour ce genre
+	de vitrine. Sauf que les roues d'un vehicule GTA ne font pas partie de son
+	modele (elles sont posees a l'execution sur des points d'ancrage par le
+	moteur de vehicules) : en objet, on obtient des carrosseries posees sur
+	rien. Une vitrine de concession avec des voitures sans roues est pire que
+	pas de vitrine du tout. On cree donc de vrais vehicules, et on les neutralise.
+
+	COMMENT ILS SONT NEUTRALISES, ET POURQUOI CA SUFFIT :
+	- portieres verrouillees (SetVehicleParamsEx doors = 1) : SA-MP interdit
+	  alors l'entree a TOUT LE MONDE, il n'y a pas d'exception proprietaire.
+	  C'est ce qui garantit "jamais conduisible", pas un test dans un callback
+	  qu'on pourrait oublier de brancher ailleurs ;
+	- delai de reapparition -1 : ils ne repassent jamais par OnVehicleSpawn,
+	  donc jamais de retour a une position "officielle" qui n'existe pas ;
+	- leur ligne dans le tableau vehicle[] est explicitement marquee vide
+	  (used = 0, SQLID = -1). Toutes les boucles du gamemode qui parcourent
+	  1..totalVehicles testent l'un ou l'autre avant d'agir : sauvegarde auto,
+	  reparation d'essence, payday... aucune ne les verra. Sans ce marquage
+	  elles risqueraient d'ecrire des lignes fantomes dans lvrp_server_vehicles.
+
+	POURQUOI LES CREER PENDANT OnGameModeInit : vehicle_Load() arrive plus tard
+	(reponse MySQL asynchrone). Ces vehicules prennent donc les tout premiers
+	IDs SA-MP, et vehicle_Load sait deja gerer le cas ou SA-MP lui rend un ID
+	different de son compteur (vehicle_Transfer + recalage de totalVehicles).
+	Les creer apres coup, sans savoir quand la reponse MySQL tombe, serait au
+	contraire une course entre les deux.
+
+	POSITIONS : posees sur la dalle exterieure de la concession, la seule zone
+	franchement vide des donnees de la map (x 1027-1037, y -1952 a -1966 : rien
+	d'autre n'y est cree). L'interieur (x 1014-1023) est occupe par le
+	comptoir, les chaises et les rayonnages du garage d'origine - y poser des
+	voitures les aurait plantees dans le mobilier.
+	Le z est volontairement pris AU-DESSUS du sol estime : un vehicule tombe
+	et se pose tout seul, alors qu'un vehicule cree trop bas reste plante dans
+	le decor. A CONFIRMER A L'OEIL en jeu, comme le reste de cette map.
+*/
+
+#define CONCESSION_MAX_EXPO 5
+
+new concessionExpoVeh[CONCESSION_MAX_EXPO];
+new concessionExpoNb = 0;
+
+// Modeles choisis pour une concession d'occasion : de la berline banale au
+// coupe, rien d'exotique ni de faction.
+new const concessionExpoModel[CONCESSION_MAX_EXPO] = { 560, 405, 445, 562, 429 };
+new const Float:concessionExpoX[CONCESSION_MAX_EXPO] = { 1029.0, 1032.5, 1036.0, 1029.0, 1032.5 };
+new const Float:concessionExpoY[CONCESSION_MAX_EXPO] = { -1953.0, -1953.0, -1953.0, -1960.5, -1960.5 };
+new const Float:concessionExpoZ[CONCESSION_MAX_EXPO] = { 13.0, 13.0, 13.0, 13.0, 13.0 };
+new const Float:concessionExpoA[CONCESSION_MAX_EXPO] = { 0.0, 0.0, 0.0, 180.0, 180.0 };
+
+stock Concession_CreateExpo()
+{
+	concessionExpoNb = 0;
+	for(new i = 0; i < CONCESSION_MAX_EXPO; i++)
+	{
+		concessionExpoVeh[i] = -1;
+		// -1 = ne reapparait jamais.
+		new vid = CreateVehicle(concessionExpoModel[i], concessionExpoX[i], concessionExpoY[i], concessionExpoZ[i], concessionExpoA[i], 1, 1, -1);
+		if(vid == INVALID_VEHICLE_ID || vid < 1 || vid >= MAX_CAR)
+		{
+			printf("[CONCESSION] Vehicule d'exposition %d : creation refusee par SA-MP.", i);
+			continue;
+		}
+		concessionExpoVeh[i] = vid;
+		concessionExpoNb++;
+
+		// Moteur coupe, phares eteints, PORTIERES VERROUILLEES : c'est cette
+		// derniere qui rend le vehicule definitivement non conduisible.
+		SetVehicleParamsEx(vid, VEHICLE_PARAMS_OFF, VEHICLE_PARAMS_OFF, VEHICLE_PARAMS_OFF, VEHICLE_PARAMS_ON, VEHICLE_PARAMS_OFF, VEHICLE_PARAMS_OFF, VEHICLE_PARAMS_OFF);
+		SetVehicleVirtualWorld(vid, 0);
+		LinkVehicleToInterior(vid, 0);
+
+		// Ligne marquee vide : voir l'explication ci-dessus. Sans ca les
+		// boucles de sauvegarde pourraient les prendre pour des vrais.
+		vehicle[vid][used] = 0;
+		vehicle[vid][SQLID] = -1;
+		vehicle[vid][cOwned] = 0;
+		vehicle[vid][cEngine] = false;
+	}
+	printf("[CONCESSION] %d vehicule(s) d'exposition (verrouilles, hors systeme vehicule).", concessionExpoNb);
+	return concessionExpoNb;
+}

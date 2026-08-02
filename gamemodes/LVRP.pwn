@@ -29895,6 +29895,10 @@ public OnGameModeInit()
 	// ligne dealerShip Type=7/City=2 doit etre inseree a la main sur la
 	// base live (voir rapport de session), ce decor ne suffit pas seul.
 	Concession_CreateMap();
+	// [CONCESSION] Vehicules de vitrine : decor pur, verrouilles, hors du
+	// tableau vehicle[] et de lvrp_server_vehicles (voir afrp_concession_map.inc).
+	// Doivent etre crees ici, avant que la reponse MySQL de vehicle_Load arrive.
+	Concession_CreateExpo();
 	// [HOPITAL] Decor du QG faction (map communautaire fournie par le
 	// proprio) - voir afrp_hopital_map.inc et Hopital_ToggleDuty (4e zone).
 	Hopital_CreateMap();
