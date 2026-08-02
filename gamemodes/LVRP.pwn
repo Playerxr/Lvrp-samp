@@ -5309,6 +5309,10 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 // [MAPPACK] mappings importes, allumables carte par carte
 #include <afrp_mappack_data>
 #include <afrp_mappack>
+// [POSTE POLICE] Poste de police routiere posable en plusieurs exemplaires
+// (/a poste). Meme map que la carte "Poste PRF" du pack, mais rebrandee en
+// francais et duplicable - voir afrp_postepolice.inc.
+#include <afrp_postepolice>
 // [ANNOUNCE] bandeau visuel pour /a an (Flash News admin)
 #include <afrp_announce>
 // [MENU RAPIDE] panneau Inventory/Phone/Anims/Toys (touche Y)
@@ -30074,6 +30078,8 @@ public OnGameModeInit()
     MapEd_Init();
     // [MAPPACK] recree les cartes importees qui sont allumees
     MapPack_Init();
+    // [POSTE POLICE] recree les exemplaires poses du poste de police routiere
+    Pp_Init();
     // [PORTES] recharge les portes reliant les mappings au jeu
     Portes_Init();
     // [RESIDENCE] recharge le proprietaire et les points de la residence
@@ -62540,6 +62546,7 @@ public OnPlayerCommandText(playerid, cmdtext[])
 					msg_Client(playerid, COLOR_WHITE, "{FF6347} Admin {A98500}Admin level {FF0000}3{A98500}:{FFFFB2} ip - recup - donner - lotto - jackpot - desarmer - argent");
 					msg_Client(playerid, COLOR_WHITE, "{FF6347} Admin {A98500}Admin level {FF0000}3{A98500}:{FFFFB2} id - supprimer - creer - spawn - payday - edit");
 					msg_Client(playerid, COLOR_WHITE, "{FF6347}» Admin «{A98500}Admin level {FF0000}3{A98500}:{FFFFB2} deplacer (repositionner une map communautaire)");
+					msg_Client(playerid, COLOR_WHITE, "{FF6347}» Admin «{A98500}Admin level {FF0000}3{A98500}:{FFFFB2} poste (poser un poste de police routiere)");
 				}
 				if (PlayerInfo[playerid][pAdmin] >= 4)
 				{
@@ -62586,6 +62593,19 @@ public OnPlayerCommandText(playerid, cmdtext[])
 					else
 						{msg_Client(playerid, COLOR_NOACCES, "{FF0069} Erreur {FFFFFF} Vous n'tes pas autoris  utiliser cette commande!");return 1;}
 				}
+			}
+			// [POSTE POLICE] /a poste [poser|liste|aller|supprimer] <n> - pose des
+			// exemplaires du poste de police routiere. Voir afrp_postepolice.inc.
+			else if(strcmp(tmp, "poste", true) == 0)
+			{
+			    if (PlayerInfo[playerid][pAdmin] < 3)
+		  			{return 1;}
+				new ppArg1[32], ppArg2[32];
+				tmp = strtok(cmdtext, idx);
+				if(strlen(tmp)) strmid(ppArg1, tmp, 0, 31, 32);
+				tmp = strtok(cmdtext, idx);
+				if(strlen(tmp)) strmid(ppArg2, tmp, 0, 31, 32);
+				return Pp_Cmd(playerid, ppArg1, ppArg2);
 			}
 			// [DEPLACER MAP] /a deplacer [reset] <nom> - repose une map communautaire
 			// entiere a la position et dans l'angle de l'admin. Voir afrp_mapmove.inc.
@@ -66958,6 +66978,7 @@ public OnPlayerCommandText(playerid, cmdtext[])
 					msg_Client(playerid, COLOR_WHITE, "{FF6347} Admin {A98500}Admin level {FF0000}3{A98500}:{FFFFB2} ip - recup - donner - lotto - jackpot - desarmer - argent");
 					msg_Client(playerid, COLOR_WHITE, "{FF6347} Admin {A98500}Admin level {FF0000}3{A98500}:{FFFFB2} id - supprimer - creer - spawn - payday - edit");
 					msg_Client(playerid, COLOR_WHITE, "{FF6347}» Admin «{A98500}Admin level {FF0000}3{A98500}:{FFFFB2} deplacer (repositionner une map communautaire)");
+					msg_Client(playerid, COLOR_WHITE, "{FF6347}» Admin «{A98500}Admin level {FF0000}3{A98500}:{FFFFB2} poste (poser un poste de police routiere)");
 				}
 				if (PlayerInfo[playerid][pAdmin] >= 4)
 				{
