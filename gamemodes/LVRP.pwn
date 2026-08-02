@@ -25039,48 +25039,52 @@ stock police_FineGestion(playerid)
 	return 1;
 }
 
+// [PRISON] Positions reelles des dalles de sol du QG Crips (carte MP_CRIPS),
+// prises directement dans l'export du mappeur (pas de calcul) pour etre
+// certain que chaque cellule tombe sur du sol praticable. +0.3 sur Z pour
+// eviter de spawn legerement enfonce dans la dalle.
+new Float:prisonCripsCell[16][3] = {
+	{2106.413, -1827.387, 12.685},
+	{2130.154, -1827.387, 12.726},
+	{2152.553, -1829.124, 12.605},
+	{2181.136, -1829.702, 12.605},
+	{2102.953, -1827.351, 12.685},
+	{2130.563, -1809.380, 12.765},
+	{2152.553, -1808.585, 12.605},
+	{2181.136, -1808.864, 12.605},
+	{2130.489, -1790.359, 12.765},
+	{2133.039, -1790.311, 12.795},
+	{2152.553, -1788.066, 12.605},
+	{2181.136, -1788.124, 12.605},
+	{2128.267, -1763.937, 12.605},
+	{2133.420, -1770.886, 12.605},
+	{2152.553, -1770.756, 12.605},
+	{2181.136, -1770.875, 12.605}
+};
+
 stock prison_Jail(playerid,id)
 {
+	#pragma unused id
+
+	// La vraie prison RP se fait desormais au QG Crips (carte MP_CRIPS) au
+	// lieu de l'ancien interieur a coordonnees fixes. On force la carte
+	// allumee : sans decor, un joueur envoye ici se retrouverait dans un
+	// terrain vague.
+	if(mpActif[MP_CRIPS] != 1)
+	{
+		mpActif[MP_CRIPS] = 1;
+		MapPack_Creer(MP_CRIPS);
+		MapPack_Save();
+	}
+
 	// FIX : on change l'interior et le VW AVANT le SafeSetPlayerPos
 	// pour eviter le bug "joueur en l'air"
-	server_SetPlayerInterior(playerid, police[id][interior]);
+	server_SetPlayerInterior(playerid, 0);
 	server_SetPlayerVirtualWorld(playerid, 0);
 
-	switch(id)
-	{
-	    case 0:
-	        {SafeSetPlayerPos(playerid,2590.2520, -1504.2607, -49.8930);} // Clulle 1
-        case 1:
-	        {SafeSetPlayerPos(playerid,2590.3604, -1506.3220, -49.8930);} // Clulle 2
-		case 2:
-	        {SafeSetPlayerPos(playerid,2590.9302, -1511.4447, -49.8930);} // Clulle 3
-  	    case 3:
-	        {SafeSetPlayerPos(playerid,2590.8438, -1513.8705, -49.8930);} // Clulle 4
-        case 4:
-	        {SafeSetPlayerPos(playerid,2590.2910, -1517.4570, -49.8930);} // Clulle 5
-		case 5:
-	        {SafeSetPlayerPos(playerid,2586.7673, -1524.8632, -49.8930);} // Clulle 6
-  	    case 6:
-	        {SafeSetPlayerPos(playerid,2585.0508, -1523.5765, -49.8930);} // Clulle 7
-        case 7:
-	        {SafeSetPlayerPos(playerid,2581.2700, -1523.6311, -49.8930);} // Clulle 8
-		case 8:
-	        {SafeSetPlayerPos(playerid,2588.8613, -1527.6036, -46.0280);} // Clulle 9
-  	    case 9:
-	        {SafeSetPlayerPos(playerid,2583.2314, -1526.4509, -46.0280);} // Clulle 10
-        case 10:
-	        {SafeSetPlayerPos(playerid,2579.7151, -1528.2705, -46.0280);} // Clulle 11
-		case 11:
-	        {SafeSetPlayerPos(playerid,2575.0469, -1517.7174, -49.8200);} // Clulle 12
-  		case 12:
-	        {SafeSetPlayerPos(playerid,2575.9563, -1514.5687, -49.8200);} // Clulle 13
-  	    case 13:
-	        {SafeSetPlayerPos(playerid,2576.0649, -1510.6128, -49.8200);} // Clulle 14
-        case 14:
-	        {SafeSetPlayerPos(playerid,2575.8926, -1507.0045, -49.8200);} // Clulle 15
-		case 15:
-	        {SafeSetPlayerPos(playerid,2575.8589, -1501.3562, -49.8200);} // Clulle 16
-	}
+	new cell = playerid % 16;
+	SafeSetPlayerPos(playerid, prisonCripsCell[cell][0], prisonCripsCell[cell][1], prisonCripsCell[cell][2]);
+
 	SetCameraBehindPlayer(playerid);
 	TogglePlayerControllable(playerid,false);
 	SetTimerEx("chargement",3000,0,"i",playerid);
