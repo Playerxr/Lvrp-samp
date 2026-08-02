@@ -5140,6 +5140,12 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 // [PRISON] Enceinte exterieure (mur/miradors/portail) visible par tous, zero install client
 #include <afrp_prison>
 
+// [CONCESSION] Decor de la 4e concession (map communautaire de garage,
+// reconvertie/rebrandee en concession d'occasion) - voir afrp_concession_map.inc.
+// La concession elle-meme (pickup, catalogue) vient de lvrp_server_dealership
+// Type=7/City=2, pas de ce fichier.
+#include <afrp_concession_map>
+
 // [PARRAINAGE] R�compense le parrain quand un nouveau joueur s'inscrit avec son nom
 #include <afrp_referral>
 
@@ -18733,6 +18739,7 @@ stock GetDealerShipName(id)
 	    case 4: {name="2 roues";}
 	    case 5: {name="Bateau";}
 	    case 6: {name="Avion";}
+	    case 7: {name="Occasion";} // [CONCESSION] 4e concession (garage reconverti, LV) - lvrp_server_dealership Type=7
 	}
 	return name;
 }
@@ -29866,6 +29873,10 @@ public OnGameModeInit()
 	// [PRISON] Vraie map interieure fournie par le proprio (525 objets, monde
 	// 871 / interieur 14) : desormais LA prison utilisee par /a jail.
 	Prison_CreateMap();
+	// [CONCESSION] Decor de la 4e concession (garage reconverti, LV) - la
+	// ligne dealerShip Type=7/City=2 doit etre inseree a la main sur la
+	// base live (voir rapport de session), ce decor ne suffit pas seul.
+	Concession_CreateMap();
 	init_MapIcon();
 	init_PickupsAndLabels();
 	init_Actors();

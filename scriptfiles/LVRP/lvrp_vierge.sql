@@ -1351,6 +1351,28 @@ CREATE TABLE IF NOT EXISTS `lvrp_server_cars` (
 -- --------------------------------------------------------
 
 --
+-- Structure de la table `lvrp_server_dealership`
+-- [CONCESSION] Absente du schema versionne alors que le systeme de
+-- concessions (dealerShip_Load/Save, GetDealerShipName) existe deja et
+-- tourne en prod - la table a ete creee a la main sur la base live a un
+-- moment non trace. Ajoutee ici pour les installs neuves (IF NOT EXISTS
+-- ne touche pas la table live existante).
+--
+
+CREATE TABLE IF NOT EXISTS `lvrp_server_dealership` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `Type` int(11) NOT NULL DEFAULT '0',
+  `City` int(11) NOT NULL DEFAULT '0',
+  `Used` int(11) NOT NULL DEFAULT '0',
+  `Pos_x` float(10,5) NOT NULL DEFAULT '0.00000',
+  `Pos_y` float(10,5) NOT NULL DEFAULT '0.00000',
+  `Pos_z` float(10,5) NOT NULL DEFAULT '0.00000',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+
+-- --------------------------------------------------------
+
+--
 -- Structure de la table `lvrp_server_distribs`
 --
 
@@ -1567,6 +1589,23 @@ INSERT INTO `lvrp_server_uniquebizz` (`id`, `Owned`, `Pos_x`, `Pos_y`, `Pos_z`, 
 (15, 0, 2026.60962, -1082.96057, 24.56250, 293.56000, 1273.98499, 1082.29004, 'Aucun', 'Free Mobile', 0, 5, 550000, 2, 0, 4, 4000, 4000, 0, 0.00000, 0.00000, 0.00000, 1, 0, 0, 0, 0, 0),
 (16, 1, 1041.22375, -1030.19519, 32.08530, 0.00000, 0.00000, 0.00000, 'Tonio_Rascalov', 'Test', 0, 0, 550000, 2, 0, 0, 4000, 4000, 0, 0.00000, 0.00000, 0.00000, 0, 0, 0, 0, 0, 0),
 (17, 0, 2352.01196, -1412.15759, 23.99240, 16.88200, 99.91150, 976.99487, 'Aucun', 'K.Meubles', 16500, 0, 450000, 2, 0, 3, 4000, 4000, 0, 0.00000, 0.00000, 0.00000, 1, 0, 0, 0, 0, 0);
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `lvrp_server_vehicles_prices`
+-- [CONCESSION] Catalogue vehicules par concession (dealerShip_ShowDialog,
+-- filtre WHERE dealerShip=Type). Meme cas que lvrp_server_dealership
+-- ci-dessus : existe en prod, absente du schema versionne.
+--
+
+CREATE TABLE IF NOT EXISTS `lvrp_server_vehicles_prices` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `dealerShip` int(11) NOT NULL DEFAULT '0',
+  `Model` int(11) NOT NULL DEFAULT '0',
+  `Price` int(11) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
 
 -- --------------------------------------------------------
 
