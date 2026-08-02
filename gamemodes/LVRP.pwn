@@ -1452,17 +1452,7 @@ new Text3D:actorChatLabel[MAX_ACTORS];
 new actorChatTimer[MAX_ACTORS];
 
 //-------------------------Gestion stats joueur --------------------------------
-new PlayerText:TextVie[MAX_PLAYERS];
-new PlayerText:TextArmure[MAX_PLAYERS];
-new Text:DisigStatsBg;
-new Text:DisigFaim1;
-new Text:DisigFaim2;
-new PlayerText:BarUpdateFaim[MAX_PLAYERS];
-new PlayerText:TextFaim[MAX_PLAYERS];
-new Text:DisigSoif1;
-new Text:DisigSoif2;
-new PlayerText:BarUpdateSoif[MAX_PLAYERS];
-new PlayerText:TextSoif[MAX_PLAYERS];
+// Vie / Armure / Faim / Soif : voir afrp_hud.inc (43 TextDraws du pack).
 new Text:DisigEndurance1;
 new Text:DisigEndurance2;
 new PlayerText:BarUpdateEndurance[MAX_PLAYERS];
@@ -3355,6 +3345,10 @@ enum e_Player
 };
 new PlayerInfo[MAX_PLAYERS][e_Player];
 
+// [HUD] Panneau Vie/Armure/Faim/Soif + ping. Place ici et pas plus bas :
+// UpdateStatsTextsPlayers appelle HUD_Update, et le module lit pFaim/pSoif.
+#include <afrp_hud>
+
 // Place APRES l'enum e_Player + PlayerInfo : le module met a jour la memoire
 // des joueurs en ligne (pDonateRank/pVipTime/pCash), donc il a besoin d'y acceder.
 #include <vip_sync>                                                    			// VIP/Cash auto (approuve par le staff dans l'app)
@@ -4038,24 +4032,9 @@ stock UpdateStatsTextsPlayers(i,id)
 	    if(PlayerInfo[i][pFaim] < 0)
 			{PlayerInfo[i][pFaim]=0;}
 			
-	    PlayerTextDrawDestroy(i,BarUpdateFaim[i]);
-	    new Float:totofaim[MAX_PLAYERS];
-	    format(string,sizeof(string),"Faim:%d",PlayerInfo[i][pFaim]);
-		PlayerTextDrawSetString(i,TextFaim[i],string);
-		totofaim[i] = 0.58*PlayerInfo[i][pFaim];
-		
-		BarUpdateFaim[i] = CreatePlayerTextDraw(i,(178+totofaim[i]), 383.000000, "~n~");
-		PlayerTextDrawBackgroundColor(i,BarUpdateFaim[i], 255);
-		PlayerTextDrawFont(i,BarUpdateFaim[i], 1);
-		PlayerTextDrawLetterSize(i,BarUpdateFaim[i], 0.469998, 0.199999);
-		PlayerTextDrawColor(i,BarUpdateFaim[i], 16752895);
-		PlayerTextDrawSetOutline(i,BarUpdateFaim[i], 0);
-		PlayerTextDrawSetProportional(i,BarUpdateFaim[i], 1);
-		PlayerTextDrawSetShadow(i,BarUpdateFaim[i], 1);
-		PlayerTextDrawUseBox(i,BarUpdateFaim[i], 1);
-		PlayerTextDrawBoxColor(i,BarUpdateFaim[i], 0x009000FF);
-		PlayerTextDrawTextSize(i,BarUpdateFaim[i], 174.000000, 0.000000);
-		PlayerTextDrawShow(i,BarUpdateFaim[i]);
+		// [HUD] La jauge faim appartient au panneau afrp_hud.inc : plus de
+		// TextDraw detruite/recreee a chaque bouchee.
+		HUD_Update(i);
 		return 1;
 	}
 	else if(id==2)// Soif
@@ -4065,34 +4044,16 @@ stock UpdateStatsTextsPlayers(i,id)
 	    if(PlayerInfo[i][pSoif] < 0)
 			{PlayerInfo[i][pSoif]=0;}
 			
-	    PlayerTextDrawDestroy(i,BarUpdateSoif[i]);
-	    new Float:totosoif[MAX_PLAYERS];
-	    
-	    format(string,sizeof(string),"Soif:%d",PlayerInfo[i][pSoif]);
-		PlayerTextDrawSetString(i,TextSoif[i],string);
-		totosoif[i] = 0.58*PlayerInfo[i][pSoif];
-		
-		BarUpdateSoif[i] = CreatePlayerTextDraw(i,(178+totosoif[i]), 371.000000, "~n~");
-		PlayerTextDrawBackgroundColor(i,BarUpdateSoif[i], 255);
-		PlayerTextDrawFont(i,BarUpdateSoif[i], 1);
-		PlayerTextDrawLetterSize(i,BarUpdateSoif[i], 0.469998, 0.199999);
-		PlayerTextDrawColor(i,BarUpdateSoif[i], 16752895);
-		PlayerTextDrawSetOutline(i,BarUpdateSoif[i], 0);
-		PlayerTextDrawSetProportional(i,BarUpdateSoif[i], 1);
-		PlayerTextDrawSetShadow(i,BarUpdateSoif[i], 1);
-		PlayerTextDrawUseBox(i,BarUpdateSoif[i], 1);
-		PlayerTextDrawBoxColor(i,BarUpdateSoif[i], 0x0000D1FF);
-		PlayerTextDrawTextSize(i,BarUpdateSoif[i], 174.000000, 58.000000);
-		PlayerTextDrawShow(i,BarUpdateSoif[i]);
+		// [HUD] idem faim : la jauge soif est geree par afrp_hud.inc.
+		HUD_Update(i);
 		return 1;
 	}
 	else if(id==4)// Vie & Armure
 	{
 	    if(PlayerInfo[i][pArmour] > 0)
 		{
-			format(string,sizeof(string),"Armure:%0.0f",PlayerInfo[i][pArmour]);
-			PlayerTextDrawSetString(i,TextArmure[i],string);
-			PlayerTextDrawShow(i, TextArmure[i]);
+			// [HUD] l'affichage de l'armure est passe dans afrp_hud.inc ; ici il
+			// ne reste que la pose du gilet sur le personnage.
 			if(ArmorSlotObject[i] == -1)
 			{
 			    if(player_GetSlotObject(i) != -1)
@@ -4109,13 +4070,12 @@ stock UpdateStatsTextsPlayers(i,id)
 		}
 		else
 		{
-			PlayerTextDrawHide(i, TextArmure[i]);
 			if(ArmorSlotObject[i] != -1)
 				{RemovePlayerAttachedObject(i,ArmorSlotObject[i]); ArmorSlotObject[i]=-1;}
 		}
-	    format(string,sizeof(string),"Vie:%0.0f",PlayerInfo[i][pHealth]);
-		PlayerTextDrawSetString(i,TextVie[i],string);
-		
+		// [HUD] vie + armure d'un coup dans le panneau afrp_hud.inc.
+		HUD_Update(i);
+
 		if(medic_BlessureActive && PlayerInfo[i][pHealth] < 13 && medic_PlayerNeedMedic[i] == 0 && gPlayerSpawn[i] != 1) // Bless
 		{
 		    
@@ -5165,8 +5125,7 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 // [EVENTS] Events aleatoires auto + commandes /event /eventtrigger
 #include <afrp_events>
 
-// [HUD] Barres vie/armure custom + affichage ping
-#include <afrp_hud>
+// [HUD] afrp_hud est inclus plus haut (juste apres PlayerInfo)
 
 // [JOB ICONS] Icones map pour chaque employeur (visible pour tous)
 #include <afrp_jobicons>
@@ -8063,18 +8022,10 @@ stock server_HideIntroTexts(playerid)
 
 stock stats_Show(playerid)
 {
-    TextDrawShowForPlayer(playerid, DisigStatsBg);
-    PlayerTextDrawShow(playerid, TextVie[playerid]);
-	TextDrawShowForPlayer(playerid, DisigFaim1);
-	TextDrawShowForPlayer(playerid, DisigFaim2);
-	PlayerTextDrawShow(playerid, BarUpdateFaim[playerid]);
-	PlayerTextDrawShow(playerid, TextFaim[playerid]);
-	TextDrawShowForPlayer(playerid, DisigSoif1);
-	TextDrawShowForPlayer(playerid, DisigSoif2);
-	PlayerTextDrawShow(playerid, BarUpdateSoif[playerid]);
-	PlayerTextDrawShow(playerid, TextSoif[playerid]);
+	// [HUD] Le pack fourni par la proprietaire remplace l'ancien bloc
+	// (fond Disig* + barres + textes) : tout est dans afrp_hud.inc.
+	HUD_Show(playerid);
 	PlayerTextDrawShow(playerid, zoneLocation[playerid]);
-	//PlayerTextDrawShow(playerid, TextMaladie[playerid]);
 	return 1;
 }
 
@@ -15056,69 +15007,8 @@ stock init_Texts()
 		TextDrawBoxColor(speedo_BarGas[1], 1900799);
 		TextDrawTextSize(speedo_BarGas[1], 592.000000, 0.000000);
 		
-		// [HUD BAS-GAUCHE] fond semi-transparent derriere le bloc vie/armure/soif/faim
-		// cree en premier pour etre dessine SOUS les barres
-		DisigStatsBg = TextDrawCreate(146.000000, 334.000000, "~n~");
-		TextDrawBackgroundColor(DisigStatsBg, 255);
-		TextDrawFont(DisigStatsBg, 1);
-		TextDrawLetterSize(DisigStatsBg, 0.500000, 5.900000);
-		TextDrawColor(DisigStatsBg, -1);
-		TextDrawSetOutline(DisigStatsBg, 0);
-		TextDrawSetProportional(DisigStatsBg, 1);
-		TextDrawSetShadow(DisigStatsBg, 0);
-		TextDrawUseBox(DisigStatsBg, 1);
-		TextDrawBoxColor(DisigStatsBg, 0x00000055);
-		TextDrawTextSize(DisigStatsBg, 244.000000, 0.000000);
-
-		// Systeme de Faim
-		DisigFaim1 = TextDrawCreate(238.000000, 381.000000, "~n~");
-		TextDrawBackgroundColor(DisigFaim1, 255);
-		TextDrawFont(DisigFaim1, 1);
-		TextDrawLetterSize(DisigFaim1, 0.469998, 0.599999);
-		TextDrawColor(DisigFaim1, -1);
-		TextDrawSetOutline(DisigFaim1, 0);
-		TextDrawSetProportional(DisigFaim1, 1);
-		TextDrawSetShadow(DisigFaim1, 1);
-		TextDrawUseBox(DisigFaim1, 1);
-		TextDrawBoxColor(DisigFaim1, 255);
-		TextDrawTextSize(DisigFaim1, 172.000000, 0.000000);
-
-		DisigFaim2 = TextDrawCreate(236.000000, 383.000000, "~n~");
-		TextDrawBackgroundColor(DisigFaim2, 255);
-		TextDrawFont(DisigFaim2, 1);
-		TextDrawLetterSize(DisigFaim2, 0.469998, 0.199999);
-		TextDrawColor(DisigFaim2, 0x004A00FF);
-		TextDrawSetOutline(DisigFaim2, 0);
-		TextDrawSetProportional(DisigFaim2, 1);
-		TextDrawSetShadow(DisigFaim2, 1);
-		TextDrawUseBox(DisigFaim2, 1);
-		TextDrawBoxColor(DisigFaim2, 0x004A00FF);
-		TextDrawTextSize(DisigFaim2, 174.000000, 0.000000);
-
-		// Systme de soif
-		DisigSoif1 = TextDrawCreate(238.000000, 369.000000, "~n~");
-		TextDrawBackgroundColor(DisigSoif1, 255);
-		TextDrawFont(DisigSoif1, 1);
-		TextDrawLetterSize(DisigSoif1, 0.469998, 0.599999);
-		TextDrawColor(DisigSoif1, -1);
-		TextDrawSetOutline(DisigSoif1, 0);
-		TextDrawSetProportional(DisigSoif1, 1);
-		TextDrawSetShadow(DisigSoif1, 1);
-		TextDrawUseBox(DisigSoif1, 1);
-		TextDrawBoxColor(DisigSoif1, 255);
-		TextDrawTextSize(DisigSoif1, 172.000000, 25.000000);
-
-		DisigSoif2 = TextDrawCreate(236.000000, 371.000000, "~n~");
-		TextDrawBackgroundColor(DisigSoif2, 255);
-		TextDrawFont(DisigSoif2, 1);
-		TextDrawLetterSize(DisigSoif2, 0.469998, 0.199999);
-		TextDrawColor(DisigSoif2, 0x00006EFF);
-		TextDrawSetOutline(DisigSoif2, 0);
-		TextDrawSetProportional(DisigSoif2, 1);
-		TextDrawSetShadow(DisigSoif2, 1);
-		TextDrawUseBox(DisigSoif2, 1);
-		TextDrawBoxColor(DisigSoif2, 0x00006EFF);
-		TextDrawTextSize(DisigSoif2, 174.000000, 25.000000);
+		// [HUD] Le fond et les barres faim/soif ont laisse place au panneau
+		// afrp_hud.inc, qui porte son propre habillage.
 
 		// Syeteme d'endurance
 		DisigEndurance1 = TextDrawCreate(610.000000, 12.000000, "~n~");
@@ -15312,47 +15202,7 @@ stock init_PlayerTexts(i)
 	PlayerTextDrawSetProportional(i,pay_TextPrice[i], 1);
 	PlayerTextDrawSetShadow(i,pay_TextPrice[i], 1);
 	
-	BarUpdateFaim[i] = CreatePlayerTextDraw(i,236.000000, 383.000000, "~n~");
-	PlayerTextDrawBackgroundColor(i,BarUpdateFaim[i], 255);
-	PlayerTextDrawFont(i,BarUpdateFaim[i], 1);
-	PlayerTextDrawLetterSize(i,BarUpdateFaim[i], 0.469998, 0.199999);
-	PlayerTextDrawColor(i,BarUpdateFaim[i], 16752895);
-	PlayerTextDrawSetOutline(i,BarUpdateFaim[i], 0);
-	PlayerTextDrawSetProportional(i,BarUpdateFaim[i], 1);
-	PlayerTextDrawSetShadow(i,BarUpdateFaim[i], 1);
-	PlayerTextDrawUseBox(i,BarUpdateFaim[i], 1);
-	PlayerTextDrawBoxColor(i,BarUpdateFaim[i], 0x009000FF);
-	PlayerTextDrawTextSize(i,BarUpdateFaim[i], 174.000000, 0.000000);
-
-	TextFaim[i] = CreatePlayerTextDraw(i,170.000000, 375.000000, "Chargement...");
-	PlayerTextDrawBackgroundColor(i,TextFaim[i], 255);
-	PlayerTextDrawFont(i,TextFaim[i], 1);
-	PlayerTextDrawLetterSize(i,TextFaim[i], 0.220000, 0.799998);
-	PlayerTextDrawColor(i,TextFaim[i], -1);
-	PlayerTextDrawSetOutline(i,TextFaim[i], 1);
-	PlayerTextDrawSetProportional(i,TextFaim[i], 1);
-	PlayerTextDrawSetShadow(i,TextFaim[i], 1);
-
-	BarUpdateSoif[i] = CreatePlayerTextDraw(i,236.000000, 371.000000, "~n~");
-	PlayerTextDrawBackgroundColor(i,BarUpdateSoif[i], 255);
-	PlayerTextDrawFont(i,BarUpdateSoif[i], 1);
-	PlayerTextDrawLetterSize(i,BarUpdateSoif[i], 0.469998, 0.199999);
-	PlayerTextDrawColor(i,BarUpdateSoif[i], 16752895);
-	PlayerTextDrawSetOutline(i,BarUpdateSoif[i], 0);
-	PlayerTextDrawSetProportional(i,BarUpdateSoif[i], 1);
-	PlayerTextDrawSetShadow(i,BarUpdateSoif[i], 1);
-	PlayerTextDrawUseBox(i,BarUpdateSoif[i], 1);
-	PlayerTextDrawBoxColor(i,BarUpdateSoif[i], 0x0000D1FF);
-	PlayerTextDrawTextSize(i,BarUpdateSoif[i], 174.000000, 58.000000);
-
-	TextSoif[i] = CreatePlayerTextDraw(i,170.000000, 364.000000, "Chargement...");
-	PlayerTextDrawBackgroundColor(i,TextSoif[i], 255);
-	PlayerTextDrawFont(i,TextSoif[i], 1);
-	PlayerTextDrawLetterSize(i,TextSoif[i], 0.220000, 0.699998);
-	PlayerTextDrawColor(i,TextSoif[i], -1);
-	PlayerTextDrawSetOutline(i,TextSoif[i], 1);
-	PlayerTextDrawSetProportional(i,TextSoif[i], 1);
-	PlayerTextDrawSetShadow(i,TextSoif[i], 1);
+	// [HUD] Faim et Soif : passees dans afrp_hud.inc (pack proprietaire).
 
 	BarUpdateEndurance[i] = CreatePlayerTextDraw(i,608.000000, 14.000000, "~n~");
 	PlayerTextDrawBackgroundColor(i,BarUpdateEndurance[i], 255);
@@ -15388,25 +15238,7 @@ stock init_PlayerTexts(i)
 	PlayerTextDrawBoxColor(i,TextMaladie[i], 255);
 	PlayerTextDrawTextSize(i,TextMaladie[i], -5.000000, 38.000000);
 
-	// Vie
-	TextVie[i] = CreatePlayerTextDraw(i,170.000000, 338.000000, "Chargement...");
-	PlayerTextDrawBackgroundColor(i,TextVie[i], 255);
-	PlayerTextDrawFont(i,TextVie[i], 1);
-	PlayerTextDrawLetterSize(i,TextVie[i], 0.220000, 0.699998);
-	PlayerTextDrawColor(i,TextVie[i], -1);
-	PlayerTextDrawSetOutline(i,TextVie[i], 1);
-	PlayerTextDrawSetProportional(i,TextVie[i], 1);
-	PlayerTextDrawSetShadow(i,TextVie[i], 1);
-
-	// Armure
-	TextArmure[i] = CreatePlayerTextDraw(i,170.000000, 350.000000, "Chargement...");
-	PlayerTextDrawBackgroundColor(i,TextArmure[i], 255);
-	PlayerTextDrawFont(i,TextArmure[i], 1);
-	PlayerTextDrawLetterSize(i,TextArmure[i], 0.220000, 0.699998);
-	PlayerTextDrawColor(i,TextArmure[i], -1);
-	PlayerTextDrawSetOutline(i,TextArmure[i], 1);
-	PlayerTextDrawSetProportional(i,TextArmure[i], 1);
-	PlayerTextDrawSetShadow(i,TextArmure[i], 1);
+	// [HUD] Vie et Armure : passees dans afrp_hud.inc (pack proprietaire).
 	
 	// Speedo
 	speedo_Speed[i] = CreatePlayerTextDraw(i,500.000000, 346.000000, "Vitesse : ~g~65 KM/h");
@@ -54903,17 +54735,7 @@ public OnPlayerCommandText(playerid, cmdtext[])
 	        payday_HideTexts(playerid);
 			job_HideTexts(playerid);
 			speedometer_Hide(playerid);
-			TextDrawHideForPlayer(playerid, DisigStatsBg);
-			PlayerTextDrawHide(playerid, TextVie[playerid]);
-			PlayerTextDrawHide(playerid, TextArmure[playerid]);
-			TextDrawHideForPlayer(playerid, DisigFaim1);
-			TextDrawHideForPlayer(playerid, DisigFaim2);
-			PlayerTextDrawHide(playerid, BarUpdateFaim[playerid]);
-			PlayerTextDrawHide(playerid, TextFaim[playerid]);
-			TextDrawHideForPlayer(playerid, DisigSoif1);
-			TextDrawHideForPlayer(playerid, DisigSoif2);
-			PlayerTextDrawHide(playerid, BarUpdateSoif[playerid]);
-			PlayerTextDrawHide(playerid, TextSoif[playerid]);
+			HUD_Hide(playerid); // [HUD] un seul appel pour tout le panneau
 			PlayerTextDrawHide(playerid,zoneLocation[playerid]);
 			DestroyDynamic3DTextLabel(player_ID[playerid]);
 		}
