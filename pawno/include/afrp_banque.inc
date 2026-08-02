@@ -260,7 +260,7 @@ stock Banque_Init()
 	TextDrawSetProportional(banqueTD[5], 1);
 	TextDrawSetSelectable(banqueTD[5], 0);
 
-	banqueTD[6] = TextDrawCreate(215.000000, 91.000000, "BANCO");
+	banqueTD[6] = TextDrawCreate(215.000000, 91.000000, "BANQUE");
 	TextDrawFont(banqueTD[6], 1);
 	TextDrawLetterSize(banqueTD[6], 0.204166, 0.899999);
 	TextDrawTextSize(banqueTD[6], 400.000000, 17.000000);
@@ -288,7 +288,7 @@ stock Banque_Init()
 	TextDrawSetProportional(banqueTD[7], 1);
 	TextDrawSetSelectable(banqueTD[7], 0);
 
-	banqueTD[8] = TextDrawCreate(212.000000, 128.000000, "Voce nao possui multas.");
+	banqueTD[8] = TextDrawCreate(212.000000, 128.000000, "Vous n'avez aucune amende.");
 	TextDrawFont(banqueTD[8], 1);
 	TextDrawLetterSize(banqueTD[8], 0.183333, 0.850000);
 	TextDrawTextSize(banqueTD[8], 400.000000, 17.000000);
@@ -540,7 +540,7 @@ stock Banque_Init()
 	TextDrawSetProportional(banqueTD[25], 1);
 	TextDrawSetSelectable(banqueTD[25], 0);
 
-	banqueTD[26] = TextDrawCreate(202.000000, 157.000000, "Saldo Bancario");
+	banqueTD[26] = TextDrawCreate(202.000000, 157.000000, "Solde Bancaire");
 	TextDrawFont(banqueTD[26], 1);
 	TextDrawLetterSize(banqueTD[26], 0.179166, 0.900000);
 	TextDrawTextSize(banqueTD[26], 400.000000, 17.000000);
@@ -554,7 +554,7 @@ stock Banque_Init()
 	TextDrawSetProportional(banqueTD[26], 1);
 	TextDrawSetSelectable(banqueTD[26], 0);
 
-	banqueTD[27] = TextDrawCreate(202.000000, 166.000000, "R$");
+	banqueTD[27] = TextDrawCreate(202.000000, 166.000000, "$");
 	TextDrawFont(banqueTD[27], 1);
 	TextDrawLetterSize(banqueTD[27], 0.337500, 1.349999);
 	TextDrawTextSize(banqueTD[27], 400.000000, 17.000000);
@@ -582,7 +582,7 @@ stock Banque_Init()
 	TextDrawSetProportional(banqueTD[28], 1);
 	TextDrawSetSelectable(banqueTD[28], 0);
 
-	banqueTD[29] = TextDrawCreate(202.000000, 203.000000, "Saldo Carteira");
+	banqueTD[29] = TextDrawCreate(202.000000, 203.000000, "Solde Liquide");
 	TextDrawFont(banqueTD[29], 1);
 	TextDrawLetterSize(banqueTD[29], 0.179166, 0.900000);
 	TextDrawTextSize(banqueTD[29], 400.000000, 17.000000);
@@ -596,7 +596,7 @@ stock Banque_Init()
 	TextDrawSetProportional(banqueTD[29], 1);
 	TextDrawSetSelectable(banqueTD[29], 0);
 
-	banqueTD[30] = TextDrawCreate(202.000000, 212.000000, "R$");
+	banqueTD[30] = TextDrawCreate(202.000000, 212.000000, "$");
 	TextDrawFont(banqueTD[30], 1);
 	TextDrawLetterSize(banqueTD[30], 0.337500, 1.349999);
 	TextDrawTextSize(banqueTD[30], 400.000000, 17.000000);
@@ -624,7 +624,7 @@ stock Banque_Init()
 	TextDrawSetProportional(banqueTD[31], 1);
 	TextDrawSetSelectable(banqueTD[31], 0);
 
-	banqueTD[32] = TextDrawCreate(216.000000, 238.000000, "Deposito");
+	banqueTD[32] = TextDrawCreate(216.000000, 238.000000, "Depot");
 	TextDrawFont(banqueTD[32], 1);
 	TextDrawLetterSize(banqueTD[32], 0.174999, 1.000000);
 	TextDrawTextSize(banqueTD[32], 16.500000, 90.500000);
@@ -638,7 +638,7 @@ stock Banque_Init()
 	TextDrawSetProportional(banqueTD[32], 1);
 	TextDrawSetSelectable(banqueTD[32], 1);
 
-	banqueTD[33] = TextDrawCreate(256.000000, 238.000000, "Saque");
+	banqueTD[33] = TextDrawCreate(256.000000, 238.000000, "Retrait");
 	TextDrawFont(banqueTD[33], 1);
 	TextDrawLetterSize(banqueTD[33], 0.174999, 1.000000);
 	TextDrawTextSize(banqueTD[33], 16.500000, 90.500000);
@@ -652,7 +652,7 @@ stock Banque_Init()
 	TextDrawSetProportional(banqueTD[33], 1);
 	TextDrawSetSelectable(banqueTD[33], 1);
 
-	banqueTD[34] = TextDrawCreate(299.000000, 238.000000, "Tranferencia");
+	banqueTD[34] = TextDrawCreate(299.000000, 238.000000, "Virement");
 	TextDrawFont(banqueTD[34], 1);
 	TextDrawLetterSize(banqueTD[34], 0.174999, 1.000000);
 	TextDrawTextSize(banqueTD[34], 16.500000, 90.500000);
@@ -708,7 +708,7 @@ stock Banque_Init()
 	TextDrawSetProportional(banqueTD[37], 1);
 	TextDrawSetSelectable(banqueTD[37], 0);
 
-	banqueTD[38] = TextDrawCreate(204.000000, 255.000000, "Qual valor desejado ?");
+	banqueTD[38] = TextDrawCreate(204.000000, 255.000000, "Quel montant desirez-vous ?");
 	TextDrawFont(banqueTD[38], 1);
 	TextDrawLetterSize(banqueTD[38], 0.183333, 1.000000);
 	TextDrawTextSize(banqueTD[38], 400.000000, 17.000000);
@@ -722,7 +722,7 @@ stock Banque_Init()
 	TextDrawSetProportional(banqueTD[38], 1);
 	TextDrawSetSelectable(banqueTD[38], 0);
 
-	banqueTD[39] = TextDrawCreate(213.000000, 266.000000, "R$");
+	banqueTD[39] = TextDrawCreate(213.000000, 266.000000, "$");
 	TextDrawFont(banqueTD[39], 1);
 	TextDrawLetterSize(banqueTD[39], 0.258332, 1.750000);
 	TextDrawTextSize(banqueTD[39], 16.500000, 90.500000);
@@ -750,7 +750,7 @@ stock Banque_Init()
 	TextDrawSetProportional(banqueTD[40], 1);
 	TextDrawSetSelectable(banqueTD[40], 0);
 
-	banqueTD[41] = TextDrawCreate(257.000000, 298.000000, "DEPOSITAR");
+	banqueTD[41] = TextDrawCreate(257.000000, 298.000000, "DEPOSER");
 	TextDrawFont(banqueTD[41], 1);
 	TextDrawLetterSize(banqueTD[41], 0.233332, 1.200000);
 	TextDrawTextSize(banqueTD[41], 16.500000, 90.500000);
@@ -1061,7 +1061,7 @@ stock Banque_Init()
 	TextDrawSetProportional(banqueTD[62], 1);
 	TextDrawSetSelectable(banqueTD[62], 0);
 
-	banqueTD[63] = TextDrawCreate(354.000000, 196.000000, "Depositado");
+	banqueTD[63] = TextDrawCreate(354.000000, 196.000000, "Depose");
 	TextDrawFont(banqueTD[63], 1);
 	TextDrawLetterSize(banqueTD[63], 0.145833, 0.800000);
 	TextDrawTextSize(banqueTD[63], 400.000000, 17.000000);
@@ -1075,7 +1075,7 @@ stock Banque_Init()
 	TextDrawSetProportional(banqueTD[63], 1);
 	TextDrawSetSelectable(banqueTD[63], 0);
 
-	banqueTD[64] = TextDrawCreate(366.000000, 203.000000, "R$ 300,00");
+	banqueTD[64] = TextDrawCreate(366.000000, 203.000000, "$ 300,00");
 	TextDrawFont(banqueTD[64], 1);
 	TextDrawLetterSize(banqueTD[64], 0.137499, 1.250000);
 	TextDrawTextSize(banqueTD[64], 16.500000, 90.500000);
@@ -1146,7 +1146,7 @@ stock Banque_Init()
 	TextDrawSetProportional(banqueTD[68], 1);
 	TextDrawSetSelectable(banqueTD[68], 0);
 
-	banqueTD[69] = TextDrawCreate(417.000000, 196.000000, "Retirado");
+	banqueTD[69] = TextDrawCreate(417.000000, 196.000000, "Retire");
 	TextDrawFont(banqueTD[69], 1);
 	TextDrawLetterSize(banqueTD[69], 0.145833, 0.800000);
 	TextDrawTextSize(banqueTD[69], 400.000000, 17.000000);
@@ -1160,7 +1160,7 @@ stock Banque_Init()
 	TextDrawSetProportional(banqueTD[69], 1);
 	TextDrawSetSelectable(banqueTD[69], 0);
 
-	banqueTD[70] = TextDrawCreate(429.000000, 203.000000, "R$ 300,00");
+	banqueTD[70] = TextDrawCreate(429.000000, 203.000000, "$ 300,00");
 	TextDrawFont(banqueTD[70], 1);
 	TextDrawLetterSize(banqueTD[70], 0.137499, 1.250000);
 	TextDrawTextSize(banqueTD[70], 16.500000, 90.500000);
@@ -1216,7 +1216,7 @@ stock Banque_Init()
 	TextDrawSetProportional(banqueTD[73], 1);
 	TextDrawSetSelectable(banqueTD[73], 0);
 
-	banqueTD[74] = TextDrawCreate(334.000000, 239.000000, "Emprestimo");
+	banqueTD[74] = TextDrawCreate(334.000000, 239.000000, "Emprunt");
 	TextDrawFont(banqueTD[74], 1);
 	TextDrawLetterSize(banqueTD[74], 0.216666, 1.250000);
 	TextDrawTextSize(banqueTD[74], 400.000000, 17.000000);
@@ -1230,7 +1230,7 @@ stock Banque_Init()
 	TextDrawSetProportional(banqueTD[74], 1);
 	TextDrawSetSelectable(banqueTD[74], 0);
 
-	banqueTD[75] = TextDrawCreate(335.000000, 253.000000, "Esta apertado sem dinheiro ?");
+	banqueTD[75] = TextDrawCreate(335.000000, 253.000000, "Besoin d'argent ?");
 	TextDrawFont(banqueTD[75], 1);
 	TextDrawLetterSize(banqueTD[75], 0.129166, 0.800000);
 	TextDrawTextSize(banqueTD[75], 400.000000, 17.000000);
@@ -1244,7 +1244,7 @@ stock Banque_Init()
 	TextDrawSetProportional(banqueTD[75], 1);
 	TextDrawSetSelectable(banqueTD[75], 0);
 
-	banqueTD[76] = TextDrawCreate(335.000000, 260.000000, "Voce ja pode realizar emprestimos no nosso banco com total seguranca e sem problemas");
+	banqueTD[76] = TextDrawCreate(335.000000, 260.000000, "Vous pouvez desormais emprunter dans notre banque en toute securite et sans probleme");
 	TextDrawFont(banqueTD[76], 1);
 	TextDrawLetterSize(banqueTD[76], 0.149999, 0.650000);
 	TextDrawTextSize(banqueTD[76], 400.000000, 17.000000);
@@ -1258,7 +1258,7 @@ stock Banque_Init()
 	TextDrawSetProportional(banqueTD[76], 1);
 	TextDrawSetSelectable(banqueTD[76], 0);
 
-	banqueTD[77] = TextDrawCreate(395.000000, 297.000000, "Realizar Emprestimo");
+	banqueTD[77] = TextDrawCreate(395.000000, 297.000000, "Faire un emprunt");
 	TextDrawFont(banqueTD[77], 1);
 	TextDrawLetterSize(banqueTD[77], 0.199999, 1.350000);
 	TextDrawTextSize(banqueTD[77], 16.500000, 90.500000);
@@ -1347,8 +1347,8 @@ stock Banque_MettreAJourEmprunt(playerid)
 
 	if(montant <= 0)
 	{
-		TextDrawSetString(banqueTD[75], "Esta apertado sem dinheiro ?");
-		TextDrawSetString(banqueTD[76], "Voce ja pode realizar emprestimos no nosso banco com total seguranca e sem problemas");
+		TextDrawSetString(banqueTD[75], "Besoin d'argent ?");
+		TextDrawSetString(banqueTD[76], "Vous pouvez desormais emprunter dans notre banque en toute securite et sans probleme");
 	}
 	else
 	{
@@ -1376,11 +1376,22 @@ stock Banque_SelectionnerOnglet(playerid, onglet)
 	TextDrawColor(banqueTD[33], (onglet == BANQ_ETAPE_RETRAIT)  ? (BANQ_COULEUR_ACTIF) : (BANQ_COULEUR_INACTIF));
 	TextDrawColor(banqueTD[34], (onglet == BANQ_ETAPE_VIREMENT) ? (BANQ_COULEUR_ACTIF) : (BANQ_COULEUR_INACTIF));
 
+	// [FIX] le bouton de confirmation (41) restait fige sur "DEPOSITAR" quelle
+	// que soit l'onglet actif - impossible de savoir qu'il validait aussi le
+	// retrait/virement. Le texte suit maintenant l'onglet selectionne.
+	switch(onglet)
+	{
+		case BANQ_ETAPE_RETRAIT:  TextDrawSetString(banqueTD[41], "RETIRER");
+		case BANQ_ETAPE_VIREMENT: TextDrawSetString(banqueTD[41], "VIRER");
+		default:                  TextDrawSetString(banqueTD[41], "DEPOSER");
+	}
+
 	if(banqOuvert[playerid])
 	{
 		TextDrawShowForPlayer(playerid, banqueTD[32]);
 		TextDrawShowForPlayer(playerid, banqueTD[33]);
 		TextDrawShowForPlayer(playerid, banqueTD[34]);
+		TextDrawShowForPlayer(playerid, banqueTD[41]);
 	}
 	return 1;
 }
@@ -1397,7 +1408,7 @@ stock Banque_ToastDepot(playerid, montant)
 {
 	new montantStr[24], s[32];
 	FormatMoney(montant, montantStr, sizeof(montantStr));
-	format(s, sizeof(s), "R$ %s,00", montantStr);
+	format(s, sizeof(s), "$ %s,00", montantStr);
 	TextDrawSetString(banqueTD[64], s);
 
 	for(new i = 0; i < sizeof(banqIdxToastRetrait); i++) TextDrawHideForPlayer(playerid, banqueTD[banqIdxToastRetrait[i]]); // un seul toast a la fois
@@ -1410,7 +1421,7 @@ stock Banque_ToastRetrait(playerid, montant)
 {
 	new montantStr[24], s[32];
 	FormatMoney(montant, montantStr, sizeof(montantStr));
-	format(s, sizeof(s), "R$ %s,00", montantStr);
+	format(s, sizeof(s), "$ %s,00", montantStr);
 	TextDrawSetString(banqueTD[70], s);
 
 	for(new i = 0; i < sizeof(banqIdxToastDepot); i++)   TextDrawHideForPlayer(playerid, banqueTD[banqIdxToastDepot[i]]); // un seul toast a la fois
