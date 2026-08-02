@@ -30,10 +30,11 @@
 #define MP_VAGOS     9
 #define MP_VARIOS    10
 #define MP_WISE      11
-#define MP_MAX_CARTES 12
+#define MP_SAMSUNG   12
+#define MP_MAX_CARTES 13
 
 #define MP_MAX_OBJ    700   // la plus grosse carte en compte 688
-#define MP_MAX_RETRAIT 199
+#define MP_MAX_RETRAIT 203
 
 new mpNom[MP_MAX_CARTES][32] = {
 	"Banque BDO",
@@ -47,7 +48,8 @@ new mpNom[MP_MAX_CARTES][32] = {
 	"QG Ballas",
 	"QG Vagos",
 	"QG Varios",
-	"Magasin de vetements Wise"
+	"Magasin de vetements Wise",
+	"Boutique Samsung"
 };
 
 new mpAuteur[MP_MAX_CARTES][20] = {
@@ -62,14 +64,15 @@ new mpAuteur[MP_MAX_CARTES][20] = {
 	"Naroto",
 	"Naroto",
 	"Naroto",
-	"WISE_ENTERPRISE"
+	"WISE_ENTERPRISE",
+	"dev_dega"
 };
 
-new mpNbObj[MP_MAX_CARTES] = { 164, 167, 688, 550, 126, 231, 84, 120, 230, 143, 150, 224 };
+new mpNbObj[MP_MAX_CARTES] = { 164, 167, 688, 550, 126, 231, 84, 120, 230, 143, 150, 224, 149 };
 
-new Float:mpVoirX[MP_MAX_CARTES] = { 940.5729, 1016.6318, 2592.9810, 1279.8729, 2282.2308, 1450.8242, 1560.5968, 2463.4643, 2528.4714, 2789.5127, 1733.9089, 1674.6700 };
-new Float:mpVoirY[MP_MAX_CARTES] = { -1671.7339, -1332.1266, 766.9609, -3898.9602, -2346.5765, -1129.5380, -1625.2272, -1912.3887, -1485.5647, -1619.2209, -2110.4419, -1752.1637 };
-new Float:mpVoirZ[MP_MAX_CARTES] = { 22.2706, 13.3828, 10.9803, 26.1658, 24.3869, 55.0938, 18.3428, 24.8360, 31.6719, 28.1672, 22.1828, 21.0198 };
+new Float:mpVoirX[MP_MAX_CARTES] = { 940.5729, 1016.6318, 2592.9810, 1279.8729, 2282.2308, 1450.8242, 1560.5968, 2463.4643, 2528.4714, 2789.5127, 1733.9089, 1674.6700, 1279.6000 };
+new Float:mpVoirY[MP_MAX_CARTES] = { -1671.7339, -1332.1266, 766.9609, -3898.9602, -2346.5765, -1129.5380, -1625.2272, -1912.3887, -1485.5647, -1619.2209, -2110.4419, -1752.1637, -1548.0000 };
+new Float:mpVoirZ[MP_MAX_CARTES] = { 22.2706, 13.3828, 10.9803, 26.1658, 24.3869, 55.0938, 18.3428, 24.8360, 31.6719, 28.1672, 22.1828, 21.0198, 13.5000 };
 
 // Batiments d'origine a retirer, carte par carte.
 new mpRmCarte[MP_MAX_RETRAIT] = {
@@ -83,7 +86,8 @@ new mpRmCarte[MP_MAX_RETRAIT] = {
 	2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4, 4, 4, 4, 5, 5, 5,
 	7, 7, 7, 7, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
 	9, 9, 9, 9, 9, 9, 9, 9, 9, 10, 10, 10, 10, 10, 10, 10, 10, 10,
-	11, 11
+	11, 11,
+	12, 12, 12, 12
 };
 new mpRmModel[MP_MAX_RETRAIT] = {
 	729, 726, 620, 1297, 1438, 3454, 3478, 3454, 3478, 3454, 3478, 3454, 3478, 3454, 3478,
@@ -101,7 +105,8 @@ new mpRmModel[MP_MAX_RETRAIT] = {
 	3594, 3594, 3594, 17912, 17859, 17861, 1267, 1261, 1297, 17912, 1527, 1267, 1261, 1226, 3635, 3670, 1308,
 	17550, 17772, 1308, 1315, 1468, 1226, 1315, 17550, 17772,
 	1226, 1308, 3634, 3669, 1308, 1308, 1308, 1308, 1308,
-	8677, 8752
+	8677, 8752,
+	792, 792, 1350, 1231
 };
 new Float:mpRmX[MP_MAX_RETRAIT] = {
 	940.929, 958.039, 930.140, 922.750, 1015.530, 2663.398, 2663.398, 2656.300,
@@ -128,7 +133,8 @@ new Float:mpRmX[MP_MAX_RETRAIT] = {
 	2510.590, 2526.580, 2526.520, 2672.909, 2524.040, 2524.040, 2538.159, 2538.159, 2531.179, 2672.909, 2522.459, 2538.159, 2538.159, 1681.969, 1668.729, 1668.729, 1676.280,
 	2870.239, 2870.239, 2424.090, 2425.050, 2475.639, 2425.830, 2416.659, 2870.239, 2870.239,
 	1817.010, 1813.150, 1711.630, 1711.630, 1832.729, 1842.449, 1832.880, 1863.300, 1833.979,
-	2362.320, 2362.320
+	2362.320, 2362.320,
+	1279.729, 1280.030, 1292.260, 1273.609
 };
 new Float:mpRmY[MP_MAX_RETRAIT] = {
 	-1668.859, -1678.050, -1662.300, -1683.338, -1337.170, 746.320, 746.320, 716.390,
@@ -155,7 +161,8 @@ new Float:mpRmY[MP_MAX_RETRAIT] = {
 	-1474.040, -1474.380, -1474.380, -1883.770, -1480.209, -1480.209, -1490.880, -1490.880, -1499.359, -1883.770, -1478.739, -1490.880, -1490.880, -2108.300, -2096.199, -2096.199, -2118.090,
 	-1589.390, -1589.390, -1999.420, -2006.839, -2022.810, -2013.849, -2020.969, -1589.390, -1589.390,
 	-2118.550, -2133.560, -2095.959, -2095.959, -2107.770, -2107.770, -2079.979, -2109.800, -2142.040,
-	1023.179, 1023.179
+	1023.179, 1023.179,
+	-1552.949, -1531.140, -1562.150, -1542.380
 };
 new Float:mpRmZ[MP_MAX_RETRAIT] = {
 	11.319, 10.741, 4.967, 15.937, 12.554, 14.170, 14.170, 14.170,
@@ -182,7 +189,8 @@ new Float:mpRmZ[MP_MAX_RETRAIT] = {
 	23.609, 24.585, 23.625, 13.875, 25.242, 25.242, 36.062, 36.062, 26.304, 13.875, 24.164, 36.062, 36.062, 16.390, 15.187, 15.187, 12.750,
 	16.562, 16.562, 12.703, 15.812, 13.820, 16.265, 15.812, 16.562, 16.562,
 	16.390, 12.750, 15.210, 15.210, 12.750, 12.750, 12.750, 12.851, 12.734,
-	7.820, 7.820
+	7.820, 7.820,
+	12.218, 12.070, 12.460, 15.234
 };
 new Float:mpRmR[MP_MAX_RETRAIT] = {
 	0.250, 0.250, 0.250, 0.250, 0.250, 0.250, 0.250, 0.250,
@@ -208,7 +216,8 @@ new Float:mpRmR[MP_MAX_RETRAIT] = {
 	0.250, 0.250, 0.250, 0.250, 0.250, 0.250, 0.250, 0.250, 0.250, 0.250, 0.250, 0.250, 0.250, 0.250, 0.250,
 	0.250, 0.250, 0.250, 0.250, 0.250, 0.250, 0.250, 0.250, 0.250, 0.250, 0.250, 0.250, 0.250, 0.250, 0.250,
 	0.250, 0.250, 0.250, 0.250, 0.250, 0.250,
-	0.250, 0.250, 0.250, 0.250, 0.250
+	0.250, 0.250, 0.250, 0.250, 0.250,
+	0.250, 0.250, 0.250, 0.250
 };
 
 new mpVaultDoor = -1;   // porte du coffre de la Banque du coin
@@ -5031,6 +5040,294 @@ stock MapPack_Creer_WISE()
 	return 1;
 }
 
+// Boutique Samsung - 149 objets, mapping de dev_dega
+stock MapPack_Creer_SAMSUNG()
+{
+	new tmpobjid;
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(18766, 1280.239135, -1553.826416, 12.950699, -90.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 10765, "airportgnd_sfse", "ws_airpt_concrete", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(18766, 1276.239135, -1553.816406, 12.950699, -90.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 10765, "airportgnd_sfse", "ws_airpt_concrete", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(18766, 1280.239135, -1548.826416, 12.950699, -90.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 10765, "airportgnd_sfse", "ws_airpt_concrete", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(18766, 1276.239135, -1548.816406, 12.950699, -90.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 10765, "airportgnd_sfse", "ws_airpt_concrete", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(18766, 1280.239135, -1543.826416, 12.950699, -90.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 10765, "airportgnd_sfse", "ws_airpt_concrete", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(18766, 1276.239135, -1543.816406, 12.950699, -90.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 10765, "airportgnd_sfse", "ws_airpt_concrete", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(18766, 1280.239135, -1541.826416, 12.950699, -90.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 10765, "airportgnd_sfse", "ws_airpt_concrete", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(18766, 1276.239135, -1541.816406, 12.950698, -90.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 10765, "airportgnd_sfse", "ws_airpt_concrete", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(18766, 1270.768676, -1553.828247, 15.050705, 0.000000, -89.999992, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 3899, "hospital2", "black", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(18766, 1270.768676, -1548.828247, 15.050705, 0.000000, -89.999992, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 3899, "hospital2", "black", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(18766, 1270.768676, -1543.828247, 15.050705, 0.000000, -89.999992, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 3899, "hospital2", "black", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(18766, 1270.768676, -1541.828247, 15.050705, 0.000000, -89.999992, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 3899, "hospital2", "black", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(18766, 1272.768676, -1538.828979, 15.050705, 0.000000, -89.999992, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 3899, "hospital2", "black", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(18766, 1277.768676, -1538.828979, 15.050705, 0.000000, -89.999992, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 3899, "hospital2", "black", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(18766, 1282.768676, -1538.828979, 15.050705, 0.000000, -89.999992, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 3899, "hospital2", "black", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(1499, 1285.076782, -1545.619995, 13.449099, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 3899, "hospital2", "black", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 1, 4830, "airport2", "sanairtex3", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(1499, 1285.076782, -1548.619262, 13.449099, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 3899, "hospital2", "black", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 1, 4830, "airport2", "sanairtex3", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19448, 1285.095825, -1540.944946, 15.208569, -90.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 4830, "airport2", "sanairtex3", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 1, 4830, "airport2", "sanairtex3", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19448, 1285.105834, -1543.944946, 15.208569, -90.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 4830, "airport2", "sanairtex3", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 1, 4830, "airport2", "sanairtex3", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19448, 1285.105834, -1550.344604, 15.208569, -90.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 4830, "airport2", "sanairtex3", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 1, 4830, "airport2", "sanairtex3", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19448, 1285.105834, -1553.844726, 15.208569, -90.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 4830, "airport2", "sanairtex3", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 1, 4830, "airport2", "sanairtex3", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(18980, 1284.687011, -1555.655151, 7.548376, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 3899, "hospital2", "black", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(1499, 1279.576416, -1556.119628, 13.449099, 0.000001, 0.000001, 179.999984, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 3899, "hospital2", "black", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 1, 4830, "airport2", "sanairtex3", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(1499, 1276.577148, -1556.119628, 13.449099, -0.000001, -0.000001, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 3899, "hospital2", "black", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 1, 4830, "airport2", "sanairtex3", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19448, 1281.276733, -1556.144165, 15.208569, -90.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 4830, "airport2", "sanairtex3", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 1, 4830, "airport2", "sanairtex3", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19448, 1283.426269, -1556.134155, 15.208569, -90.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 4830, "airport2", "sanairtex3", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 1, 4830, "airport2", "sanairtex3", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19448, 1274.877075, -1556.144165, 15.208569, -90.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 4830, "airport2", "sanairtex3", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 1, 4830, "airport2", "sanairtex3", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19448, 1272.877075, -1556.134155, 15.208569, -90.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 4830, "airport2", "sanairtex3", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 1, 4830, "airport2", "sanairtex3", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19360, 1285.040649, -1547.130371, 17.636543, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 4830, "airport2", "sanairtex3", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19360, 1278.033203, -1556.141967, 17.696746, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 4830, "airport2", "sanairtex3", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(18766, 1280.239135, -1553.826416, 19.750701, -90.000000, -135.000000, -135.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 3899, "hospital2", "black", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(18766, 1276.239135, -1553.816406, 19.750701, -90.000000, -135.000000, -135.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 3899, "hospital2", "black", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(18766, 1280.239135, -1548.826416, 19.750701, -90.000000, -135.000000, -135.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 3899, "hospital2", "black", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(18766, 1276.239135, -1548.816406, 19.750701, -90.000000, -135.000000, -135.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 3899, "hospital2", "black", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(18766, 1280.239135, -1543.826416, 19.750701, -90.000000, -135.000000, -135.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 3899, "hospital2", "black", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(18766, 1276.239135, -1543.816406, 19.750701, -90.000000, -135.000000, -135.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 3899, "hospital2", "black", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(18766, 1280.239135, -1541.826416, 19.750701, -90.000000, -135.000000, -135.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 3899, "hospital2", "black", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(18766, 1276.239135, -1541.816406, 19.750701, -90.000000, -135.000000, -135.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 3899, "hospital2", "black", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19448, 1285.182495, -1543.086669, 18.546878, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 3899, "hospital2", "black", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19448, 1285.182495, -1551.386596, 18.546878, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 3899, "hospital2", "black", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19448, 1280.383666, -1556.186645, 18.546878, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 3899, "hospital2", "black", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19448, 1275.083984, -1556.186645, 18.546878, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 3899, "hospital2", "black", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19380, 1271.183349, -1551.193969, 14.150702, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 14581, "ab_mafiasuitea", "walp45S", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19380, 1271.193359, -1544.084228, 14.150702, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 14581, "ab_mafiasuitea", "walp45S", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19380, 1276.028686, -1539.255126, 14.050702, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 10398, "countryclub_sfs", "hc_wall2", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19380, 1280.228149, -1539.245117, 14.050702, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 10398, "countryclub_sfs", "hc_wall2", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19380, 1280.228149, -1544.545288, 19.320720, 0.000000, -89.999992, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 19800, "lsacarpark1", "dt_officewall2", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19380, 1280.228149, -1550.845214, 19.330720, 0.000000, -89.999992, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 19800, "lsacarpark1", "dt_officewall2", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19380, 1276.028198, -1544.545288, 19.310720, -0.000001, -89.999992, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 19800, "lsacarpark1", "dt_officewall2", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19380, 1276.028198, -1550.845214, 19.320720, -0.000001, -89.999992, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 19800, "lsacarpark1", "dt_officewall2", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19482, 1285.353637, -1551.378784, 18.746879, 0.000000, -0.000001, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterialText(tmpobjid, 0, "S", 130, "Ariel", 199, 1, 0xFFFFFFFF, 0x00000000, 1);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19482, 1285.353637, -1550.079101, 18.746879, 0.000000, -0.000001, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterialText(tmpobjid, 0, "A", 130, "Ariel", 199, 1, 0xFFFFFFFF, 0x00000000, 1);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19482, 1285.353637, -1548.529296, 18.746879, 0.000000, -0.000001, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterialText(tmpobjid, 0, "M", 130, "Ariel", 199, 1, 0xFFFFFFFF, 0x00000000, 1);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19482, 1285.353637, -1547.079345, 18.746879, 0.000000, -0.000001, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterialText(tmpobjid, 0, "S", 130, "Ariel", 199, 1, 0xFFFFFFFF, 0x00000000, 1);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19482, 1285.353637, -1545.779418, 18.746879, 0.000000, -0.000001, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterialText(tmpobjid, 0, "U", 130, "Ariel", 199, 1, 0xFFFFFFFF, 0x00000000, 1);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19482, 1285.353637, -1544.479492, 18.746879, 0.000000, -0.000001, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterialText(tmpobjid, 0, "N", 130, "Ariel", 199, 1, 0xFFFFFFFF, 0x00000000, 1);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19482, 1285.353637, -1543.179321, 18.746879, 0.000000, -0.000001, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterialText(tmpobjid, 0, "G", 130, "Ariel", 199, 1, 0xFFFFFFFF, 0x00000000, 1);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19482, 1274.254638, -1556.279052, 18.046876, 0.000001, -0.000004, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterialText(tmpobjid, 0, "S", 130, "Ariel", 199, 1, 0xFFFFFFFF, 0x00000000, 1);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19482, 1275.554321, -1556.279052, 18.046876, 0.000001, -0.000004, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterialText(tmpobjid, 0, "A", 130, "Ariel", 199, 1, 0xFFFFFFFF, 0x00000000, 1);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19482, 1277.104125, -1556.279052, 18.046876, 0.000001, -0.000004, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterialText(tmpobjid, 0, "M", 130, "Ariel", 199, 1, 0xFFFFFFFF, 0x00000000, 1);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19482, 1278.554077, -1556.279052, 18.046876, 0.000001, -0.000004, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterialText(tmpobjid, 0, "S", 130, "Ariel", 199, 1, 0xFFFFFFFF, 0x00000000, 1);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19482, 1279.854003, -1556.279052, 18.046876, 0.000001, -0.000004, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterialText(tmpobjid, 0, "U", 130, "Ariel", 199, 1, 0xFFFFFFFF, 0x00000000, 1);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19482, 1281.153930, -1556.279052, 18.046876, 0.000001, -0.000004, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterialText(tmpobjid, 0, "N", 130, "Ariel", 199, 1, 0xFFFFFFFF, 0x00000000, 1);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19482, 1282.454101, -1556.279052, 18.046876, 0.000001, -0.000004, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterialText(tmpobjid, 0, "G", 130, "Ariel", 199, 1, 0xFFFFFFFF, 0x00000000, 1);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(18762, 1272.178833, -1542.141723, 11.850692, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 3899, "hospital2", "black", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(18762, 1271.479003, -1542.141723, 11.850692, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 3899, "hospital2", "black", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(2626, 1278.424316, -1542.294311, 13.950700, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 3899, "hospital2", "black", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19482, 1278.541015, -1542.677734, 13.950700, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterialText(tmpobjid, 0, "SAMSUNG", 130, "Ariel", 30, 1, 0xFFFFFFFF, 0x00000000, 1);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(1499, 1279.382324, -1541.897460, 11.850692, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 3899, "hospital2", "black", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 1, 14789, "ab_sfgymmain", "gun_ceiling2_128", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(18762, 1279.283081, -1539.836425, 11.950694, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 3899, "hospital2", "black", 0x00000000);
+	SetDynamicObjectMaterial(tmpobjid, 1, 3899, "hospital2", "black", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(18762, 1273.732666, -1547.810058, 13.750699, -90.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 3899, "hospital2", "black", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(1630, 1273.756225, -1546.405029, 14.250701, 0.000000, 89.999992, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18065, "ab_sfammumain", "shelf_glas", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19563, 1273.877197, -1546.034301, 14.310704, -90.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18874, "mobilephone10", "mobilephone10-2", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19563, 1273.877197, -1546.634155, 14.310704, -90.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18874, "mobilephone10", "mobilephone10-2", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(1630, 1273.756225, -1547.904663, 14.250701, -0.000004, 89.999992, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18065, "ab_sfammumain", "shelf_glas", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19563, 1273.877197, -1547.533935, 14.310704, -90.000000, 360.000000, 89.999992, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18874, "mobilephone10", "mobilephone10-2", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19563, 1273.877197, -1548.133789, 14.310704, -90.000000, 360.000000, 89.999992, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18874, "mobilephone10", "mobilephone10-2", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(1630, 1273.756225, -1549.504272, 14.250701, -0.000004, 89.999992, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18065, "ab_sfammumain", "shelf_glas", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19563, 1273.877197, -1549.133544, 14.310704, -90.000000, 0.000000, 89.999984, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18874, "mobilephone10", "mobilephone10-2", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19563, 1273.877197, -1549.733398, 14.310704, -90.000000, 360.000000, 89.999992, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18874, "mobilephone10", "mobilephone10-2", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19482, 1271.365966, -1553.088867, 15.850708, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterialText(tmpobjid, 0, "GALAXY", 130, "Ariel", 35, 1, 0xFFFFFFFF, 0x00000000, 1);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19786, 1271.224487, -1549.113037, 15.850708, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 1, 15040, "cuntcuts", "GB_phone01", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19786, 1271.224487, -1545.113037, 15.850708, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 1, 19513, "whitephone", "whitephonefront", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(18762, 1277.732666, -1547.810058, 13.750699, -90.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 3899, "hospital2", "black", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(1630, 1277.756225, -1546.405029, 14.250701, 0.000000, 89.999992, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18065, "ab_sfammumain", "shelf_glas", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19563, 1277.877197, -1546.034301, 14.310704, -90.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18874, "mobilephone10", "mobilephone10-2", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19563, 1277.877197, -1546.634155, 14.310704, -90.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18874, "mobilephone10", "mobilephone10-2", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(1630, 1277.756225, -1547.904663, 14.250701, -0.000004, 89.999992, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18065, "ab_sfammumain", "shelf_glas", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19563, 1277.877197, -1547.533935, 14.310704, -90.000000, 360.000000, 89.999992, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18874, "mobilephone10", "mobilephone10-2", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19563, 1277.877197, -1548.133789, 14.310704, -90.000000, 360.000000, 89.999992, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18874, "mobilephone10", "mobilephone10-2", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(1630, 1277.756225, -1549.504272, 14.250701, -0.000004, 89.999992, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18065, "ab_sfammumain", "shelf_glas", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19563, 1277.877197, -1549.133544, 14.310704, -90.000000, 0.000000, 89.999984, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18874, "mobilephone10", "mobilephone10-2", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19563, 1277.877197, -1549.733398, 14.310704, -90.000000, 360.000000, 89.999992, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18874, "mobilephone10", "mobilephone10-2", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(18762, 1282.332519, -1551.810058, 13.750699, -90.000000, -135.000000, -135.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 3899, "hospital2", "black", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(1630, 1282.356079, -1550.405029, 14.250701, -0.000001, 89.999992, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18065, "ab_sfammumain", "shelf_glas", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19893, 1282.226196, -1550.059936, 14.250701, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 1, 8057, "vgsswarehse02", "ws_RShaul_transp_M", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19893, 1282.226196, -1550.660034, 14.250701, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 1, 8057, "vgsswarehse02", "ws_RShaul_transp_M", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(1630, 1282.356079, -1551.904663, 14.250701, -0.000007, 89.999992, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18065, "ab_sfammumain", "shelf_glas", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19893, 1282.226196, -1551.559814, 14.250700, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 1, 8057, "vgsswarehse02", "ws_RShaul_transp_M", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19893, 1282.226196, -1552.159667, 14.250700, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 1, 8057, "vgsswarehse02", "ws_RShaul_transp_M", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(1630, 1282.356079, -1553.504272, 14.250701, -0.000007, 89.999992, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 18065, "ab_sfammumain", "shelf_glas", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19786, 1282.350708, -1539.313842, 16.150709, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 1, 3899, "hospital2", "black", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19482, 1282.399169, -1539.452392, 16.150709, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterialText(tmpobjid, 0, "SAMSUNG", 130, "Ariel", 35, 1, 0xFFFFFFFF, 0x00000000, 1);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19482, 1274.236572, -1547.701782, 13.900699, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterialText(tmpobjid, 0, "SAMSUNG", 130, "Ariel", 40, 1, 0xFFFFFFFF, 0x00000000, 1);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19482, 1278.236816, -1547.701782, 13.900699, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterialText(tmpobjid, 0, "SAMSUNG", 130, "Ariel", 40, 1, 0xFFFFFFFF, 0x00000000, 1);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19482, 1281.735961, -1551.701782, 13.900699, 0.000000, 0.000000, -179.999984, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterialText(tmpobjid, 0, "SAMSUNG", 130, "Ariel", 40, 1, 0xFFFFFFFF, 0x00000000, 1);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(2491, 1276.466430, -1555.400756, 13.350699, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 1, 3899, "hospital2", "black", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(2491, 1280.266235, -1555.400756, 13.350699, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 1, 3899, "hospital2", "black", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19482, 1276.236083, -1555.401611, 14.300702, -90.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterialText(tmpobjid, 0, "SAMSUNG", 130, "Ariel", 25, 1, 0xFFFFFFFF, 0x00000000, 1);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19482, 1280.036376, -1555.401611, 14.300702, -90.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterialText(tmpobjid, 0, "SAMSUNG", 130, "Ariel", 25, 1, 0xFFFFFFFF, 0x00000000, 1);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(2491, 1284.449951, -1548.686645, 13.350699, -0.000001, -0.000001, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 1, 3899, "hospital2", "black", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19482, 1284.450805, -1548.916503, 14.300702, -90.000000, 45.000000, -134.999984, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterialText(tmpobjid, 0, "SAMSUNG", 130, "Ariel", 25, 1, 0xFFFFFFFF, 0x00000000, 1);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(2491, 1284.449951, -1545.086547, 13.350699, -0.000004, -0.000001, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 1, 3899, "hospital2", "black", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19482, 1284.450805, -1545.316406, 14.300702, -90.000000, 189.735610, 9.735632, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterialText(tmpobjid, 0, "SAMSUNG", 130, "Ariel", 25, 1, 0xFFFFFFFF, 0x00000000, 1);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19360, 1275.501464, -1539.263061, 16.750711, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterial(tmpobjid, 0, 3899, "hospital2", "black", 0x00000000);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19482, 1275.399414, -1539.452392, 16.850711, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterialText(tmpobjid, 0, "SAMSUNG", 130, "Ariel", 50, 1, 0xFFFFFFFF, 0x00000000, 1);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19482, 1276.199218, -1539.362426, 16.350709, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	SetDynamicObjectMaterialText(tmpobjid, 0, "GALAXY", 130, "Ariel", 35, 1, 0xFFFFFFFF, 0x00000000, 1);
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(14414, 1287.319458, -1547.120361, 10.240196, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(14414, 1278.089111, -1558.804321, 10.256649, 0.000000, 0.000000, -179.999984, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(2413, 1273.150878, -1542.181396, 13.450698, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(2413, 1274.750976, -1542.181396, 13.450698, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(2413, 1276.350585, -1542.181396, 13.450697, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19623, 1274.944702, -1542.121582, 14.510703, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19623, 1276.244628, -1542.121582, 14.510703, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(367, 1273.545410, -1542.432617, 14.500702, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(367, 1272.945556, -1542.432617, 14.500702, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(18075, 1280.779907, -1550.313842, 19.150705, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(18075, 1280.779907, -1544.313842, 19.150705, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(18075, 1274.779907, -1544.313842, 19.140705, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19786, 1271.224487, -1553.113037, 15.850708, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19894, 1282.231811, -1553.097900, 14.250701, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(19894, 1282.231811, -1553.697753, 14.250701, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(18075, 1274.779907, -1550.313842, 19.140705, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(640, 1285.588989, -1553.657348, 13.246876, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(640, 1285.578979, -1551.657836, 13.236877, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(640, 1285.578979, -1542.657592, 13.236877, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(640, 1285.588989, -1541.047973, 13.246876, 0.000000, 0.000000, 0.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(640, 1283.289306, -1556.688964, 13.253904, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(640, 1282.389526, -1556.688964, 13.243904, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(640, 1273.689208, -1556.688964, 13.243904, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(640, 1272.989379, -1556.688964, 13.253904, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(1212, 1278.377319, -1542.319091, 14.450702, 0.000000, 0.000000, 102.277435, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(1212, 1278.677368, -1542.319091, 14.450702, 0.000000, 0.000000, 102.277435, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(1212, 1278.977416, -1542.319091, 14.450702, 0.000000, 0.000000, 102.277435, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(1829, 1271.956542, -1539.824462, 13.920701, 0.000000, 0.000000, 90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(1231, 1287.250244, -1541.169799, 14.992932, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(1231, 1287.250244, -1554.169799, 14.992932, 0.000000, 0.000000, -90.000000, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(1231, 1284.250244, -1558.169799, 14.992932, 0.000000, 0.000000, 179.999984, -1, -1, -1, 300.00, 300.00));
+	tmpobjid = MapPack_Add(MP_SAMSUNG, CreateDynamicObject(1231, 1273.250244, -1558.169799, 14.992932, 0.000000, 0.000000, 179.999984, -1, -1, -1, 300.00, 300.00));
+	#pragma unused tmpobjid
+	return 1;
+}
+
 stock MapPack_CreerCarte(carte)
 {
 	switch(carte)
@@ -5047,6 +5344,7 @@ stock MapPack_CreerCarte(carte)
 		case MP_VAGOS: return MapPack_Creer_VAGOS();
 		case MP_VARIOS: return MapPack_Creer_VARIOS();
 		case MP_WISE: return MapPack_Creer_WISE();
+		case MP_SAMSUNG: return MapPack_Creer_SAMSUNG();
 	}
 	return 0;
 }

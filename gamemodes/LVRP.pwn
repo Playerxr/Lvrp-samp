@@ -70439,13 +70439,20 @@ public OnPlayerCommandText(playerid, cmdtext[])
 	// [MOBILE INLINE] commandes mobile_system inlinees
 	if(strcmp(cmd, "/mobile", true) == 0 || strcmp(cmd, "/mobitel", true) == 0)
 		return Mobile_CmdMobile(playerid);
-	if(strcmp(cmd, "/shop", true) == 0 || strcmp(cmd, "/market", true) == 0)
-		return Mobile_CmdShop(playerid);
 	if(strcmp(cmd, "/mobilesettings", true) == 0)
 		return Mobile_CmdMobileSettings(playerid);
 
-    if(0 && (strcmp(cmd, "/shop", true) == 0 || strcmp(cmd, "/market", true) == 0))
+    // [FIX] /shop et /market collisionnaient : ce bloc (achat du tout premier
+    // telephone, dialogue 9102) etait mort derriere un "if(0 && ...)" car
+    // Mobile_CmdShop() ci-dessus repondait toujours en premier - or
+    // Mobile_CmdShop ne fait que la recharge de credit (dialogue 9103) et
+    // suppose que le joueur a deja un telephone. Resultat : aucun joueur
+    // sans telephone ne pouvait jamais en acheter un. Fusion des deux ici :
+    // meme verification de proximite (IsPlayerNearMarket, inclut desormais
+    // la Boutique Samsung), puis routage selon hasPhone.
+    if(strcmp(cmd, "/shop", true) == 0 || strcmp(cmd, "/market", true) == 0)
     {
+        if(!IsPlayerNearMarket(playerid)) return SendPlayerNotification(playerid, -1, NOT_IN_MARKET), 1;
         if(writingTweet[playerid] == 1) return SendClientMessage(playerid, -1, MSG_TWEET_ERROR), 1;
         if(hasPhone[playerid] == 1)
         {

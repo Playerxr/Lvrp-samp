@@ -59,11 +59,12 @@
 
 
 // Variables
-new Float:marketCoordinates[3][3] =
+new Float:marketCoordinates[4][3] =
 {
 	{2284.8750, -1326.1179, 25.5},
 	{1152.3308, -1657.2321, 14.5},
-	{1340.5618, -1318.0380, 14.0}
+	{1340.5618, -1318.0380, 14.0},
+	{1279.6000, -1548.0000, 13.5}	// Boutique Samsung (/mappack)
 };
 
 // hasPhone, playerNumber, playerCredit, usingPhone deja declares dans LVRP.pwn
