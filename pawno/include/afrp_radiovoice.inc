@@ -9,60 +9,51 @@
 	changeait qui entend la voix de qui. C'etait purement decoratif - la seule radio
 	qui marchait vraiment etait /radio <message>, un message texte via msg_Radio().
 
-	Le plugin SampVoice (plugins/sampvoice.so, natives dans sampvoice.inc) est
-	installe mais jamais utilise dans le gamemode. Ce module cree un vrai canal
-	vocal global (GSTREAM) par faction legale et y attache/detache les joueurs
-	quand ils font /radio ou /local, EN PLUS de la radio texte existante (qui
-	n'est pas touchee).
+	=== [REECRITURE] LA PREMIERE VERSION DE CE MODULE NE POUVAIT PAS MARCHER ===
+	Elle appelait des fonctions ("SvCreateGStream", "SvAttachSpeakerToStream",
+	"SvIsPlayerSpeaking", ...) qui n'existent pas dans le vrai plugin installe
+	(plugins/sampvoice.so) : voir sampvoice.inc, reecrit en meme temps que ce
+	fichier a partir de la vraie doc (sv_control/sampvoice.chm, extraite avec
+	extract_chmLib). Chaque appel echouait silencieusement (native introuvable),
+	donc aucun son ne passait, quel que soit le code autour. Cette version
+	utilise les vraies fonctions du plugin.
 
-	=== POURQUOI UN GSTREAM PAR FACTION (PAS UN SEUL CANAL GLOBAL) ===
+	=== MODELE REEL (channels/streams, pas "GStream/LStream") ===
+	Chaque joueur a 32 canaux et un role Listener + un role Speaker. Un STREAM
+	global (SvCreateStream(0.0)) recoit l'audio des canaux Speaker qui lui sont
+	attaches (SvAttachStream) et le diffuse a ses Listeners (SvAttachListener).
+	SvPlay(playerid, channel) demarre reellement le micro sur ce canal (c'est
+	l'action, pas juste une autorisation) ; SvStop l'arrete. Comme /radio est un
+	mode permanent (pas du push-to-talk), on appelle SvPlay/SvStop directement
+	depuis /radio et /local plutot que de brancher une touche d'activation.
+
+	=== POURQUOI UN STREAM PAR FACTION (PAS UN SEUL CANAL GLOBAL) ===
 	Meme regroupement que msg_Radio() : chaque faction (PlayerInfo[playerid][pMember])
 	a sa propre frequence texte, donc sa propre frequence vocale. Un flic en /radio
 	ne doit pas entendre un pompier en /radio.
 
-	=== LISTENER vs SPEAKER SUR UN GSTREAM ===
-	sampvoice.inc ne declare QUE des natives "Listener" pour SV_GSTREAM (section
-	"Streams Global") et QUE des natives "Speaker" pour SV_LSTREAM (section
-	"Streams Local") - mais les tags SV_LSTREAM:/SV_GSTREAM: sont definis vides
-	(#define SV_GSTREAM: -> rien) donc n'importe quel native s'applique a n'importe
-	quel handle de stream : ce n'est qu'un classement documentaire, pas une
-	restriction du compilateur. gamemodes/sampvoice.pwn (FS de reference, PAS
-	compile/charge - lu uniquement pour l'idiome) le confirme : JoinGroupVoiceChannel
-	attache un GSTREAM radio comme Listener (pour qu'il entende le canal), et
-	SvAttachSpeakerToStream est appele sur ce meme GSTREAM pour qu'il y emette.
-	Les deux sont necessaires et independants. Ici, comme /radio n'est pas un
-	push-to-talk mais un mode permanent (jusqu'a /local), on attache les deux
-	tout de suite plutot que de brancher les callbacks de touche d'activation.
-
 	=== CAPACITE CLIENT (JOUEURS SANS LE PLUGIN) ===
-	SvGetVersion/SvHasMicro (verifies a la connexion, meme idiome que le FS de
-	reference) : si le joueur n'a pas le plugin SampVoice ou pas de micro, /radio
-	continue de fonctionner en mode texte (talkStats + le widget existant), mais
-	RadioVoice_Enable() renvoie un message clair au lieu d'echouer en silence, et
-	n'attache jamais un joueur incapable a un canal.
+	SvGetVersion/SvHasMicro verifies a la connexion : si le joueur n'a pas le
+	plugin SampVoice ou pas de micro, /radio continue de fonctionner en mode
+	texte (talkStats + le widget existant), mais RadioVoice_Enable() renvoie un
+	message clair au lieu d'echouer en silence, et n'attache jamais un joueur
+	incapable a un canal.
 
-	=== POURQUOI L'ICONE DU WIDGET NE S'ALLUMAIT JAMAIS ===
-	RadioWidget (afrp_radiowidget.inc) n'ecoute que OnPlayerVoiceStart/Stop.
-	Mais ces deux publics ne sont JAMAIS appeles par le plugin SampVoice
-	lui-meme : sampvoice.inc precise que ce sont des callbacks "emis par le FS
-	sampvoice.pwn" (voir ce fichier, present dans gamemodes/ pour reference
-	seulement, jamais compile/charge sur le serveur). Sans ce FS, personne
-	n'appelle jamais OnPlayerVoiceStart/Stop : l'icone ne s'affiche donc
-	jamais, meme quand la voix passe reellement dans le canal. Ici, pas de FS
-	et pas de touche d'activation a brancher (le mode radio est permanent, cf.
-	section precedente) : un timer interroge simplement SvIsPlayerSpeaking()
-	pour chaque joueur attache a un canal, et appelle OnPlayerVoiceStart/Stop
-	seulement quand son etat change. Ca reste les memes deux publics que le
-	FS de reference aurait appeles - juste declenches autrement.
+	=== ICONE DU WIDGET ===
+	Comme SvPlay/SvStop demarrent/arretent le micro de facon deterministe (pas
+	de touche a surveiller, pas de polling necessaire), on appelle directement
+	OnPlayerVoiceStart/Stop (afrp_radiowidget.inc) au moment ou on appelle
+	SvPlay/SvStop : l'icone s'allume des l'entree en mode radio et s'eteint des
+	la sortie, sans dependre d'un evenement du plugin qui n'existe pas dans
+	cette version (pas de callback "le joueur parle" cote serveur).
 
 	=== CHANGEMENT DE FACTION PENDANT UN /radio ACTIF ===
 	PlayerInfo[playerid][pMember] est reassigne a une quarantaine d'endroits
 	differents dans LVRP.pwn (recrutement, licenciement, arrestation, admin...).
-	Plutot que d'accrocher un appel de nettoyage a chacun (fragile, facile a
-	oublier a la prochaine faction ajoutee), un timer de reconciliation toutes
-	les 8 secondes verifie que le canal auquel un joueur est attache correspond
-	toujours a sa faction actuelle, et le detache sinon (+ remet talkStats a 0
-	pour que l'icone du widget ne reste pas allumee pour rien).
+	Plutot que d'accrocher un appel de nettoyage a chacun, un timer de
+	reconciliation toutes les 8 secondes verifie que le canal auquel un joueur
+	est attache correspond toujours a sa faction actuelle, et le detache sinon
+	(+ remet talkStats a 0 pour que l'icone du widget ne reste pas allumee).
 
 	Hooks a brancher dans LVRP.pwn :
 	- OnGameModeInit    -> RadioVoice_Init()
@@ -83,14 +74,13 @@
 #define RADIOVOICE_MAX_FACTION   56
 // Reconciliation faction/canal (rattrape un changement de faction sans /local).
 #define RADIOVOICE_RECONCILE_MS  8000
-// Poll SvIsPlayerSpeaking() pour piloter le widget (cf. section plus haut).
-#define RADIOVOICE_POLL_MS       250
-#define RADIOVOICE_STREAM_COLOR  0x00FF80FF
+// Canal SampVoice utilise pour la radio (sur les 32 disponibles par joueur).
+// Reserve : 0 pour un eventuel futur chat de proximite, la radio prend le 1.
+#define RADIOVOICE_CHANNEL       1
 
-new SV_GSTREAM:radioVoiceStream[RADIOVOICE_MAX_FACTION] = {SV_NULL, ...};
+new radioVoiceStream[RADIOVOICE_MAX_FACTION] = {SV_NULL, ...};
 new bool:radioVoiceCapable[MAX_PLAYERS];   // plugin SampVoice + micro detectes a la connexion
 new radioVoiceAttachedTo[MAX_PLAYERS];     // pMember du canal actuellement attache, 0 = aucun
-new bool:radioVoiceSpeaking[MAX_PLAYERS];  // dernier etat connu de SvIsPlayerSpeaking()
 
 // [SOURCE DE VERITE UNIQUE] Meme regle que le "_pm" de /radio (ligne ~55635 de
 // LVRP.pwn) : qui a le droit a la radio de faction. Ne pas dupliquer ailleurs -
@@ -104,25 +94,20 @@ stock bool:RadioVoice_IsLegalFaction(pm)
 
 stock RadioVoice_Init()
 {
-	new name[32];
 	for(new pm = 1; pm < RADIOVOICE_MAX_FACTION; pm++)
 	{
 		if(!RadioVoice_IsLegalFaction(pm)) continue;
-		format(name, sizeof(name), "Radio-Faction-%d", pm);
-		radioVoiceStream[pm] = SvCreateGStream(RADIOVOICE_STREAM_COLOR, name);
+		radioVoiceStream[pm] = SvCreateStream(); // 0.0 par defaut = stream global (2D), pas positionnel
 	}
 	SetTimer("RadioVoice_ReconcileTick", RADIOVOICE_RECONCILE_MS, 1);
-	SetTimer("RadioVoice_PollTick", RADIOVOICE_POLL_MS, 1);
 	return 1;
 }
 
 stock RadioVoice_OnConnect(playerid)
 {
 	radioVoiceAttachedTo[playerid] = 0;
-	radioVoiceSpeaking[playerid] = false;
-	// Meme idiome que gamemodes/sampvoice.pwn::OnPlayerConnect (FS de reference) :
-	// verification directe, sans delai - le plugin repond des le handshake client.
 	radioVoiceCapable[playerid] = bool:(SvGetVersion(playerid) != SV_NULL && SvHasMicro(playerid) == SV_TRUE);
+	if(radioVoiceCapable[playerid]) SvEnableListener(playerid);
 	return 1;
 }
 
@@ -139,23 +124,16 @@ stock RadioVoice_DetachCurrent(playerid)
 {
 	new pm = radioVoiceAttachedTo[playerid];
 	radioVoiceAttachedTo[playerid] = 0;
-
-	// Icone eteinte tout de suite : sinon elle resterait allumee jusqu'au
-	// prochain SvIsPlayerSpeaking()==FALSE, ce qui peut ne jamais arriver si
-	// le joueur relache son micro pile au moment ou il quitte le canal.
-	if(radioVoiceSpeaking[playerid])
-	{
-		radioVoiceSpeaking[playerid] = false;
-		OnPlayerVoiceStop(playerid);
-	}
-
 	if(pm <= 0 || pm >= RADIOVOICE_MAX_FACTION) return 0;
 
-	new SV_GSTREAM:chan = radioVoiceStream[pm];
-	if(chan == SV_NULL) return 0;
+	SvStop(playerid, RADIOVOICE_CHANNEL);
+	OnPlayerVoiceStop(playerid); // eteint l'icone du widget
 
-	if(SvHasSpeakerInStream(chan, playerid)) SvDetachSpeakerFromStream(chan, playerid);
-	if(SvHasListenerInStream(chan, playerid)) SvDetachListenerFromStream(chan, playerid);
+	new voiceStream = radioVoiceStream[pm];
+	if(voiceStream == SV_NULL) return 0;
+
+	SvDetachStream(playerid, voiceStream, RADIOVOICE_CHANNEL);
+	SvDetachListener(voiceStream, playerid);
 	return 1;
 }
 
@@ -177,12 +155,14 @@ stock RadioVoice_Enable(playerid)
 
 	RadioVoice_DetachCurrent(playerid); // au cas ou la faction a change depuis le dernier /radio
 
-	new SV_GSTREAM:chan = radioVoiceStream[pm];
-	if(chan == SV_NULL) return 0; // ne devrait pas arriver (faction legale sans canal cree)
+	new voiceStream = radioVoiceStream[pm];
+	if(voiceStream == SV_NULL) return 0; // ne devrait pas arriver (faction legale sans stream cree)
 
-	if(!SvHasListenerInStream(chan, playerid)) SvAttachListenerToStream(chan, playerid);
-	if(!SvHasSpeakerInStream(chan, playerid)) SvAttachSpeakerToStream(chan, playerid);
+	SvAttachListener(voiceStream, playerid);
+	SvAttachStream(playerid, voiceStream, RADIOVOICE_CHANNEL);
+	SvPlay(playerid, RADIOVOICE_CHANNEL); // demarre reellement le micro sur ce canal
 	radioVoiceAttachedTo[playerid] = pm;
+	OnPlayerVoiceStart(playerid); // allume l'icone du widget
 	return 1;
 }
 
@@ -209,27 +189,6 @@ public RadioVoice_ReconcileTick()
 			// Evite une icone widget allumee pour un canal qu'il a quitte.
 			if(GetPVarInt(rvI, "talkStats") == 3) SetPVarInt(rvI, "talkStats", 0);
 		}
-	}
-	return 1;
-}
-
-// [WIDGET] Voir la section "POURQUOI L'ICONE DU WIDGET NE S'ALLUMAIT JAMAIS"
-// en tete de fichier : personne n'appelle jamais OnPlayerVoiceStart/Stop tout
-// seul, donc on le fait ici a chaque fois que l'etat de parole change reellement.
-forward RadioVoice_PollTick();
-public RadioVoice_PollTick()
-{
-	for(new rvI = 0; rvI < MAX_PLAYERS_CURRENT + 1; rvI++)
-	{
-		if(!IsPlayerConnected(rvI)) continue;
-		if(radioVoiceAttachedTo[rvI] == 0) continue;
-
-		new bool:speaking = bool:(SvIsPlayerSpeaking(rvI) == SV_TRUE);
-		if(speaking == radioVoiceSpeaking[rvI]) continue;
-
-		radioVoiceSpeaking[rvI] = speaking;
-		if(speaking) OnPlayerVoiceStart(rvI);
-		else         OnPlayerVoiceStop(rvI);
 	}
 	return 1;
 }
