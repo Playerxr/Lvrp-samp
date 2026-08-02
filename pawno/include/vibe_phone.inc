@@ -201,11 +201,15 @@ stock phone_Create(playerid)
     phone_TD[playerid][PHONE_TD_ICON_VEHICLE] = phoneTD_Sprite(playerid, 513.500, 230.000, 21.000, 26.000, 421097727, "LD_SPAC:white", true);
     phone_TD[playerid][PHONE_TD_ICON_LAINNYA] = phoneTD_Sprite(playerid, 563.500, 230.000, 21.000, 26.000, -626712321, "LD_SPAC:white", true);
 
-    phone_TD[playerid][36] = phoneTD_Label(playerid, 515.500, 208.000, 0.108, 0.698, -1, 1, "Informasi");
-    phone_TD[playerid][37] = phoneTD_Label(playerid, 542.000, 208.000, 0.108, 0.698, -1, 1, "Layanan");
-    phone_TD[playerid][38] = phoneTD_Label(playerid, 565.000, 208.000, 0.108, 0.698, -1, 1, "M-Banking");
-    phone_TD[playerid][39] = phoneTD_Label(playerid, 597.000, 208.000, 0.108, 0.698, -1, 1, "X");
-    phone_TD[playerid][40] = phoneTD_Label(playerid, 517.000, 258.000, 0.108, 0.698, -1, 1, "Vehicles");
+    // [FIX LANGUE] Le pack source est indonesien : ces libelles etaient
+    // restes "Informasi/Layanan/M-Banking/X/Vehicles" sous des icones dont la
+    // fonction reelle est deja en francais (voir la correspondance icone ->
+    // fonction en tete de fichier). Traduits pour dire ce qui s'ouvre vraiment.
+    phone_TD[playerid][36] = phoneTD_Label(playerid, 515.500, 208.000, 0.108, 0.698, -1, 1, "Infos");
+    phone_TD[playerid][37] = phoneTD_Label(playerid, 542.000, 208.000, 0.108, 0.698, -1, 1, "Urgences");
+    phone_TD[playerid][38] = phoneTD_Label(playerid, 565.000, 208.000, 0.108, 0.698, -1, 1, "Banque");
+    phone_TD[playerid][39] = phoneTD_Label(playerid, 597.000, 208.000, 0.108, 0.698, -1, 1, "SMS");
+    phone_TD[playerid][40] = phoneTD_Label(playerid, 517.000, 258.000, 0.108, 0.698, -1, 1, "Vehicule");
 
     phone_TD[playerid][PHONE_TD_ICON_WHATSAPP] = phoneTD_Sprite(playerid, 522.500, 361.000, 21.000, 26.000, -2048950785, "LD_SPAC:white", true);
     phone_TD[playerid][PHONE_TD_ICON_GPS]      = phoneTD_Sprite(playerid, 550.500, 361.000, 21.000, 26.000, -1, "LD_SPAC:white", true);
@@ -234,7 +238,7 @@ stock phone_Create(playerid)
     phone_TD[playerid][63] = phoneTD_Sprite(playerid, 580.500, 372.000, 16.000, 14.000, -1, "LD_BEAT:chit");                   // Kontak
     phone_TD[playerid][64] = phoneTD_Sprite(playerid, 581.500, 373.000, 14.000, 12.000, -12254977, "LD_BEAT:chit");            // Kontak
     phone_TD[playerid][65] = phoneTD_Label(playerid, 568.500, 232.000, 0.337, 1.598, -1, 1, "...");                            // Lainnya
-    phone_TD[playerid][66] = phoneTD_Label(playerid, 567.000, 258.000, 0.108, 0.698, -1, 1, "Lainnya");                        // Lainnya (libelle)
+    phone_TD[playerid][66] = phoneTD_Label(playerid, 567.000, 258.000, 0.108, 0.698, -1, 1, "Reglages");                       // [FIX LANGUE] etait "Lainnya"
     phone_TD[playerid][67] = phoneTD_Sprite(playerid, 546.500, 191.000, 4.500, 4.000, -1, "LD_SPAC:white");                    // Layanan
     phone_TD[playerid][68] = phoneTD_Sprite(playerid, 545.500, 192.000, 6.500, 5.000, -1, "LD_SPAC:white");                    // Layanan
     return 1;
