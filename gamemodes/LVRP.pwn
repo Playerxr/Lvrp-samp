@@ -5146,6 +5146,11 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 // Type=7/City=2, pas de ce fichier.
 #include <afrp_concession_map>
 
+// [HOPITAL] Decor du QG hopital (map communautaire fournie par le
+// proprietaire) - voir afrp_hopital_map.inc. 4e zone reconnue par
+// Hopital_ToggleDuty() via HOPITAL_MAP_ZONE_* (definis dans ce fichier).
+#include <afrp_hopital_map>
+
 // [PARRAINAGE] R�compense le parrain quand un nouveau joueur s'inscrit avec son nom
 #include <afrp_referral>
 
@@ -21864,8 +21869,10 @@ stock Hopital_ToggleDuty(playerid)
     if(IsPlayerInRangeOfPoint(playerid, 30.0, 1607.0, 1816.0, 10.8)) atHospital = true; // LV
     else if(IsPlayerInRangeOfPoint(playerid, 30.0, 1183.0, -1322.0, 13.5)) atHospital = true; // LS
     else if(IsPlayerInRangeOfPoint(playerid, 30.0, -2655.0, 638.0, 14.4)) atHospital = true; // SF
+    // [HOPITAL] 4e zone : vrai QG (map communautaire), voir afrp_hopital_map.inc
+    else if(IsPlayerInRangeOfPoint(playerid, HOPITAL_MAP_ZONE_RADIUS, HOPITAL_MAP_ZONE_X, HOPITAL_MAP_ZONE_Y, HOPITAL_MAP_ZONE_Z)) atHospital = true;
     if(!atHospital && PlayerInfo[playerid][pAdmin] < 2)
-        {return msg_Client(playerid, COLOR_INFO, "{CF9756} Hopital {FFFFFF} Vous devez �tre a l'hopital (LS, SF ou LV).");}
+        {return msg_Client(playerid, COLOR_INFO, "{CF9756} Hopital {FFFFFF} Vous devez �tre a l'hopital (LS, SF, LV ou le QG).");}
 
     if(hopital_Duty[playerid] == 1)
     {
@@ -23421,6 +23428,7 @@ public OnPlayerConnect(playerid)
     ArmNiv_OnConnect(playerid); // [ARMES / NIVEAU] reset anti-spam du message
     MapEd_OnConnect(playerid); // [MAPEDIT] reset de l'objet selectionne
     MapPack_OnConnect(playerid); // [MAPPACK] retire les batiments remplaces par les cartes allumees
+    Hopital_MapRemoveBuildings(playerid); // [HOPITAL] retire les 7 batiments GTA remplaces par le QG (par joueur, exige par RemoveBuildingForPlayer)
     Portes_OnConnect(playerid); // [PORTES] rien a reinitialiser, garde le crochet pret
     Sp2_OnConnect(playerid); // [SPEEDO2] sinon le slot garde la preference du precedent occupant
     Bsk_OnConnect(playerid); // [BASKET] libere un ballon reste au nom du precedent occupant
@@ -29877,6 +29885,9 @@ public OnGameModeInit()
 	// ligne dealerShip Type=7/City=2 doit etre inseree a la main sur la
 	// base live (voir rapport de session), ce decor ne suffit pas seul.
 	Concession_CreateMap();
+	// [HOPITAL] Decor du QG faction (map communautaire fournie par le
+	// proprio) - voir afrp_hopital_map.inc et Hopital_ToggleDuty (4e zone).
+	Hopital_CreateMap();
 	init_MapIcon();
 	init_PickupsAndLabels();
 	init_Actors();
