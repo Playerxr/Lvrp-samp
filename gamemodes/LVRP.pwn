@@ -9177,8 +9177,14 @@ public SetPlayerSpawn(playerid)
 		}
 		if(PlayerInfo[playerid][pJailed] == 2)
 		{
-		    // FIX BUG prison NoRP : SafeTeleportPlayer atomique
-		    SafeTeleportPlayer(playerid, 7282.9902, -1521.5159, 2.9969, 0, 0);
+		    // [VRAIE PRISON] Ancien bug : l'ancien spot (X=7282) est hors des
+		    // limites de la map GTA SA (-3000/+3000), donc sans sol -> un joueur
+		    // se reconnectant pendant sa peine tombait dans le vide (meme bug que
+		    // celui deja corrige cote MySQLJail). On utilise desormais la meme
+		    // vraie map interieure que /a jail, coherent des deux cotes.
+		    new Float:jailX, Float:jailY, Float:jailZ;
+		    Prison_GetCellPos(playerid, jailX, jailY, jailZ);
+		    SafeTeleportPlayer(playerid, jailX, jailY, jailZ, PRISON_MAP_INTERIOR, PRISON_MAP_WORLD);
 		    SafeSetPlayerArmour(playerid, 0);
 		    SafeResetPlayerWeapons(playerid);
 			msg_Client(playerid, COLOR_INFO, "{CF9756} Info {FFFFFF} Votre peine de prison pour comportement NO RP n'est pas termin�, retour en prison.");
@@ -12409,7 +12415,11 @@ stock timer_Decrement(i)
 				}
 				else if(PlayerInfo[i][pJailed] == 2)
 				{
+					// [VRAIE PRISON] Le joueur etait sur PRISON_MAP_WORLD (voir MySQLJail) :
+					// il faut le remettre sur le monde 0 en plus de l'interieur 0, sinon
+					// il reste isole des autres joueurs meme dans la ville normale.
 		     		server_SetPlayerInterior(i, 0);
+					server_SetPlayerVirtualWorld(i, 0);
 					SafeSetPlayerPos(i,1743.1295,-1862.9645,13.5757);
 					msg_Client(i, COLOR_STATS,"{CF9756} Prison {FFFFFF} Vous avez termin votre peine de prison.");
 			  		msg_Client(i, COLOR_STATS,"{CF9756} Prison {FFFFFF} Ne faites plus d'actes NO RP et vous ne serez plus emprisonns par un Administrateur.");
@@ -12861,10 +12871,12 @@ public MySQLJail(playerid,by,reason[],times)
 	TogglePlayerControllable(playerid, 0);
 	PlayerInfo[playerid][pJailed] = 2;
 	PlayerInfo[playerid][pJailTime] = times*60;
-	server_SetPlayerInterior(playerid, 0);
-	// [FIX VIDE] L'ancien spot (X=7282) est hors des limites de la map GTA SA
-	// (-3000/+3000) -> aucun sol, le joueur flottait/tombait dans le vide.
-	// On le place d�sormais dans l'enceinte de prison (objets streames, sol reel).
+	// [VRAIE PRISON] /a jail teleporte maintenant dans la vraie map interieure
+	// fournie par le proprio (afrp_prison_map.inc), plus dans l'ancienne
+	// enceinte a ciel ouvert (ni dans l'ancien spot X=7282 hors limites de la
+	// map GTA SA qui laissait le joueur flotter dans le vide).
+	server_SetPlayerInterior(playerid, PRISON_MAP_INTERIOR);
+	server_SetPlayerVirtualWorld(playerid, PRISON_MAP_WORLD);
 	new Float:jailX, Float:jailY, Float:jailZ;
 	Prison_GetCellPos(playerid, jailX, jailY, jailZ);
 	SafeSetPlayerPos(playerid, jailX, jailY, jailZ);
@@ -29851,6 +29863,9 @@ public OnGameModeInit()
 	Elevator_Initialize();
 	init_Mapping();
 	// Prison_CreateCompound(); // [PRISON] DESACTIVE (doublon + emplacement sur l'eau, voir /a creer prison)
+	// [PRISON] Vraie map interieure fournie par le proprio (525 objets, monde
+	// 871 / interieur 14) : desormais LA prison utilisee par /a jail.
+	Prison_CreateMap();
 	init_MapIcon();
 	init_PickupsAndLabels();
 	init_Actors();
@@ -63579,6 +63594,10 @@ public OnPlayerCommandText(playerid, cmdtext[])
 						PlayerInfo[giveplayerid][pJailTime] = 0;
 						SafeSetPlayerPos(giveplayerid,spawn[PlayerInfo[giveplayerid][pCity]][pos][0],spawn[PlayerInfo[giveplayerid][pCity]][pos][1],spawn[PlayerInfo[giveplayerid][pCity]][pos][2]); SetPlayerFacingAngle(giveplayerid,spawn[PlayerInfo[giveplayerid][pCity]][pos][3]);
       					server_SetPlayerInterior(giveplayerid, 0);
+						// [VRAIE PRISON] /a jail met le joueur sur PRISON_MAP_WORLD (871) :
+						// il faut l'en sortir explicitement, sinon /a dejail le laisse
+						// visuellement "dehors" mais toujours isole des autres joueurs.
+						server_SetPlayerVirtualWorld(giveplayerid, 0);
 						TogglePlayerControllable(giveplayerid, true);
 						format(string,sizeof(string),"{FF2727} Admin {FFABAD} Vous avez djail %s.",PlayerInfo[giveplayerid][pRealName]);
 						msg_Client(playerid,COLOR_WHITE,string);

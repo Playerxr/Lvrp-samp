@@ -1,15 +1,29 @@
 /*
-	afrp_prison.inc - Prison : enceinte fixe + createur de prison custom + barreaux
+	afrp_prison.inc - Prison : vraie map interieure (fournie par le proprio)
+	+ enceinte fixe (legacy, dormante) + createur de prison custom + barreaux
 
+	[VRAIE PRISON, aout 2026] Le proprietaire a fourni une map interieure
+	faite a la main (525 objets, voir afrp_prison_map.inc) pour remplacer
+	l'ancienne enceinte a ciel ouvert generee proceduralement. C'est
+	desormais CA la vraie prison : /a jail y teleporte le joueur (monde
+	PRISON_MAP_WORLD / interieur PRISON_MAP_INTERIOR, voir afrp_prison_map.inc),
+	Prison_CreateMap() la construit une fois au demarrage (OnGameModeInit).
+
+	[POURQUOI GARDER LE RESTE] Rien ci-dessous n'est plus le chemin par
+	defaut de /a jail, mais rien n'a ete supprime : le proprietaire n'a pas
+	demande a perdre ces outils, seulement a utiliser la vraie map.
 	1) ENCEINTE FIXE (Prison_CreateCompound) : mur/miradors/portail autour du
-	   point "Prison acceuil" deja existant dans init_Mapping().
-
+	   point "Prison acceuil" deja existant dans init_Mapping(). Deja
+	   desactivee (appel commente dans OnGameModeInit) AVANT ce changement -
+	   code mort laisse en place tel quel, rien touche ici.
 	2) CREATEUR CUSTOM (/a creer prison) : construit la MEME enceinte centree
 	   sur la position de l'admin + orientee selon l'angle ou il regarde.
 	   Relancer la commande detruit l'ancienne prison custom et reconstruit.
-
+	   Reste utilisable tel quel (ex: prison RP secondaire, evenement) mais
+	   /a jail ne s'y teleporte plus automatiquement (voir Prison_GetCellPos).
 	3) BARREAUX (/a barreau) : grille de cellule (kb_cagedoor) posee a la
-	   position de l'admin pour fermer une cellule piece par piece.
+	   position de l'admin pour fermer une cellule piece par piece. Toujours
+	   utile pour amenager l'enceinte custom ci-dessus.
 
 	[FIX HAUTEUR] Le modele tall_fence (974) a son pivot proche du CENTRE du
 	mesh, pas a sa base -> place "a plat" sur le sol (Z du joueur/ancre), il
@@ -25,6 +39,9 @@
 	#endinput
 #endif
 #define AFRP_PRISON_INCLUDED
+
+// La vraie map (objets + PRISON_MAP_WORLD/PRISON_MAP_INTERIOR).
+#include <afrp_prison_map>
 
 // Point d'ancrage de l'enceinte FIXE : identique a l'acteur "Prison acceuil"
 // deja place dans init_Mapping() (CreateDynamicLvrpActor(71, 919.7765, -2370.7874, 13.2474, ...))
@@ -50,6 +67,22 @@
 #define MODEL_PRISON_TOWER   3279  // a51_spottower
 #define MODEL_PRISON_PYLON   16335 // des_transtower
 #define MODEL_PRISON_BAR     1499  // kb_cagedoor (grille/barreaux de cellule)
+
+// Point de detention dans la VRAIE map (afrp_prison_map.inc). Choisi au
+// centre de la piece d'accueil du fichier fourni (repere : cluster de portes
+// cr_door_03/gen_doorint04 et de murs cj_sports_wall entre x=-1175/-1164,
+// y=-990/-1000 ; meubles dunc_dinning/kb_couch06/plant_pot autour), a bonne
+// distance (>=2 unites) de chaque porte, mur et meuble releve dans le fichier
+// source -> aucun risque de spawn coince dans un mur, mais PAS verifie en jeu
+// (pas de client dispo ici) : a confirmer par le proprietaire (joueur au sol,
+// pas dans le decor, texture/collision correctes).
+#define PRISON_CELL_X       -1170.0
+#define PRISON_CELL_Y       -995.5
+#define PRISON_CELL_Z        128.9
+// Petite grille (3x3, 1.2 unite d'ecart) autour du point ci-dessus pour que
+// plusieurs joueurs jailes en meme temps ne s'empilent pas exactement au
+// meme endroit, tout en restant dans la meme zone dagagee.
+#define PRISON_CELL_SPACING   1.2
 
 #define MAX_PRISON_CUSTOM_OBJ  260
 #define MAX_PRISON_BARS        100
@@ -159,30 +192,23 @@ stock Prison_CreateCompound()
 	return 1;
 }
 
-// Position d'un joueur jail OOC (/a jail). Si une prison custom a ete
-// construite via /a creer prison, on teleporte DEDANS (en tenant compte de
-// sa rotation) ; sinon on retombe sur l'ancien point fixe (sans murs
-// desormais, mais le joueur reste gele via TogglePlayerControllable).
+// Position d'un joueur jail OOC (/a jail) DANS LA VRAIE MAP (afrp_prison_map.inc).
+// [SIMPLIFICATION] Avant la vraie map, cette fonction branchait entre
+// l'enceinte custom (/a creer prison) et l'enceinte fixe selon
+// prisonCustomExists -> avec la vraie map ce serait un 3e branchement
+// (fixe/custom/vraie map) sans plus de raison d'etre : la vraie map est
+// maintenant LA prison, un point c'est tout. La branche custom est retiree
+// d'ICI uniquement ; /a creer prison et /a barreau restent intacts plus bas
+// pour qui voudrait batir une enceinte custom a part (voir entete fichier).
+// L'appelant doit aussi placer le joueur sur PRISON_MAP_WORLD/PRISON_MAP_INTERIOR
+// (voir afrp_prison_map.inc) : cette fonction ne renvoie que x/y/z.
 stock Prison_GetCellPos(playerid, &Float:outX, &Float:outY, &Float:outZ)
 {
-	new col = playerid % 4;
-	new row = (playerid / 4) % 4;
-
-	if(prisonCustomExists)
-	{
-		new Float:lx = -((PRISON_WIDTH / 2.0) - 8.0) + (float(col) * 9.0);
-		new Float:ly = 6.0 + (float(row) * 7.0);
-		new Float:dx, Float:dy;
-		Prison_RotateOffset(lx, ly, prisonCustomAngle, dx, dy);
-		outX = prisonCustomAnchorX + dx;
-		outY = prisonCustomAnchorY + dy;
-		outZ = prisonCustomAnchorZ;
-		return 1;
-	}
-
-	outX = PRISON_ANCHOR_X - (PRISON_WIDTH / 2.0) + 8.0 + (float(col) * 9.0);
-	outY = PRISON_ANCHOR_Y - 6.0 - (float(row) * 7.0);
-	outZ = PRISON_ANCHOR_Z;
+	new col = playerid % 3;
+	new row = (playerid / 3) % 3;
+	outX = PRISON_CELL_X + (float(col) - 1.0) * PRISON_CELL_SPACING;
+	outY = PRISON_CELL_Y + (float(row) - 1.0) * PRISON_CELL_SPACING;
+	outZ = PRISON_CELL_Z;
 	return 1;
 }
 
