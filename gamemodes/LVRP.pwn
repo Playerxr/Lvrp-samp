@@ -5274,6 +5274,8 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 #include <afrp_raccourcis>
 // [RADIO WIDGET] icone affichee pendant qu'on parle en mode radio
 #include <afrp_radiowidget>
+// [RADIO VOICE] vrai canal vocal SampVoice derriere /radio et /local
+#include <afrp_radiovoice>
 // [BASKET] dribble, paniers et points (remet en marche le basket existant)
 #include <afrp_basket>
 // [SPEEDO2] tableau de bord moderne (habillage alternatif du compteur)
@@ -23381,6 +23383,7 @@ public OnPlayerConnect(playerid)
     VipPerks_OnConnect(playerid); // [VIP PERKS] reset cooldowns tp + tag
     GangTag_OnConnect(playerid); // [GANG TAG] init slot label
     LegalTag_OnConnect(playerid); // [LEGAL TAG] init slot label
+    RadioVoice_OnConnect(playerid); // [RADIO VOICE] detecte plugin SampVoice + micro
     Obj_OnPlayerConnect(playerid); // [OBJECTIFS] reset de l'etat avant login
     TopJour_OnConnect(playerid); // [TOP DU JOUR] reset des compteurs anti-AFK
     Annonce_OnConnect(playerid); // [ANNONCE] reset du bandeau
@@ -24027,6 +24030,7 @@ public OnPlayerDisconnect(playerid, reason)
     TC_OnDisconnect(playerid); // [TABLECRAFT] detruit les textdraws du panneau de craft
     Raccourcis_OnDisconnect(playerid); // [RACCOURCIS] annule un maintien en cours
     RadioWidget_OnDisconnect(playerid); // [RADIO WIDGET] evite un affichage fantome a la reconnexion
+    RadioVoice_OnDisconnect(playerid); // [RADIO VOICE] detache du canal vocal en cours
     TopJour_OnDisconnect(playerid); // [TOP DU JOUR] detruit le panneau
     Annonce_OnDisconnect(playerid); // [ANNONCE] detruit le bandeau
     Cv_OnDisconnect(playerid); // [CONVOI] retire de l'escorte / du braquage
@@ -29987,6 +29991,8 @@ public OnGameModeInit()
     Residence_Init();
     // [RADIO WIDGET] cree l'icone (une seule fois, affichee/cachee par joueur)
     RadioWidget_Init();
+    // [RADIO VOICE] cree un canal vocal SampVoice par faction legale
+    RadioVoice_Init();
     // [SPEEDO2] cree le timer du tableau de bord moderne
     Sp2_Init();
     // [BASKET] charge les paniers poses en jeu
@@ -55651,6 +55657,10 @@ public OnPlayerCommandText(playerid, cmdtext[])
 			// toujours la commande. Fusionne ici le comportement des deux :
 			// /radio seul = bascule le micro en mode radio, /radio <texte> =
 			// message ecrit sur la frequence de la faction.
+			// [RADIO VOICE] rejoint le vrai canal vocal SampVoice de la faction
+			// (message dedie si le joueur n'a pas le plugin/micro) - talkStats
+			// reste bascule dans tous les cas, en phase avec ce canal.
+			RadioVoice_Enable(playerid);
 			SetPVarInt(playerid, "talkStats", 3);
 			msg_Client(playerid, COLOR_WHITE, "{8B8B00}\xbb VOIP \xab{FFFFFF} Mode radio active.");
 			return 1;
@@ -70140,6 +70150,8 @@ public OnPlayerCommandText(playerid, cmdtext[])
 	// Fusionne dans ce premier bloc, voir plus haut.
 	else if(strcmp(cmd, "/local", true) == 0)
 	{
+		// [RADIO VOICE] quitte le canal vocal de faction en meme temps que talkStats
+		RadioVoice_Disable(playerid);
 		SetPVarInt(playerid, "talkStats", 0);
 		msg_Client(playerid, COLOR_WHITE, "{8B8B00}\xbb VOIP \xab{FFFFFF} Mode local activ\xe9.");
 		return 1;
