@@ -285,8 +285,15 @@ stock TC_Creer(playerid)
 	tcTD[playerid][TC_TD_CRAFT_GOLF] = TC_Sprite(playerid, 74.0, 328.0, 35.0, 13.0, -16776961, "LD_SPAC:white", true);
 	tcTD[playerid][70] = TC_Label(playerid, 82.0, 328.0, 0.170, 1.199, -1, 1, "CRAFT");
 
-	// --- fond plein ecran ---
-	tcTD[playerid][71] = TC_Sprite(playerid, -327.0, -384.0, 1409.0, 1176.0, 103, "LD_BEAT:chit");
+	// --- fond du panneau ---
+	// [FIX] La source etirait "LD_BEAT:chit" (une petite icone decorative,
+	// jamais prevue pour de tels agrandissements ailleurs dans ce gamemode)
+	// a 1409x1176, bien plus grand que l'ecran : au lieu d'un fond discret,
+	// ca affichait un gros aplat qui debordait sur les boutons. On reprend
+	// "LD_SPAC:white" (la texture plate deja utilisee pour tous les autres
+	// grands fonds du gamemode : svPanneau, phone_TD[4], etc.) et on borne
+	// la taille au panneau lui-meme au lieu de l'ecran entier.
+	tcTD[playerid][71] = TC_Sprite(playerid, 10.0, 65.0, 250.0, 335.0, 103, "LD_SPAC:white");
 
 	return 1;
 }
@@ -357,7 +364,12 @@ stock TC_Cmd(playerid)
 
 	TC_Creer(playerid);
 	tcOuvert[playerid] = 1;
-	for(new i = 0; i < TC_TD_COUNT; i++) PlayerTextDrawShow(playerid, tcTD[playerid][i]);
+	// [FIX] Le fond (indice 71) doit s'afficher EN PREMIER : sur SA-MP, un
+	// textdraw affiche plus tard se dessine par-dessus les precedents. En le
+	// montrant en dernier (boucle 0..71 dans l'ordre), le fond recouvrait
+	// tous les boutons et le texte au lieu de rester derriere.
+	PlayerTextDrawShow(playerid, tcTD[playerid][71]);
+	for(new i = 0; i < TC_TD_COUNT - 1; i++) PlayerTextDrawShow(playerid, tcTD[playerid][i]);
 	SelectTextDraw(playerid, 0x00C8FFAA);
 
 	TC_Msg(playerid, "{AAAAAA}Clique CRAFT sous une arme pour l'acheter, ou CLOSE pour fermer.");
