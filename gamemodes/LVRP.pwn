@@ -5288,6 +5288,8 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 #include <afrp_mappack>
 // [ANNOUNCE] bandeau visuel pour /a an (Flash News admin)
 #include <afrp_announce>
+// [MENU RAPIDE] panneau Inventory/Phone/Anims/Toys (touche Y)
+#include <afrp_menurapide>
 // [EVENTS ADMIN] Systeme generique d'evenements (course, DM, derby...)
 #include <afrp_event>
 // [DIAGNOSTIC] volontairement en dernier : il lit les compteurs de tous les
@@ -23406,6 +23408,7 @@ public OnPlayerConnect(playerid)
     SacV_OnConnect(playerid); // [SAC VISUEL] sinon le slot croit sa grille encore ouverte
     TC_OnConnect(playerid); // [TABLECRAFT] sinon le slot croit son panneau encore ouvert
     Banque_OnConnect(playerid); // [BANQUE] sinon le slot croit le panneau encore ouvert
+    MenuRapide_OnConnect(playerid); // [MENU RAPIDE] cree les textdraws Inventory/Phone/Anims/Toys
     TelApp_OnConnect(playerid); // [TELAPPS] reset du numero en cours de saisie
     ArmeePaie_Time[playerid] = 0; // [ARMEE] sinon le slot garde le compteur du precedent occupant
     Ent_OnPlayerConnect(playerid); // [ENTREPRISE] reset compteur minutes accumulees
@@ -24037,6 +24040,7 @@ public OnPlayerDisconnect(playerid, reason)
     SacV_OnDisconnect(playerid); // [SAC VISUEL] detruit les textdraws de la grille
     TC_OnDisconnect(playerid); // [TABLECRAFT] detruit les textdraws du panneau de craft
     Banque_OnDisconnect(playerid); // [BANQUE] reset des flags (textdraws globaux, rien a detruire)
+    MenuRapide_OnDisconnect(playerid); // [MENU RAPIDE] detruit les textdraws Inventory/Phone/Anims/Toys
     Raccourcis_OnDisconnect(playerid); // [RACCOURCIS] annule un maintien en cours
     RadioWidget_OnDisconnect(playerid); // [RADIO WIDGET] evite un affichage fantome a la reconnexion
     RadioVoice_OnDisconnect(playerid); // [RADIO VOICE] detache du canal vocal en cours
@@ -47377,6 +47381,14 @@ public OnPlayerKeyStateChange(playerid, newkeys, oldkeys)
 	skip_phone_sub:
 	if(newkeys == KEY_YES || newkeys & KEY_YES)
 	{
+	    // [MENU RAPIDE] Y ne fait deja rien en dehors d'un job actif ou d'une
+	    // demande de renfort police (voir plus bas) : on ouvre le menu
+	    // uniquement dans ce cas-la, pour ne rien casser des deux autres.
+	    if(job_Start[playerid] == 0 && police_Duty[playerid] == 0 && GetPlayerState(playerid) == PLAYER_STATE_ONFOOT)
+	    {
+	        MenuRapide_Toggle(playerid);
+	        return 1;
+	    }
 	    if(job_Start[playerid] == 1)
 		{
 		    if(PlayerInfo[playerid][pJob] == 1 && GetPlayerState(playerid) == PLAYER_STATE_ONFOOT)
@@ -48580,6 +48592,8 @@ public OnPlayerClickPlayerTextDraw(playerid, PlayerText:playertextid)
     if(SacV_OnClick(playerid, playertextid)) return 1;
     // [TABLECRAFT] etabli de craft d'armes (/craft), meme exclusivite que le sac.
     if(TC_OnClick(playerid, playertextid)) return 1;
+    // [MENU RAPIDE] boutons Inventory/Phone/Anims/Toys.
+    if(MenuRapide_OnClickPlayerText(playerid, playertextid)) return 1;
     // [MOBILE APPS] Intercepte clics sur les 3 nouvelles tiles (GPS/M�t�o/News) AVANT mobile_system
     if(usingPhone[playerid] == 1 && MobileApps_OnClick(playerid, playertextid)) return 1;
     // [MOBILE INLINE] Dispatch clics vers mobile_system (apps Notes/SMS/Banque/Appels/Twitter)
@@ -48645,6 +48659,8 @@ public OnPlayerClickTextDraw(playerid, Text:clickedid)
 	if(TC_OnClickHorsZone(playerid, clickedid)) return 1;
 	// [BANQUE] clics du panneau bancoverde.pwn + Echap pour fermer.
 	if(Banque_OnClick(playerid, clickedid)) return 1;
+	// [MENU RAPIDE] clics Inventory/Phone/Anims/Toys + Echap pour fermer.
+	if(MenuRapide_OnClick(playerid, clickedid)) return 1;
 	// Fermer le telephone AFRP si clic hors zone
 	if(clickedid == Text:INVALID_TEXT_DRAW && usingPhone[playerid] == 1)
 	{
