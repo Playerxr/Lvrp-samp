@@ -41,6 +41,20 @@
 	RadioVoice_Enable() renvoie un message clair au lieu d'echouer en silence, et
 	n'attache jamais un joueur incapable a un canal.
 
+	=== POURQUOI L'ICONE DU WIDGET NE S'ALLUMAIT JAMAIS ===
+	RadioWidget (afrp_radiowidget.inc) n'ecoute que OnPlayerVoiceStart/Stop.
+	Mais ces deux publics ne sont JAMAIS appeles par le plugin SampVoice
+	lui-meme : sampvoice.inc precise que ce sont des callbacks "emis par le FS
+	sampvoice.pwn" (voir ce fichier, present dans gamemodes/ pour reference
+	seulement, jamais compile/charge sur le serveur). Sans ce FS, personne
+	n'appelle jamais OnPlayerVoiceStart/Stop : l'icone ne s'affiche donc
+	jamais, meme quand la voix passe reellement dans le canal. Ici, pas de FS
+	et pas de touche d'activation a brancher (le mode radio est permanent, cf.
+	section precedente) : un timer interroge simplement SvIsPlayerSpeaking()
+	pour chaque joueur attache a un canal, et appelle OnPlayerVoiceStart/Stop
+	seulement quand son etat change. Ca reste les memes deux publics que le
+	FS de reference aurait appeles - juste declenches autrement.
+
 	=== CHANGEMENT DE FACTION PENDANT UN /radio ACTIF ===
 	PlayerInfo[playerid][pMember] est reassigne a une quarantaine d'endroits
 	differents dans LVRP.pwn (recrutement, licenciement, arrestation, admin...).
@@ -69,11 +83,14 @@
 #define RADIOVOICE_MAX_FACTION   56
 // Reconciliation faction/canal (rattrape un changement de faction sans /local).
 #define RADIOVOICE_RECONCILE_MS  8000
+// Poll SvIsPlayerSpeaking() pour piloter le widget (cf. section plus haut).
+#define RADIOVOICE_POLL_MS       250
 #define RADIOVOICE_STREAM_COLOR  0x00FF80FF
 
 new SV_GSTREAM:radioVoiceStream[RADIOVOICE_MAX_FACTION] = {SV_NULL, ...};
 new bool:radioVoiceCapable[MAX_PLAYERS];   // plugin SampVoice + micro detectes a la connexion
 new radioVoiceAttachedTo[MAX_PLAYERS];     // pMember du canal actuellement attache, 0 = aucun
+new bool:radioVoiceSpeaking[MAX_PLAYERS];  // dernier etat connu de SvIsPlayerSpeaking()
 
 // [SOURCE DE VERITE UNIQUE] Meme regle que le "_pm" de /radio (ligne ~55635 de
 // LVRP.pwn) : qui a le droit a la radio de faction. Ne pas dupliquer ailleurs -
@@ -95,12 +112,14 @@ stock RadioVoice_Init()
 		radioVoiceStream[pm] = SvCreateGStream(RADIOVOICE_STREAM_COLOR, name);
 	}
 	SetTimer("RadioVoice_ReconcileTick", RADIOVOICE_RECONCILE_MS, 1);
+	SetTimer("RadioVoice_PollTick", RADIOVOICE_POLL_MS, 1);
 	return 1;
 }
 
 stock RadioVoice_OnConnect(playerid)
 {
 	radioVoiceAttachedTo[playerid] = 0;
+	radioVoiceSpeaking[playerid] = false;
 	// Meme idiome que gamemodes/sampvoice.pwn::OnPlayerConnect (FS de reference) :
 	// verification directe, sans delai - le plugin repond des le handshake client.
 	radioVoiceCapable[playerid] = bool:(SvGetVersion(playerid) != SV_NULL && SvHasMicro(playerid) == SV_TRUE);
@@ -120,6 +139,16 @@ stock RadioVoice_DetachCurrent(playerid)
 {
 	new pm = radioVoiceAttachedTo[playerid];
 	radioVoiceAttachedTo[playerid] = 0;
+
+	// Icone eteinte tout de suite : sinon elle resterait allumee jusqu'au
+	// prochain SvIsPlayerSpeaking()==FALSE, ce qui peut ne jamais arriver si
+	// le joueur relache son micro pile au moment ou il quitte le canal.
+	if(radioVoiceSpeaking[playerid])
+	{
+		radioVoiceSpeaking[playerid] = false;
+		OnPlayerVoiceStop(playerid);
+	}
+
 	if(pm <= 0 || pm >= RADIOVOICE_MAX_FACTION) return 0;
 
 	new SV_GSTREAM:chan = radioVoiceStream[pm];
@@ -180,6 +209,27 @@ public RadioVoice_ReconcileTick()
 			// Evite une icone widget allumee pour un canal qu'il a quitte.
 			if(GetPVarInt(rvI, "talkStats") == 3) SetPVarInt(rvI, "talkStats", 0);
 		}
+	}
+	return 1;
+}
+
+// [WIDGET] Voir la section "POURQUOI L'ICONE DU WIDGET NE S'ALLUMAIT JAMAIS"
+// en tete de fichier : personne n'appelle jamais OnPlayerVoiceStart/Stop tout
+// seul, donc on le fait ici a chaque fois que l'etat de parole change reellement.
+forward RadioVoice_PollTick();
+public RadioVoice_PollTick()
+{
+	for(new rvI = 0; rvI < MAX_PLAYERS_CURRENT + 1; rvI++)
+	{
+		if(!IsPlayerConnected(rvI)) continue;
+		if(radioVoiceAttachedTo[rvI] == 0) continue;
+
+		new bool:speaking = bool:(SvIsPlayerSpeaking(rvI) == SV_TRUE);
+		if(speaking == radioVoiceSpeaking[rvI]) continue;
+
+		radioVoiceSpeaking[rvI] = speaking;
+		if(speaking) OnPlayerVoiceStart(rvI);
+		else         OnPlayerVoiceStop(rvI);
 	}
 	return 1;
 }
