@@ -24171,6 +24171,7 @@ public inscription_EndIntro(playerid)
 public OnPlayerDisconnect(playerid, reason)
 {
     phone_Destroy(playerid); // [VIBE PHONE P1] cleanup TextDraws nouveau telephone
+    Mobile_OnPlayerDisconnect(playerid); // [MOBILE INLINE] libere les slots textdraw du vieux telephone
     AntiDM_OnDisconnect(playerid); // [ANTI-DM] reset strikes
     AntiSpam_OnDisconnect(playerid); // [MOD TOOLS] reset spam history
     Calm_OnDisconnect(playerid); // [MOD TOOLS] cleanup calm TextDraw + unfreeze

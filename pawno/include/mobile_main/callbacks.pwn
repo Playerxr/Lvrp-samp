@@ -77,10 +77,29 @@ stock Mobile_OnPlayerConnect(playerid)
 	return 1;
 }
 
+stock Mobile_OnPlayerDisconnect(playerid)
+{
+    // Les apps peuvent encore exister si le joueur quitte telephone ouvert.
+    DestroyTextDraws(playerid);
+
+    for(new i = 0; i < sizeof(TEXTDRAW_NOTIFICATION[]); i++)
+    {
+        if(TEXTDRAW_NOTIFICATION[playerid][i] == PlayerText:INVALID_TEXT_DRAW) continue;
+        PlayerTextDrawDestroy(playerid, TEXTDRAW_NOTIFICATION[playerid][i]);
+        TEXTDRAW_NOTIFICATION[playerid][i] = PlayerText:INVALID_TEXT_DRAW;
+    }
+    usingPhone[playerid] = 0;
+    return 1;
+}
+
 stock Mobile_OnPlayerClickPlayerTextDraw(playerid, PlayerText:playertextid)
 {
+    // [BUDGET TEXTDRAWS] Telephone ferme, tout le tableau vaut INVALID : sans ce
+    // garde un clic hors zone (INVALID_TEXT_DRAW) declencherait toutes les apps.
+    if(TEXTDRAW_DEFAULT[playerid][0] == PlayerText:INVALID_TEXT_DRAW) return 0;
+
 	// Notes
-    if(playertextid == TEXTDRAW_HOME[playerid][0]) 
+    if(playertextid == TEXTDRAW_HOME[playerid][0])
     {
         HidePhone(playerid);
         UseMobile(playerid, NOTES, SHOW, NOTESLISTTD);
@@ -117,12 +136,13 @@ stock Mobile_OnPlayerClickPlayerTextDraw(playerid, PlayerText:playertextid)
     }
 
     // Putting away phone
-    if(playertextid == TEXTDRAW_DEFAULT[playerid][12]) 
+    if(playertextid == TEXTDRAW_DEFAULT[playerid][12])
     {
-        HidePhone(playerid);
         CancelSelectTextDraw(playerid);
-        UseMobile(playerid, NOAPPS, HIDE);
+        // [BUDGET TEXTDRAWS] meme raison que /mobile : on rend les slots au client.
+        DestroyTextDraws(playerid);
         usingPhone[playerid] = false;
+        return 1;
     }
     // One step back
     if(playertextid == TEXTDRAW_DEFAULT[playerid][13]) 
@@ -172,7 +192,7 @@ stock Mobile_OnDialogResponse(playerid, dialogid, response, listitem, inputtext[
 
                         SendClientMessage(playerid, -1, ""SUCCESS"");
                         SendPlayerNotification(playerid, -1, READY_TO_USE);
-                        CreateTextDraws(playerid);
+                        // [BUDGET TEXTDRAWS] pas de creation ici : /mobile s'en charge.
 
                         new foo[256];
 				        mysql_format(db_handle, foo, sizeof(foo), 

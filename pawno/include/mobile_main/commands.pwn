@@ -16,18 +16,17 @@ stock Mobile_CmdMobile(playerid)
 
 	if(usingPhone[playerid] == 0)
 	{
-		// [FIX] Si le joueur a hasPhone=1 (depuis lvrp_users) mais que les TextDraws
-		// du mobile_system n'ont jamais ete crees (record absent dans `users`),
-		// on les cree maintenant + on INSERT le record pour les futurs login.
-		if(TEXTDRAW_DEFAULT[playerid][0] == PlayerText:INVALID_TEXT_DRAW)
-		{
-			CreateTextDraws(playerid);
-			new sqlBuf[200];
-			mysql_format(db_handle, sqlBuf, sizeof(sqlBuf),
-				"INSERT IGNORE INTO `users` (`Username`, `HasPhone`, `Number`, `Credit`, `Frame`, `Background`) VALUES ('%e', 1, %d, %d, 0, 0)",
-				GetName(playerid), playerNumber[playerid], playerCredit[playerid]);
-			mysql_tquery(db_handle, sqlBuf);
-		}
+		// [FIX] Le record `users` peut manquer (joueur venu de lvrp_users) : il
+		// porte le fond d'ecran et le cadre, donc on le cree au premier usage.
+		new sqlBuf[200];
+		mysql_format(db_handle, sqlBuf, sizeof(sqlBuf),
+			"INSERT IGNORE INTO `users` (`Username`, `HasPhone`, `Number`, `Credit`, `Frame`, `Background`) VALUES ('%e', 1, %d, %d, 0, 0)",
+			GetName(playerid), playerNumber[playerid], playerCredit[playerid]);
+		mysql_tquery(db_handle, sqlBuf);
+
+		// [BUDGET TEXTDRAWS] Les 165 elements des apps naissent ici et meurent
+		// a la fermeture ; CreateTextDraws se protege lui-meme du double appel.
+		CreateTextDraws(playerid);
 
 		SelectTextDraw(playerid, SELECTION_COLOR);
 		UseMobile(playerid, HOME, SHOW);
@@ -39,8 +38,9 @@ stock Mobile_CmdMobile(playerid)
 	else
 	{
 		CancelSelectTextDraw(playerid);
-		HidePhone(playerid);
-		ShowNoApps(playerid, HIDE);
+		// Destroy et pas Hide : masquer ne rend pas le slot au client, et c'est
+		// ce qui empechait le sac / le craft / le HUD de s'afficher.
+		DestroyTextDraws(playerid);
 
 		usingPhone[playerid] = 0;
 	}

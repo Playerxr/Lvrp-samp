@@ -237,6 +237,14 @@ public HidePhone(playerid)
 forward CreateTextDraws(playerid);
 public CreateTextDraws(playerid)
 {
+	// [BUDGET TEXTDRAWS] Appele a l'OUVERTURE du telephone, plus au login.
+	// Les 165 elements des apps ne servent que telephone allume : les garder
+	// en permanence bouffait les 2/3 des 256 textdraws qu'un client SA-MP
+	// accepte, ce qui empechait le sac, le craft ou le HUD de s'afficher.
+	// Le groupe NOTIFICATION est exclu : lui doit rester resident (il sert
+	// telephone ferme, cf. CreateNotification).
+	if(TEXTDRAW_DEFAULT[playerid][0] != PlayerText:INVALID_TEXT_DRAW) return 1;
+
 	CreatePhoneTD(playerid);
     CreateBankTD(playerid);
     CreateCallDialTD(playerid);
@@ -248,6 +256,32 @@ public CreateTextDraws(playerid)
     CreateSMSTD(playerid);
     CreateTimeTD(playerid);
     CreateTwitterTD(playerid);
+
+    // Fond d'ecran + cadre : les TextDraws viennent d'etre recreees a neuf,
+    // il faut donc reappliquer le theme sauvegarde en DB.
+    new foo[80];
+    mysql_format(db_handle, foo, sizeof(foo), "SELECT * FROM `users` WHERE `Username` = '%e'", GetName(playerid));
+    mysql_tquery(db_handle, foo, "SQLLoadPhone", "d", playerid);
+	return 1;
+}
+
+// Detruit tout sauf le groupe NOTIFICATION (4 elements) qui doit survivre
+// pour afficher les appels / SMS / virements recus telephone range.
+forward DestroyTextDraws(playerid);
+public DestroyTextDraws(playerid)
+{
+	new td;
+	for(td = 0; td < sizeof(TEXTDRAW_DEFAULT[]);   td++) if(TEXTDRAW_DEFAULT[playerid][td]   != PlayerText:INVALID_TEXT_DRAW) { PlayerTextDrawDestroy(playerid, TEXTDRAW_DEFAULT[playerid][td]);   TEXTDRAW_DEFAULT[playerid][td]   = PlayerText:INVALID_TEXT_DRAW; }
+	for(td = 0; td < sizeof(TEXTDRAW_BANK[]);      td++) if(TEXTDRAW_BANK[playerid][td]      != PlayerText:INVALID_TEXT_DRAW) { PlayerTextDrawDestroy(playerid, TEXTDRAW_BANK[playerid][td]);      TEXTDRAW_BANK[playerid][td]      = PlayerText:INVALID_TEXT_DRAW; }
+	for(td = 0; td < sizeof(TEXTDRAW_CALLDIAL[]);  td++) if(TEXTDRAW_CALLDIAL[playerid][td]  != PlayerText:INVALID_TEXT_DRAW) { PlayerTextDrawDestroy(playerid, TEXTDRAW_CALLDIAL[playerid][td]);  TEXTDRAW_CALLDIAL[playerid][td]  = PlayerText:INVALID_TEXT_DRAW; }
+	for(td = 0; td < sizeof(TEXTDRAW_CALLLIST[]);  td++) if(TEXTDRAW_CALLLIST[playerid][td]  != PlayerText:INVALID_TEXT_DRAW) { PlayerTextDrawDestroy(playerid, TEXTDRAW_CALLLIST[playerid][td]);  TEXTDRAW_CALLLIST[playerid][td]  = PlayerText:INVALID_TEXT_DRAW; }
+	for(td = 0; td < sizeof(TEXTDRAW_CALLING[]);   td++) if(TEXTDRAW_CALLING[playerid][td]   != PlayerText:INVALID_TEXT_DRAW) { PlayerTextDrawDestroy(playerid, TEXTDRAW_CALLING[playerid][td]);   TEXTDRAW_CALLING[playerid][td]   = PlayerText:INVALID_TEXT_DRAW; }
+	for(td = 0; td < sizeof(TEXTDRAW_HOME[]);      td++) if(TEXTDRAW_HOME[playerid][td]      != PlayerText:INVALID_TEXT_DRAW) { PlayerTextDrawDestroy(playerid, TEXTDRAW_HOME[playerid][td]);      TEXTDRAW_HOME[playerid][td]      = PlayerText:INVALID_TEXT_DRAW; }
+	for(td = 0; td < sizeof(TEXTDRAW_NOTES[]);     td++) if(TEXTDRAW_NOTES[playerid][td]     != PlayerText:INVALID_TEXT_DRAW) { PlayerTextDrawDestroy(playerid, TEXTDRAW_NOTES[playerid][td]);     TEXTDRAW_NOTES[playerid][td]     = PlayerText:INVALID_TEXT_DRAW; }
+	for(td = 0; td < sizeof(TEXTDRAW_NOTESLIST[]); td++) if(TEXTDRAW_NOTESLIST[playerid][td] != PlayerText:INVALID_TEXT_DRAW) { PlayerTextDrawDestroy(playerid, TEXTDRAW_NOTESLIST[playerid][td]); TEXTDRAW_NOTESLIST[playerid][td] = PlayerText:INVALID_TEXT_DRAW; }
+	for(td = 0; td < sizeof(TEXTDRAW_SMS[]);       td++) if(TEXTDRAW_SMS[playerid][td]       != PlayerText:INVALID_TEXT_DRAW) { PlayerTextDrawDestroy(playerid, TEXTDRAW_SMS[playerid][td]);       TEXTDRAW_SMS[playerid][td]       = PlayerText:INVALID_TEXT_DRAW; }
+	for(td = 0; td < sizeof(TEXTDRAW_TIME[]);      td++) if(TEXTDRAW_TIME[playerid][td]      != PlayerText:INVALID_TEXT_DRAW) { PlayerTextDrawDestroy(playerid, TEXTDRAW_TIME[playerid][td]);      TEXTDRAW_TIME[playerid][td]      = PlayerText:INVALID_TEXT_DRAW; }
+	for(td = 0; td < sizeof(TEXTDRAW_TWITTER[]);   td++) if(TEXTDRAW_TWITTER[playerid][td]   != PlayerText:INVALID_TEXT_DRAW) { PlayerTextDrawDestroy(playerid, TEXTDRAW_TWITTER[playerid][td]);   TEXTDRAW_TWITTER[playerid][td]   = PlayerText:INVALID_TEXT_DRAW; }
 	return 1;
 }
 
@@ -361,10 +395,14 @@ public SendPlayerNotification(playerid, receiverid, type)
 forward CreateNotification(playerid, lineone[], linetwo[], receiverid);
 public CreateNotification(playerid, lineone[], linetwo[], receiverid)
 {
+	// Ce groupe reste resident telephone ferme : c'est lui qui previent d'un
+	// appel / SMS / virement. S'il manque, la notification serait perdue.
+	if(TEXTDRAW_NOTIFICATION[playerid][0] == PlayerText:INVALID_TEXT_DRAW) CreateNotificationTD(playerid);
+
 	new string[80];
 	format(string, sizeof(string), "%s~n~%s", lineone, linetwo);
 	PlayerTextDrawSetString(playerid, TEXTDRAW_NOTIFICATION[playerid][3], string);
-	
+
 	for(new i = 0; i < 4; i++) PlayerTextDrawShow(playerid, TEXTDRAW_NOTIFICATION[playerid][i]);
 
 	SetTimerEx("HideNotification", 2000, false, "d", playerid);
@@ -506,7 +544,7 @@ public SQLLoadUser(playerid)
 		cache_get_value_name_int(0, "Number", playerNumber[playerid]);
 		cache_get_value_name_int(0, "Credit", playerCredit[playerid]);
 
-		if(hasPhone[playerid] == 1) CreateTextDraws(playerid);
+		// [BUDGET TEXTDRAWS] Plus de creation au login : /mobile s'en charge.
 	}
 	return 1;
 }

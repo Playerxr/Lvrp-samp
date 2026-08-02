@@ -12,6 +12,7 @@
 	  - OnGameModeInit          -> Mobile_Init();
 	  - OnGameModeExit          -> Mobile_Exit();
 	  - OnPlayerConnect         -> Mobile_OnPlayerConnect(playerid);
+	  - OnPlayerDisconnect      -> Mobile_OnPlayerDisconnect(playerid);
 	  - OnPlayerText            -> if(!Mobile_OnPlayerText(playerid, text)) return 0;
 	  - OnPlayerClickPlayerTextDraw -> Mobile_OnPlayerClickPlayerTextDraw(playerid, playertextid);
 	  - OnDialogResponse        -> Mobile_OnDialogResponse(playerid, dialogid, response, listitem, inputtext);
