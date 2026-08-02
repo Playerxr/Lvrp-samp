@@ -5283,6 +5283,8 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 // [MAPPACK] mappings importes, allumables carte par carte
 #include <afrp_mappack_data>
 #include <afrp_mappack>
+// [ANNOUNCE] bandeau visuel pour /a an (Flash News admin)
+#include <afrp_announce>
 // [EVENTS ADMIN] Systeme generique d'evenements (course, DM, derby...)
 #include <afrp_event>
 // [DIAGNOSTIC] volontairement en dernier : il lit les compteurs de tous les
@@ -29997,6 +29999,8 @@ public OnGameModeInit()
     RadioWidget_Init();
     // [RADIO VOICE] cree un canal vocal SampVoice par faction legale
     RadioVoice_Init();
+    // [ANNOUNCE] cree le bandeau de /a an (une seule fois, affiche/cache pour tous)
+    Announce_Init();
     // [SPEEDO2] cree le timer du tableau de bord moderne
     Sp2_Init();
     // [BASKET] charge les paniers poses en jeu
@@ -65087,6 +65091,8 @@ public OnPlayerCommandText(playerid, cmdtext[])
 		  			format(string, sizeof(string), "Flash News : %s ", result);
 					msg_OOC(0xF635B9F6,string);
 					printf("%s", string);
+					// [ANNOUNCE] bandeau visuel en plus du message OOC ci-dessus
+					Announce_Show(PlayerInfo[playerid][pRealName], result);
 					format(string, sizeof(string), "%s  parl en FlashNew : %s.",PlayerInfo[playerid][pRealName],result);
 					log_Admin(string);
 					return 1;
