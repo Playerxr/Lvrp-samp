@@ -28,32 +28,42 @@
 	perdre aucun objet a personne.
 
 	=== LE BUDGET DE TEXTDRAWS ===
-	Un client SA-MP n'accepte que 256 textdraws par joueur, et ce gamemode en
-	tient deja pres de 200 en permanence : 169 pour le telephone, plus le HUD,
-	le panneau du top du jour et les objectifs. Une grille bavarde ne se serait
-	pas affichee du tout, sans message d'erreur.
-	Deux mesures : la grille se limite a 51 elements (un apercu et un libelle
-	par case, au lieu de quatre elements comme dans le pack fourni), et ils sont
-	crees a l'ouverture puis detruits a la fermeture.
+	Un client SA-MP n'accepte que 256 textdraws par joueur. Longtemps ce
+	gamemode en gardait pres de 200 en permanence, et la grille avait du etre
+	bridee a 51 elements pour tenir. Ce n'est plus vrai : depuis que le
+	telephone cree ses 165 textdraws d'apps a l'ouverture au lieu de les garder
+	toute la session, le total resident est de 98 (4 notifications du
+	telephone, 50 pour init_PlayerTexts, 44 pour le HUD). Il reste 158 places.
+	La grille peut donc reprendre la composition complete du pack fourni :
+	121 elements (5 par case x 20, 5 d'habillage, 2 par bouton x 8), soit un
+	pic de 219 sur 256 quand le sac est ouvert.
+	Ils restent crees a l'ouverture et detruits a la fermeture : hors du sac,
+	le module ne coute rien.
 
-	=== HABILLAGE "NOPIXEL" (2026) ===
+	=== L'INTERFACE VIENT DU PACK "NOPIXEL" FOURNI (2026) ===
 	La proprietaire a fourni un pack d'inventaire NoPixel complet, d'un autre
-	gamemode : stockage par nom de chaine (InventoryData[][MAX_INVENTORY]) avec
-	sa propre table MySQL, incompatible avec PlayerInfo[][pInvModel/pInvQuant]
-	que des dizaines d'endroits du gamemode lisent et ecrivent deja (metiers,
-	dealer, magasins, /craft...). Seul le LOOK a ete repris, pas le stockage :
-	- Palette de couleurs : ardoise foncee 960053503 pour les cases et les
-	  boutons, or 0xFFD70091 pour la case selectionnee (INDEXTD/MenuStore_*
-	  du pack), fond quasi noir 151655679 pour les panneaux.
-	- "Badge numerote par case" (idee de INDEXTD) : au lieu d'un textdraw
-	  separe par case (20 de plus, hors budget), le numero est incruste dans
-	  le libelle existant via un code couleur {RRGGBB} - cout nul.
-	- "Trait d'accent sous la case" (idee de GARISBAWAH) : le pack en cree un
-	  par case (20 de plus). Hors de portee du budget ci-dessus (200 fixes +
-	  54 de la grille ne laisse presque rien) : un seul trait, qui suit la
-	  case selectionnee au lieu d'etre statique sous chacune, restitue l'idee
-	  pour +1 seul textdraw.
-	Rien d'autre ne change : memes 8 boutons, memes clics, meme stockage.
+	gamemode, et prefere son interface a la notre. C'est donc la MISE EN PAGE
+	qui est reprise, pas seulement la palette comme au premier essai :
+	- grille 5 colonnes au pas de 39 px (x=125/164/203/242/281), 4 lignes au
+	  pas de 52 px (y=137/189/241/293), cases de 37x49 ;
+	- 5 elements par case comme dans le pack : la tuile de fond (INDEXTD, qui
+	  est aussi le seul element cliquable et change de couleur a la
+	  selection), l'apercu 3D (MODELTD), le nom (NAMETD), la quantite
+	  (AMOUNTTD) et le trait d'accent sous la case (GARISBAWAH) ;
+	- le bandeau d'entete du pack : fond, filet, titre a gauche, compteur a
+	  droite ;
+	- les boutons a la maniere du pack : un pave sprite + son libelle centre.
+	Le pack n'a que 4 boutons (Jumlah/Gunakan/Berikan/Tutup). Les 8 du gamemode
+	sont conserves et habilles dans le meme langage visuel : en supprimer un
+	aurait supprime une fonction.
+	CE QUI N'EST PAS REPRIS, le stockage : le pack range les objets dans
+	InventoryData[][MAX_INVENTORY] avec des cles texte et sa propre table
+	MySQL, incompatible avec PlayerInfo[][pInvModel/pInvQuant] que des dizaines
+	d'endroits du gamemode lisent et ecrivent deja (metiers, dealer, magasins,
+	/craft, armes). Ses Inventory_Add/Set/Remove sont donc ignores.
+	Son NOTIFBOX (bulle "objet recu") ne l'est pas non plus : SacV_Msg dit deja
+	tout dans le chat, ou le joueur garde l'historique, alors qu'une bulle
+	disparait. Cinq textdraws pour dire moins bien la meme chose.
 
 	=== LES ARMES NE SONT PAS DANS LA GRILLE ===
 	Elles sont rangees a part dans le gamemode (pInvWeapon / pInvAmmo, avec un
@@ -88,24 +98,50 @@
 #define SV_DROP_MAX         40       // objets simultanement au sol sur tout le serveur
 #define SV_DROP_DIST        2.5
 
-// Coordonnees reprises du pack de textdraws fourni.
+// Geometrie reprise telle quelle du pack fourni (CreatePlayerInv) : panneau
+// principal 118,114 sur 206x237, grille 5x4 de cases 37x49 aux pas 39/52.
+// Le pack, dessine a la main dans un editeur, a quelques pixels de jeu entre
+// ses lignes (137/189/241/294) ; on prend le pas regulier de 52.
 #define SV_PANEL_X        118.0
-#define SV_PANEL_Y        96.0
-#define SV_CASE_W         39.0
-#define SV_CASE_H         51.0
-#define SV_COL_PAS        40.0
-#define SV_LIGNE_PAS      56.0
+#define SV_PANEL_Y        114.0
+#define SV_PANEL_W        206.0
+#define SV_PANEL_H        237.0
 #define SV_CASE_X0        125.0
-#define SV_CASE_Y0        120.0
+#define SV_CASE_Y0        137.0
+#define SV_CASE_W         37.0
+#define SV_CASE_H         49.0
+#define SV_COL_PAS        39.0
+#define SV_LIGNE_PAS      52.0
+
+// Panneau d'actions : le pack le cale a droite de la grille (330..418) pour
+// 4 boutons. Il en faut 8 ici, donc il descend jusqu'au bas du panneau
+// principal (351) au lieu de s'arreter a 286 ; le pas passe de 23 a 26.
+// Bornes verifiees : dernier bouton 319..341, sous le bas du fond a 351, et
+// x=330 commence apres la grille qui finit a 318 : rien ne se recouvre.
+#define SV_ACT_X          330.0
+#define SV_ACT_Y          130.0
+#define SV_ACT_W          88.0
+#define SV_ACT_H          221.0
+#define SV_BTN_X          334.0
+#define SV_BTN_Y0         137.0
+#define SV_BTN_W          79.0
+#define SV_BTN_H          22.0
+#define SV_BTN_PAS        26.0
 
 // Palette reprise du pack NoPixel (INDEXTD/JUMLAH/panneaux) : ardoise foncee
 // pour les cases et boutons au repos, or pour la selection, quasi-noir pour
 // les fonds de panneau. Coordonnees RGBA (ordre SA-MP), pas ARGB.
 #define SV_COUL_CASE      960053503     // case/bouton au repos (ardoise)
 #define SV_COUL_CASE_SEL  0xFFD70091    // case selectionnee (or, ex-cyan)
-#define SV_COUL_ACCENT    0xFFD700FF    // trait d'accent sous la case selectionnee
+#define SV_COUL_TRAIT     16777215      // trait d'accent du pack (cyan opaque)
+#define SV_COUL_TRAIT_SEL 0xFFD700FF    // le meme trait sous la case selectionnee
 #define SV_COUL_FOND      151655679     // fond des panneaux (quasi-noir)
 #define SV_DIST_DONNER    3.0
+
+// Largeur d'un caractere, en pixels, pour une taille de lettre donnee : sert a
+// centrer les libelles des boutons et a couper les noms trop longs. Releve sur
+// les textdraws existants du gamemode (0.119 tient ~15 caracteres en 39 px).
+#define SV_CHAR_PX(%0)    ((%0) * 21.8)
 
 // Boutons du panneau de droite.
 #define SV_BTN_DETAILS    0
@@ -117,14 +153,19 @@
 #define SV_BTN_PAGE       6
 #define SV_BTN_FERMER     7
 
-new PlayerText:svFondP[MAX_PLAYERS][5];
-new PlayerText:svModele[MAX_PLAYERS][SV_CASES];
-new PlayerText:svNom[MAX_PLAYERS][SV_CASES];
-new PlayerText:svBtn[MAX_PLAYERS][SV_BOUTONS];
-new PlayerText:svPanneau[MAX_PLAYERS];
-// Trait d'accent (idee GARISBAWAH du pack NoPixel) : un seul, repositionne
-// sous la case selectionnee au lieu d'un par case (+1 textdraw au lieu de +20).
-new PlayerText:svAccent[MAX_PLAYERS];
+// Habillage : 0 fond principal, 1 filet de l'entete, 2 titre, 3 compteur.
+new PlayerText:svFondP[MAX_PLAYERS][4];
+new PlayerText:svPanneau[MAX_PLAYERS];              // fond du panneau d'actions
+// Les cinq elements par case du pack fourni. svCase est le seul cliquable :
+// les quatre autres se dessinent par-dessus sans intercepter le clic, exactement
+// comme INDEXTD/MODELTD/NAMETD/AMOUNTTD/GARISBAWAH dans le pack.
+new PlayerText:svCase[MAX_PLAYERS][SV_CASES];       // tuile de fond (INDEXTD)
+new PlayerText:svModele[MAX_PLAYERS][SV_CASES];     // apercu 3D (MODELTD)
+new PlayerText:svNom[MAX_PLAYERS][SV_CASES];        // nom (NAMETD)
+new PlayerText:svQte[MAX_PLAYERS][SV_CASES];        // quantite (AMOUNTTD)
+new PlayerText:svTrait[MAX_PLAYERS][SV_CASES];      // trait d'accent (GARISBAWAH)
+new PlayerText:svBtn[MAX_PLAYERS][SV_BOUTONS];      // pave du bouton (cliquable)
+new PlayerText:svBtnTxt[MAX_PLAYERS][SV_BOUTONS];   // libelle pose dessus
 
 new svOuvert[MAX_PLAYERS];          // 1 = grille affichee
 new svPage[MAX_PLAYERS];            // page courante
@@ -226,13 +267,17 @@ stock SacV_NbPages(playerid)
 // ============================================================================
 // CREATION DES TEXTDRAWS
 // ============================================================================
+// L'ordre de creation suit l'ordre d'affichage (fonds, puis tuiles, puis
+// contenu des cases, puis boutons) : sur SA-MP c'est le dernier montre qui se
+// dessine par-dessus, et garder les deux ordres identiques evite de se
+// demander lequel des deux compte le jour ou l'on ajoute un element.
 stock SacV_Creer(playerid)
 {
 	new Float:x, Float:y;
 
-	// --- fond et entete ---
+	// --- fond principal du pack (INVNAME[0]) ---
 	svFondP[playerid][0] = CreatePlayerTextDraw(playerid, SV_PANEL_X, SV_PANEL_Y, "LD_SPAC:white");
-	PlayerTextDrawTextSize(playerid, svFondP[playerid][0], 213.0, 253.0);
+	PlayerTextDrawTextSize(playerid, svFondP[playerid][0], SV_PANEL_W, SV_PANEL_H);
 	PlayerTextDrawAlignment(playerid, svFondP[playerid][0], 1);
 	PlayerTextDrawColor(playerid, svFondP[playerid][0], SV_COUL_FOND);
 	PlayerTextDrawSetShadow(playerid, svFondP[playerid][0], 0);
@@ -241,29 +286,44 @@ stock SacV_Creer(playerid)
 	PlayerTextDrawFont(playerid, svFondP[playerid][0], 4);
 	PlayerTextDrawSetProportional(playerid, svFondP[playerid][0], 1);
 
-	svFondP[playerid][1] = CreatePlayerTextDraw(playerid, 125.0, 115.0, "LD_SPAC:white");
-	PlayerTextDrawTextSize(playerid, svFondP[playerid][1], 199.0, 3.0);
+	// --- fond du panneau d'actions (INVNAME[4] du pack) ---
+	svPanneau[playerid] = CreatePlayerTextDraw(playerid, SV_ACT_X, SV_ACT_Y, "LD_SPAC:white");
+	PlayerTextDrawTextSize(playerid, svPanneau[playerid], SV_ACT_W, SV_ACT_H);
+	PlayerTextDrawAlignment(playerid, svPanneau[playerid], 1);
+	PlayerTextDrawColor(playerid, svPanneau[playerid], SV_COUL_FOND);
+	PlayerTextDrawSetShadow(playerid, svPanneau[playerid], 0);
+	PlayerTextDrawSetOutline(playerid, svPanneau[playerid], 0);
+	PlayerTextDrawBackgroundColor(playerid, svPanneau[playerid], 255);
+	PlayerTextDrawFont(playerid, svPanneau[playerid], 4);
+	PlayerTextDrawSetProportional(playerid, svPanneau[playerid], 1);
+
+	// --- bandeau d'entete (INVNAME[1..3]) : filet, titre, compteur ---
+	svFondP[playerid][1] = CreatePlayerTextDraw(playerid, 125.0, 130.0, "LD_SPAC:white");
+	PlayerTextDrawTextSize(playerid, svFondP[playerid][1], 193.0, 4.0);
 	PlayerTextDrawAlignment(playerid, svFondP[playerid][1], 1);
-	PlayerTextDrawColor(playerid, svFondP[playerid][1], 255);
+	PlayerTextDrawColor(playerid, svFondP[playerid][1], SV_COUL_TRAIT);
 	PlayerTextDrawSetShadow(playerid, svFondP[playerid][1], 0);
 	PlayerTextDrawSetOutline(playerid, svFondP[playerid][1], 0);
 	PlayerTextDrawBackgroundColor(playerid, svFondP[playerid][1], 255);
 	PlayerTextDrawFont(playerid, svFondP[playerid][1], 4);
 	PlayerTextDrawSetProportional(playerid, svFondP[playerid][1], 1);
 
-	svFondP[playerid][2] = CreatePlayerTextDraw(playerid, 126.0, 115.0, "LD_SPAC:white");
-	PlayerTextDrawTextSize(playerid, svFondP[playerid][2], 165.0, 3.0);
+	svFondP[playerid][2] = CreatePlayerTextDraw(playerid, 125.0, 119.0, "Sac");
+	PlayerTextDrawLetterSize(playerid, svFondP[playerid][2], 0.209, 0.999);
 	PlayerTextDrawAlignment(playerid, svFondP[playerid][2], 1);
-	PlayerTextDrawColor(playerid, svFondP[playerid][2], 12582911);
+	PlayerTextDrawColor(playerid, svFondP[playerid][2], -1);
 	PlayerTextDrawSetShadow(playerid, svFondP[playerid][2], 0);
 	PlayerTextDrawSetOutline(playerid, svFondP[playerid][2], 0);
-	PlayerTextDrawBackgroundColor(playerid, svFondP[playerid][2], 255);
-	PlayerTextDrawFont(playerid, svFondP[playerid][2], 4);
+	PlayerTextDrawBackgroundColor(playerid, svFondP[playerid][2], 150);
+	PlayerTextDrawFont(playerid, svFondP[playerid][2], 1);
 	PlayerTextDrawSetProportional(playerid, svFondP[playerid][2], 1);
 
-	svFondP[playerid][3] = CreatePlayerTextDraw(playerid, 126.0, 105.0, "Sac");
-	PlayerTextDrawLetterSize(playerid, svFondP[playerid][3], 0.14, 0.898);
-	PlayerTextDrawAlignment(playerid, svFondP[playerid][3], 1);
+	// Compteur cale a droite du bandeau (le pack le pose a gauche en x=277,
+	// mais notre texte varie de longueur : aligne a droite, il ne peut pas
+	// venir mordre le titre ni deborder du fond a x=324).
+	svFondP[playerid][3] = CreatePlayerTextDraw(playerid, 318.0, 121.0, "0/0");
+	PlayerTextDrawLetterSize(playerid, svFondP[playerid][3], 0.189, 0.799);
+	PlayerTextDrawAlignment(playerid, svFondP[playerid][3], 3);
 	PlayerTextDrawColor(playerid, svFondP[playerid][3], -1);
 	PlayerTextDrawSetShadow(playerid, svFondP[playerid][3], 0);
 	PlayerTextDrawSetOutline(playerid, svFondP[playerid][3], 0);
@@ -271,30 +331,29 @@ stock SacV_Creer(playerid)
 	PlayerTextDrawFont(playerid, svFondP[playerid][3], 1);
 	PlayerTextDrawSetProportional(playerid, svFondP[playerid][3], 1);
 
-	svFondP[playerid][4] = CreatePlayerTextDraw(playerid, 324.0, 105.0, "0/0");
-	PlayerTextDrawLetterSize(playerid, svFondP[playerid][4], 0.14, 0.699);
-	PlayerTextDrawAlignment(playerid, svFondP[playerid][4], 3);
-	PlayerTextDrawColor(playerid, svFondP[playerid][4], -1);
-	PlayerTextDrawSetShadow(playerid, svFondP[playerid][4], 0);
-	PlayerTextDrawSetOutline(playerid, svFondP[playerid][4], 0);
-	PlayerTextDrawBackgroundColor(playerid, svFondP[playerid][4], 150);
-	PlayerTextDrawFont(playerid, svFondP[playerid][4], 1);
-	PlayerTextDrawSetProportional(playerid, svFondP[playerid][4], 1);
-
-	// --- les 20 cases ---
-	// Un client SA-MP n'accepte que 256 textdraws par joueur, et ce gamemode en
-	// tient deja pres de 200 en permanence (telephone, HUD, panneaux). La grille
-	// se limite donc a deux elements par case, apercu et libelle, au lieu des
-	// quatre du pack d'origine : au-dela, la grille ne s'affichait tout
-	// simplement pas pour un joueur qui a un telephone.
+	// --- les 20 cases, cinq elements chacune comme dans le pack ---
 	for(new k = 0; k < SV_CASES; k++)
 	{
 		x = SV_CASE_X0 + (float(k % SV_COLS) * SV_COL_PAS);
 		y = SV_CASE_Y0 + (float(k / SV_COLS) * SV_LIGNE_PAS);
 
-		// L'apercu 3D est l'element cliquable : il couvre le centre de la case.
-		svModele[playerid][k] = CreatePlayerTextDraw(playerid, x + 4.0, y + 9.0, "_");
-		PlayerTextDrawTextSize(playerid, svModele[playerid][k], 30.0, 35.0);
+		// La tuile (INDEXTD) porte le clic ET la couleur de selection. Les quatre
+		// elements suivants se posent dessus sans etre selectionnables : SA-MP ne
+		// laisse intercepter un clic qu'aux textdraws selectionnables, les autres
+		// ne bloquent rien. C'est exactement le montage du pack.
+		svCase[playerid][k] = CreatePlayerTextDraw(playerid, x, y, "LD_SPAC:white");
+		PlayerTextDrawTextSize(playerid, svCase[playerid][k], SV_CASE_W, SV_CASE_H);
+		PlayerTextDrawAlignment(playerid, svCase[playerid][k], 1);
+		PlayerTextDrawColor(playerid, svCase[playerid][k], SV_COUL_CASE);
+		PlayerTextDrawSetShadow(playerid, svCase[playerid][k], 0);
+		PlayerTextDrawSetOutline(playerid, svCase[playerid][k], 0);
+		PlayerTextDrawBackgroundColor(playerid, svCase[playerid][k], 255);
+		PlayerTextDrawFont(playerid, svCase[playerid][k], 4);
+		PlayerTextDrawSetProportional(playerid, svCase[playerid][k], 1);
+		PlayerTextDrawSetSelectable(playerid, svCase[playerid][k], 1);
+
+		svModele[playerid][k] = CreatePlayerTextDraw(playerid, x, y + 2.0, "_");
+		PlayerTextDrawTextSize(playerid, svModele[playerid][k], SV_CASE_W, 46.0);
 		PlayerTextDrawAlignment(playerid, svModele[playerid][k], 1);
 		PlayerTextDrawColor(playerid, svModele[playerid][k], -1);
 		PlayerTextDrawSetShadow(playerid, svModele[playerid][k], 0);
@@ -304,80 +363,89 @@ stock SacV_Creer(playerid)
 		PlayerTextDrawSetProportional(playerid, svModele[playerid][k], 0);
 		PlayerTextDrawSetPreviewModel(playerid, svModele[playerid][k], 1212);
 		PlayerTextDrawSetPreviewRot(playerid, svModele[playerid][k], 0.0, 0.0, 0.0, 1.0);
-		PlayerTextDrawSetSelectable(playerid, svModele[playerid][k], 1);
 
-		// Nom et quantite sur la meme ligne, avec un fond de case dessine par la
-		// boite de ce textdraw : la selection change sa couleur.
-		svNom[playerid][k] = CreatePlayerTextDraw(playerid, x + 2.0, y + 1.0, "_");
-		PlayerTextDrawLetterSize(playerid, svNom[playerid][k], 0.119, 0.598);
+		svNom[playerid][k] = CreatePlayerTextDraw(playerid, x + 2.0, y + 2.0, "_");
+		PlayerTextDrawLetterSize(playerid, svNom[playerid][k], 0.159, 0.898);
 		PlayerTextDrawAlignment(playerid, svNom[playerid][k], 1);
 		PlayerTextDrawColor(playerid, svNom[playerid][k], -1);
 		PlayerTextDrawSetShadow(playerid, svNom[playerid][k], 0);
 		PlayerTextDrawSetOutline(playerid, svNom[playerid][k], 0);
-		PlayerTextDrawBackgroundColor(playerid, svNom[playerid][k], 0);
+		PlayerTextDrawBackgroundColor(playerid, svNom[playerid][k], 150);
 		PlayerTextDrawFont(playerid, svNom[playerid][k], 1);
 		PlayerTextDrawSetProportional(playerid, svNom[playerid][k], 1);
-		PlayerTextDrawUseBox(playerid, svNom[playerid][k], 1);
-		PlayerTextDrawBoxColor(playerid, svNom[playerid][k], SV_COUL_CASE);
-		PlayerTextDrawTextSize(playerid, svNom[playerid][k], x + SV_CASE_W, y + SV_CASE_H);
+
+		svQte[playerid][k] = CreatePlayerTextDraw(playerid, x + 2.0, y + 40.0, "_");
+		PlayerTextDrawLetterSize(playerid, svQte[playerid][k], 0.150, 0.799);
+		PlayerTextDrawAlignment(playerid, svQte[playerid][k], 1);
+		PlayerTextDrawColor(playerid, svQte[playerid][k], -1);
+		PlayerTextDrawSetShadow(playerid, svQte[playerid][k], 0);
+		PlayerTextDrawSetOutline(playerid, svQte[playerid][k], 0);
+		PlayerTextDrawBackgroundColor(playerid, svQte[playerid][k], 150);
+		PlayerTextDrawFont(playerid, svQte[playerid][k], 1);
+		PlayerTextDrawSetProportional(playerid, svQte[playerid][k], 1);
+
+		svTrait[playerid][k] = CreatePlayerTextDraw(playerid, x, y + 48.0, "LD_SPAC:white");
+		PlayerTextDrawTextSize(playerid, svTrait[playerid][k], SV_CASE_W, 2.0);
+		PlayerTextDrawAlignment(playerid, svTrait[playerid][k], 1);
+		PlayerTextDrawColor(playerid, svTrait[playerid][k], SV_COUL_TRAIT);
+		PlayerTextDrawSetShadow(playerid, svTrait[playerid][k], 0);
+		PlayerTextDrawSetOutline(playerid, svTrait[playerid][k], 0);
+		PlayerTextDrawBackgroundColor(playerid, svTrait[playerid][k], 255);
+		PlayerTextDrawFont(playerid, svTrait[playerid][k], 4);
+		PlayerTextDrawSetProportional(playerid, svTrait[playerid][k], 1);
 	}
 
-	// --- panneau d'actions ---
-	// Hauteur alignee sur le bas de la grille de cases (y=339, cf SV_CASE_Y0 +
-	// 3*SV_LIGNE_PAS + SV_CASE_H) : la colonne de droite peut ainsi accueillir
-	// 8 boutons sans deborder sur une zone d'ecran deja utilisee ailleurs.
-	svPanneau[playerid] = CreatePlayerTextDraw(playerid, 347.0, 168.0, "LD_SPAC:white");
-	PlayerTextDrawTextSize(playerid, svPanneau[playerid], 402.0, 339.0);
-	PlayerTextDrawAlignment(playerid, svPanneau[playerid], 1);
-	PlayerTextDrawColor(playerid, svPanneau[playerid], SV_COUL_FOND);
-	PlayerTextDrawSetShadow(playerid, svPanneau[playerid], 0);
-	PlayerTextDrawSetOutline(playerid, svPanneau[playerid], 0);
-	PlayerTextDrawBackgroundColor(playerid, svPanneau[playerid], 255);
-	PlayerTextDrawFont(playerid, svPanneau[playerid], 4);
-	PlayerTextDrawSetProportional(playerid, svPanneau[playerid], 1);
-
-	new libelles[SV_BOUTONS][12] = { "Details", "Utiliser", "Donner", "Jeter", "Deplacer", "Sac", "Page", "Fermer" };
+	// --- les 8 boutons : pave sprite + libelle, comme JUMLAH + INVNAME[5] ---
+	// Le pack cale ses libelles a des x tapes a la main ; ici le libelle est
+	// centre par calcul, sinon "Sac" et "Deplacer" ne pourraient pas partager
+	// la meme abscisse sans que l'un des deux soit de travers.
+	new libelles[SV_BOUTONS][12] = { "Details", "Utiliser", "Donner", "Jeter", "Deplacer", "Sac", "Page 1/1", "Fermer" };
 	for(new b = 0; b < SV_BOUTONS; b++)
 	{
-		y = 174.0 + (float(b) * 21.0);
+		y = SV_BTN_Y0 + (float(b) * SV_BTN_PAS);
 
-		// Texte et fond dans le meme textdraw (font 1 + UseBox) : deux elements
-		// par bouton auraient coute cinq slots de plus pour rien.
-		svBtn[playerid][b] = CreatePlayerTextDraw(playerid, 356.0, y + 4.0, libelles[b]);
-		PlayerTextDrawLetterSize(playerid, svBtn[playerid][b], 0.15, 0.898);
+		svBtn[playerid][b] = CreatePlayerTextDraw(playerid, SV_BTN_X, y, "LD_SPAC:white");
+		PlayerTextDrawTextSize(playerid, svBtn[playerid][b], SV_BTN_W, SV_BTN_H);
 		PlayerTextDrawAlignment(playerid, svBtn[playerid][b], 1);
-		PlayerTextDrawColor(playerid, svBtn[playerid][b], -1);
+		PlayerTextDrawColor(playerid, svBtn[playerid][b], SV_COUL_CASE);
 		PlayerTextDrawSetShadow(playerid, svBtn[playerid][b], 0);
 		PlayerTextDrawSetOutline(playerid, svBtn[playerid][b], 0);
-		PlayerTextDrawBackgroundColor(playerid, svBtn[playerid][b], 0);
-		PlayerTextDrawFont(playerid, svBtn[playerid][b], 1);
+		PlayerTextDrawBackgroundColor(playerid, svBtn[playerid][b], 255);
+		PlayerTextDrawFont(playerid, svBtn[playerid][b], 4);
 		PlayerTextDrawSetProportional(playerid, svBtn[playerid][b], 1);
-		PlayerTextDrawUseBox(playerid, svBtn[playerid][b], 1);
-		PlayerTextDrawBoxColor(playerid, svBtn[playerid][b], SV_COUL_CASE);
-		PlayerTextDrawTextSize(playerid, svBtn[playerid][b], 397.0, y + 18.0);
 		PlayerTextDrawSetSelectable(playerid, svBtn[playerid][b], 1);
-	}
 
-	// --- trait d'accent (idee GARISBAWAH) : pas cree ici. SA-MP ne permet pas
-	// de deplacer un textdraw existant (x/y figes a la creation), donc
-	// SacV_Remplir le (re)cree lui-meme a l'emplacement de la case selectionnee
-	// et le detruit quand rien n'est selectionne. INVALID_TEXT_DRAW le marque
-	// absent au repos.
-	svAccent[playerid] = PlayerText:INVALID_TEXT_DRAW;
+		x = SV_BTN_X + ((SV_BTN_W - (float(strlen(libelles[b])) * SV_CHAR_PX(0.30))) / 2.0);
+		svBtnTxt[playerid][b] = CreatePlayerTextDraw(playerid, x, y + 6.0, libelles[b]);
+		PlayerTextDrawLetterSize(playerid, svBtnTxt[playerid][b], 0.30, 0.999);
+		PlayerTextDrawAlignment(playerid, svBtnTxt[playerid][b], 1);
+		PlayerTextDrawColor(playerid, svBtnTxt[playerid][b], -1);
+		PlayerTextDrawSetShadow(playerid, svBtnTxt[playerid][b], 0);
+		PlayerTextDrawSetOutline(playerid, svBtnTxt[playerid][b], 0);
+		PlayerTextDrawBackgroundColor(playerid, svBtnTxt[playerid][b], 150);
+		PlayerTextDrawFont(playerid, svBtnTxt[playerid][b], 1);
+		PlayerTextDrawSetProportional(playerid, svBtnTxt[playerid][b], 1);
+	}
 	return 1;
 }
 
 stock SacV_Detruire(playerid)
 {
-	for(new k = 0; k < 5; k++) PlayerTextDrawDestroy(playerid, svFondP[playerid][k]);
+	for(new k = 0; k < 4; k++) PlayerTextDrawDestroy(playerid, svFondP[playerid][k]);
+	PlayerTextDrawDestroy(playerid, svPanneau[playerid]);
 	for(new k = 0; k < SV_CASES; k++)
 	{
+		PlayerTextDrawDestroy(playerid, svCase[playerid][k]);
 		PlayerTextDrawDestroy(playerid, svModele[playerid][k]);
 		PlayerTextDrawDestroy(playerid, svNom[playerid][k]);
+		PlayerTextDrawDestroy(playerid, svQte[playerid][k]);
+		PlayerTextDrawDestroy(playerid, svTrait[playerid][k]);
 	}
-	for(new b = 0; b < SV_BOUTONS; b++) PlayerTextDrawDestroy(playerid, svBtn[playerid][b]);
-	PlayerTextDrawDestroy(playerid, svPanneau[playerid]);
-	if(svAccent[playerid] != PlayerText:INVALID_TEXT_DRAW) PlayerTextDrawDestroy(playerid, svAccent[playerid]);
+	for(new b = 0; b < SV_BOUTONS; b++)
+	{
+		PlayerTextDrawDestroy(playerid, svBtn[playerid][b]);
+		PlayerTextDrawDestroy(playerid, svBtnTxt[playerid][b]);
+	}
 	return 1;
 }
 
@@ -400,71 +468,64 @@ stock SacV_Remplir(playerid)
 		svSlotDe[playerid][place++] = i;
 	}
 
+	// Les cases ne se chevauchent pas entre elles (37 de large au pas de 39,
+	// 49 de haut au pas de 52) : seul l'ordre A L'INTERIEUR d'une case compte.
+	// La tuile passe donc en premier a chaque fois, sans quoi elle recouvrirait
+	// l'apercu et le nom au reaffichage qui suit un changement de selection.
 	for(new k = 0; k < SV_CASES; k++)
 	{
 		new slot = svSlotDe[playerid][k];
+		new selectionnee = (svSel[playerid] == k && slot != -1);
+
+		PlayerTextDrawColor(playerid, svCase[playerid][k],
+			(selectionnee) ? (SV_COUL_CASE_SEL) : (SV_COUL_CASE));
+		PlayerTextDrawShow(playerid, svCase[playerid][k]);
+
 		if(slot == -1)
 		{
-			// Case vide : le cadre reste, le contenu part. L'apercu est masque
-			// plutot que mis au modele 0, un modele invalide affichant parfois
-			// un objet au hasard cote client. Le numero reste affiche : il sert
-			// de repere de case meme vide.
-			format(s, sizeof(s), "{AAAAAA}%d", k + 1);
-			PlayerTextDrawSetString(playerid, svNom[playerid][k], s);
-			PlayerTextDrawBoxColor(playerid, svNom[playerid][k], SV_COUL_CASE);
-			PlayerTextDrawShow(playerid, svNom[playerid][k]);
+			// Case vide : la tuile reste (et reste cliquable, pour servir de
+			// destination a un deplacement), tout le contenu part. L'apercu est
+			// masque plutot que mis au modele 0, un modele invalide affichant
+			// parfois un objet au hasard cote client.
 			PlayerTextDrawHide(playerid, svModele[playerid][k]);
+			PlayerTextDrawHide(playerid, svNom[playerid][k]);
+			PlayerTextDrawHide(playerid, svQte[playerid][k]);
+			PlayerTextDrawHide(playerid, svTrait[playerid][k]);
 			continue;
 		}
 
 		new modelid = PlayerInfo[playerid][pInvModel][slot];
 		format(nom, sizeof(nom), "%s", GetItemName(modelid));
-		// Un nom trop long depasse de la case : on le coupe (un peu plus court
-		// qu'avant pour laisser la place au numero de case).
-		if(strlen(nom) > 7) nom[7] = 0;
-		// "Badge numerote" (idee INDEXTD) incruste dans le libelle via un code
-		// couleur {RRGGBB}, plutot qu'un textdraw separe par case (hors budget,
-		// cf en-tete du fichier) : cout nul.
-		format(s, sizeof(s), "{AAAAAA}%d {FFFFFF}%s x%d", k + 1, nom, PlayerInfo[playerid][pInvQuant][slot]);
-		PlayerTextDrawSetString(playerid, svNom[playerid][k], s);
-		PlayerTextDrawBoxColor(playerid, svNom[playerid][k],
-			(svSel[playerid] == k) ? (SV_COUL_CASE_SEL) : (SV_COUL_CASE));
+		// Un nom trop long depasserait de la case : 37 px a 0.159 de largeur de
+		// lettre tiennent une dizaine de caracteres.
+		if(strlen(nom) > 10) nom[10] = 0;
 
 		PlayerTextDrawSetPreviewModel(playerid, svModele[playerid][k], SacV_ModeleAffiche(modelid));
-		PlayerTextDrawShow(playerid, svNom[playerid][k]);
 		PlayerTextDrawShow(playerid, svModele[playerid][k]);
+
+		PlayerTextDrawSetString(playerid, svNom[playerid][k], nom);
+		PlayerTextDrawShow(playerid, svNom[playerid][k]);
+
+		format(s, sizeof(s), "x%d", PlayerInfo[playerid][pInvQuant][slot]);
+		PlayerTextDrawSetString(playerid, svQte[playerid][k], s);
+		PlayerTextDrawShow(playerid, svQte[playerid][k]);
+
+		// Le trait du pack est statique ; le passer en or sous la case
+		// selectionnee rend le choix lisible meme quand l'objet couvre la tuile.
+		PlayerTextDrawColor(playerid, svTrait[playerid][k],
+			(selectionnee) ? (SV_COUL_TRAIT_SEL) : (SV_COUL_TRAIT));
+		PlayerTextDrawShow(playerid, svTrait[playerid][k]);
 	}
 
-	format(s, sizeof(s), "%d/%d objets - page %d/%d", SacV_NbObjets(playerid),
-		gPlayerInventory[playerid], svPage[playerid] + 1, SacV_NbPages(playerid));
-	PlayerTextDrawSetString(playerid, svFondP[playerid][4], s);
-	PlayerTextDrawShow(playerid, svFondP[playerid][4]);
+	format(s, sizeof(s), "%d/%d objets", SacV_NbObjets(playerid), gPlayerInventory[playerid]);
+	PlayerTextDrawSetString(playerid, svFondP[playerid][3], s);
+	PlayerTextDrawShow(playerid, svFondP[playerid][3]);
 
-	// --- trait d'accent sous la case selectionnee (idee GARISBAWAH) ---
-	// Un textdraw ne peut pas etre deplace apres creation (x/y figes) : on le
-	// detruit et le recree a la bonne position plutot que d'en garder un par
-	// case (20 de plus, hors budget).
-	if(svAccent[playerid] != PlayerText:INVALID_TEXT_DRAW)
-	{
-		PlayerTextDrawDestroy(playerid, svAccent[playerid]);
-		svAccent[playerid] = PlayerText:INVALID_TEXT_DRAW;
-	}
-	if(svSel[playerid] != -1 && svSlotDe[playerid][svSel[playerid]] != -1)
-	{
-		new k = svSel[playerid];
-		new Float:ax = SV_CASE_X0 + (float(k % SV_COLS) * SV_COL_PAS) + 2.0;
-		new Float:ay = SV_CASE_Y0 + (float(k / SV_COLS) * SV_LIGNE_PAS) + SV_CASE_H - 3.0;
-		svAccent[playerid] = CreatePlayerTextDraw(playerid, ax, ay, "LD_SPAC:white");
-		PlayerTextDrawTextSize(playerid, svAccent[playerid], SV_CASE_W - 4.0, 2.0);
-		PlayerTextDrawAlignment(playerid, svAccent[playerid], 1);
-		PlayerTextDrawColor(playerid, svAccent[playerid], SV_COUL_ACCENT);
-		PlayerTextDrawSetShadow(playerid, svAccent[playerid], 0);
-		PlayerTextDrawSetOutline(playerid, svAccent[playerid], 0);
-		PlayerTextDrawBackgroundColor(playerid, svAccent[playerid], 255);
-		PlayerTextDrawFont(playerid, svAccent[playerid], 4);
-		PlayerTextDrawSetProportional(playerid, svAccent[playerid], 1);
-		PlayerTextDrawShow(playerid, svAccent[playerid]);
-	}
+	// La pagination s'affiche sur son propre bouton : le bandeau reste lisible
+	// et ca evite un textdraw de plus rien que pour "page 1/2".
+	format(s, sizeof(s), "Page %d/%d", svPage[playerid] + 1, SacV_NbPages(playerid));
+	PlayerTextDrawSetString(playerid, svBtnTxt[playerid][SV_BTN_PAGE], s);
+	PlayerTextDrawShow(playerid, svBtnTxt[playerid][SV_BTN_PAGE]);
 	return 1;
 }
 
@@ -488,7 +549,7 @@ stock SacV_Ouvrir(playerid)
 	}
 
 	// Le telephone et le sac ne peuvent pas tenir ensemble dans le budget de
-	// textdraws du client : 234 pour le smartphone ouvert, plus 51 pour la
+	// textdraws du client : 234 pour le smartphone ouvert, plus 121 pour la
 	// grille, depasse les 256 autorises et la grille ne s'afficherait pas.
 	if(phone_State[playerid] != PHONE_STATE_CLOSED) phone_Close(playerid);
 	if(usingPhone[playerid] == 1)
@@ -505,10 +566,25 @@ stock SacV_Ouvrir(playerid)
 	svSel[playerid]    = -1;
 	svDeplaceSrc[playerid] = -1;
 
-	for(new k = 0; k < 5; k++) PlayerTextDrawShow(playerid, svFondP[playerid][k]);
+	// [ORDRE D'AFFICHAGE] Sur SA-MP, un textdraw montre plus tard se dessine
+	// PAR-DESSUS les precedents : c'est exactement le bug qu'avait /craft, dont
+	// le fond etait affiche en dernier et masquait ses propres boutons. Les
+	// deux fonds partent donc en premier, le contenu ensuite.
+	PlayerTextDrawShow(playerid, svFondP[playerid][0]);
 	PlayerTextDrawShow(playerid, svPanneau[playerid]);
-	for(new b = 0; b < SV_BOUTONS; b++) PlayerTextDrawShow(playerid, svBtn[playerid][b]);
-	SacV_Remplir(playerid);
+
+	new titre[40];
+	format(titre, sizeof(titre), "Sac - %s", PlayerInfo[playerid][pName]);
+	PlayerTextDrawSetString(playerid, svFondP[playerid][2], titre);
+	PlayerTextDrawShow(playerid, svFondP[playerid][1]);
+	PlayerTextDrawShow(playerid, svFondP[playerid][2]);
+
+	for(new b = 0; b < SV_BOUTONS; b++)
+	{
+		PlayerTextDrawShow(playerid, svBtn[playerid][b]);
+		PlayerTextDrawShow(playerid, svBtnTxt[playerid][b]);
+	}
+	SacV_Remplir(playerid);          // cases + compteur + libelle de pagination
 	SelectTextDraw(playerid, 0x00C8FFAA);
 
 	SacV_Msg(playerid, "{AAAAAA}Clique un objet, puis une action a droite. Les armes restent sur /sac arme.");
@@ -840,9 +916,11 @@ stock SacV_OnClick(playerid, PlayerText:playertextid)
 {
 	if(svOuvert[playerid] != 1) return 0;
 
+	// C'est la tuile de fond qui porte le clic (comme INDEXTD dans le pack) :
+	// l'apercu 3D pose dessus n'est pas selectionnable et ne l'intercepte pas.
 	for(new k = 0; k < SV_CASES; k++)
 	{
-		if(playertextid != svModele[playerid][k]) continue;
+		if(playertextid != svCase[playerid][k]) continue;
 		if(svDeplaceSrc[playerid] != -1) return SacV_TerminerDeplacement(playerid, k);
 		if(svSlotDe[playerid][k] == -1) return 1;   // case vide : clic ignore
 		svSel[playerid] = k;
