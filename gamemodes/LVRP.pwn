@@ -5140,6 +5140,12 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 // [PRISON] Enceinte exterieure (mur/miradors/portail) visible par tous, zero install client
 #include <afrp_prison>
 
+// [DEPLACER MAP] /a deplacer <nom> : repose une map entiere a la position et
+// dans l'angle de l'admin, et retient le choix. Inclus AVANT les fichiers de
+// map : ce sont eux qui appellent MM_Begin/MM_Obj, et leurs constantes
+// (MM_HOPITAL, MM_CONCESSION...) doivent deja etre connues du preprocesseur.
+#include <afrp_mapmove>
+
 // [CONCESSION] Decor de la 4e concession (map communautaire de garage,
 // reconvertie/rebrandee en concession d'occasion) - voir afrp_concession_map.inc.
 // La concession elle-meme (pickup, catalogue) vient de lvrp_server_dealership
@@ -21879,7 +21885,10 @@ stock Hopital_ToggleDuty(playerid)
     else if(IsPlayerInRangeOfPoint(playerid, 30.0, 1183.0, -1322.0, 13.5)) atHospital = true; // LS
     else if(IsPlayerInRangeOfPoint(playerid, 30.0, -2655.0, 638.0, 14.4)) atHospital = true; // SF
     // [HOPITAL] 4e zone : vrai QG (map communautaire), voir afrp_hopital_map.inc
-    else if(IsPlayerInRangeOfPoint(playerid, HOPITAL_MAP_ZONE_RADIUS, HOPITAL_MAP_ZONE_X, HOPITAL_MAP_ZONE_Y, HOPITAL_MAP_ZONE_Z)) atHospital = true;
+    // Centre lu sur l'ancrage courant de la map et non sur une constante figee :
+    // le QG est deplacable (/a deplacer hopital), et une zone restee a l'ancienne
+    // adresse ferait echouer /duty hopital sans le moindre message d'erreur.
+    else if(IsPlayerInRangeOfPoint(playerid, HOPITAL_MAP_ZONE_RADIUS, MM_AnchorX(MM_HOPITAL), MM_AnchorY(MM_HOPITAL), MM_AnchorZ(MM_HOPITAL))) atHospital = true;
     if(!atHospital && PlayerInfo[playerid][pAdmin] < 2)
         {return msg_Client(playerid, COLOR_INFO, "{CF9756} Hopital {FFFFFF} Vous devez ï¿½tre a l'hopital (LS, SF, LV ou le QG).");}
 
@@ -27670,6 +27679,10 @@ public dealerShip_Load()
 		cache_get_value_name_float(i,"Pos_z", dealerShip[i][pos][2]);
 		dealerShip_Update(i);
 	}
+	// [DEPLACER MAP] La 4e concession (Type=7) est posee sur une map deplacable.
+	// Son pickup vit en base : sans ce rappel il resterait a l'ancienne adresse
+	// apres un redemarrage alors que le batiment, lui, a bouge.
+	Concession_MovePickup();
 	return 1;
 }
 
@@ -29887,6 +29900,10 @@ public OnGameModeInit()
 	ResetElevatorQueue();
 	Elevator_Initialize();
 	init_Mapping();
+	// [DEPLACER MAP] Relit les deplacements enregistres AVANT de creer les maps :
+	// elles doivent naitre directement au bon endroit plutot que d'apparaitre a
+	// leur position d'origine puis sauter ailleurs sous les yeux des joueurs.
+	MM_Init();
 	// Prison_CreateCompound(); // [PRISON] DESACTIVE (doublon + emplacement sur l'eau, voir /a creer prison)
 	// [PRISON] Vraie map interieure fournie par le proprio (525 objets, monde
 	// 871 / interieur 14) : desormais LA prison utilisee par /a jail.
@@ -62522,6 +62539,7 @@ public OnPlayerCommandText(playerid, cmdtext[])
 					msg_Client(playerid, COLOR_WHITE, "{FF6347} Admin {A98500}Admin level {FF0000}3{A98500}:{FFFFB2} kickall - reboot - an - musique - cnnn - event - divorce");
 					msg_Client(playerid, COLOR_WHITE, "{FF6347} Admin {A98500}Admin level {FF0000}3{A98500}:{FFFFB2} ip - recup - donner - lotto - jackpot - desarmer - argent");
 					msg_Client(playerid, COLOR_WHITE, "{FF6347} Admin {A98500}Admin level {FF0000}3{A98500}:{FFFFB2} id - supprimer - creer - spawn - payday - edit");
+					msg_Client(playerid, COLOR_WHITE, "{FF6347}» Admin «{A98500}Admin level {FF0000}3{A98500}:{FFFFB2} deplacer (repositionner une map communautaire)");
 				}
 				if (PlayerInfo[playerid][pAdmin] >= 4)
 				{
@@ -62568,6 +62586,19 @@ public OnPlayerCommandText(playerid, cmdtext[])
 					else
 						{msg_Client(playerid, COLOR_NOACCES, "{FF0069} Erreur {FFFFFF} Vous n'tes pas autoris  utiliser cette commande!");return 1;}
 				}
+			}
+			// [DEPLACER MAP] /a deplacer [reset] <nom> - repose une map communautaire
+			// entiere a la position et dans l'angle de l'admin. Voir afrp_mapmove.inc.
+			else if(strcmp(tmp, "deplacer", true) == 0)
+			{
+			    if (PlayerInfo[playerid][pAdmin] < 3)
+		  			{return 1;}
+				new mmArg1[32], mmArg2[32];
+				tmp = strtok(cmdtext, idx);
+				if(strlen(tmp)) strmid(mmArg1, tmp, 0, 31, 32);
+				tmp = strtok(cmdtext, idx);
+				if(strlen(tmp)) strmid(mmArg2, tmp, 0, 31, 32);
+				return MM_Cmd(playerid, mmArg1, mmArg2);
 			}
 			else if(strcmp(tmp, "veprice", true) == 0)
 			{
@@ -66926,6 +66957,7 @@ public OnPlayerCommandText(playerid, cmdtext[])
 					msg_Client(playerid, COLOR_WHITE, "{FF6347} Admin {A98500}Admin level {FF0000}3{A98500}:{FFFFB2} kickall - reboot - an - musique - cnnn - event - divorce");
 					msg_Client(playerid, COLOR_WHITE, "{FF6347} Admin {A98500}Admin level {FF0000}3{A98500}:{FFFFB2} ip - recup - donner - lotto - jackpot - desarmer - argent");
 					msg_Client(playerid, COLOR_WHITE, "{FF6347} Admin {A98500}Admin level {FF0000}3{A98500}:{FFFFB2} id - supprimer - creer - spawn - payday - edit");
+					msg_Client(playerid, COLOR_WHITE, "{FF6347}» Admin «{A98500}Admin level {FF0000}3{A98500}:{FFFFB2} deplacer (repositionner une map communautaire)");
 				}
 				if (PlayerInfo[playerid][pAdmin] >= 4)
 				{

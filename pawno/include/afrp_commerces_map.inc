@@ -91,15 +91,54 @@ new Float:cmmVoirZ[CMM_MAX_CARTES] = { 13.5000, 14.0000, 14.0000, 21.6000 };
 new cmmObj[CMM_MAX_CARTES][CMM_MAX_OBJ];
 new cmmNb[CMM_MAX_CARTES];
 
+// Les quatre maps de ce fichier sont aussi declarees dans afrp_mapmove.inc
+// (/a deplacer). Deux numerotations differentes plutot qu'une seule parce que
+// les deux modules n'ont pas la meme liste : mapmove couvre aussi l'hopital,
+// la concession et le Coffee Shop, qui n'ont rien a faire ici.
+stock Cmm_MapMove(carte)
+{
+	switch(carte)
+	{
+		case CMM_MARKET247:  return MM_MARKET247;
+		case CMM_MINIMARKET: return MM_MINIMARKET;
+		case CMM_VETEMENTS:  return MM_VETEMENTS;
+		case CMM_PROJET1:    return MM_PROJET1;
+	}
+	return -1;
+}
+
 // Cree un objet ET l'enregistre pour sa carte. C'est le seul point de passage :
 // c'est ce qui rend chaque map destructible/recreable individuellement sans
 // toucher aux 700 lignes de donnees brutes ci-dessous.
 stock Cmm_Obj(carte, model, Float:x, Float:y, Float:z, Float:rx, Float:ry, Float:rz, wid = -1, iid = -1, pid = -1, Float:sd = 300.0, Float:dd = 300.0)
 {
-	new objectid = CreateDynamicObject(model, x, y, z, rx, ry, rz, wid, iid, pid, sd, dd);
+	// Les coordonnees ci-dessous sont celles de l'auteur, jamais retouchees.
+	// Cmm_MapMove() rend l'index /a deplacer correspondant : si la map a ete
+	// deplacee en jeu, MM_Point/MM_Angle reposent le point au bon endroit ;
+	// sinon ils rendent la coordonnee telle quelle.
+	new mv = Cmm_MapMove(carte);
+	new Float:nx, Float:ny, Float:nz;
+	MM_Point(mv, x, y, z, nx, ny, nz);
+	new objectid = CreateDynamicObject(model, nx, ny, nz, rx, ry, MM_Angle(mv, rz), wid, iid, pid, sd, dd);
 	if(carte >= 0 && carte < CMM_MAX_CARTES && cmmNb[carte] < CMM_MAX_OBJ)
 		cmmObj[carte][cmmNb[carte]++] = objectid;
 	return objectid;
+}
+
+// Detruit puis recree une des quatre maps a l'ancrage courant. Appelee par
+// MM_Reconstruire (afrp_mapmove.inc) : c'est ici que vit la correspondance
+// MM_* -> CMM_*, parce que afrp_mapmove.inc est inclus avant ce fichier et ne
+// connait pas encore les constantes CMM_*.
+stock Cmm_Reconstruire(map)
+{
+	switch(map)
+	{
+		case MM_MARKET247:  { Cmm_Detruire(CMM_MARKET247);  return Market247_CreateMap(); }
+		case MM_MINIMARKET: { Cmm_Detruire(CMM_MINIMARKET); return MiniMarket_CreateMap(); }
+		case MM_VETEMENTS:  { Cmm_Detruire(CMM_VETEMENTS);  return Vetements_CreateMap(); }
+		case MM_PROJET1:    { Cmm_Detruire(CMM_PROJET1);    return Projet1_CreateMap(); }
+	}
+	return -1;
 }
 
 stock Cmm_Detruire(carte)
@@ -1304,9 +1343,16 @@ stock Commerces_MapRemoveBuildings(playerid)
 // a celui declare cote entree (donc -1 ne marcherait pas ici).
 stock Projet1_CheckEnter(playerid)
 {
+	// Les deux points sont recalcules a chaque passage plutot que stockes : si
+	// la map est deplacee (/a deplacer project1), la porte suit toute seule et
+	// il n'y a aucun etat a resynchroniser. C'est exactement le genre de lien
+	// oublie qui casse en silence quand une map bouge.
+	new Float:ex, Float:ey, Float:ez, Float:ix, Float:iy, Float:iz;
+	MM_Point(MM_PROJET1, PROJET1_EXT_X, PROJET1_EXT_Y, PROJET1_EXT_Z, ex, ey, ez);
+	MM_Point(MM_PROJET1, PROJET1_INT_X, PROJET1_INT_Y, PROJET1_INT_Z, ix, iy, iz);
 	return server_Link(playerid, 1.5,
-		PROJET1_EXT_X, PROJET1_EXT_Y, PROJET1_EXT_Z, PROJET1_EXT_A, 0, 0, 0, "~w~Entree",
-		PROJET1_INT_X, PROJET1_INT_Y, PROJET1_INT_Z, PROJET1_INT_A, 0, 0, 0, "~w~Sortie", 1);
+		ex, ey, ez, MM_Angle(MM_PROJET1, PROJET1_EXT_A), 0, 0, 0, "~w~Entree",
+		ix, iy, iz, MM_Angle(MM_PROJET1, PROJET1_INT_A), 0, 0, 0, "~w~Sortie", 1);
 }
 
 // ============================================================================

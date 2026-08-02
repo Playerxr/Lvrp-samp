@@ -40,6 +40,14 @@
 #endif
 #define AFRP_MAPPACK_INCLUDED
 
+// afrp_mapmove.inc est inclus AVANT afrp_mappack_data.inc et doit donc
+// recopier en dur l'index du Coffee Shop. Ce garde-fou fait echouer la
+// compilation si un jour une carte est inseree avant elle - sans lui,
+// /a deplacer coffee deplacerait silencieusement une autre carte.
+#if MM_COFFEE_MP != MP_COFFEE
+	#error MM_COFFEE_MP (afrp_mapmove.inc) ne pointe plus sur le Coffee Shop du pack de mappings.
+#endif
+
 #define MP_ADMIN_LEVEL   3
 #define MP_FILE          "mappack.cfg"
 #define DIALOG_MP_LISTE  9637
@@ -63,6 +71,15 @@ stock MapPack_Msg(playerid, const text[])
 stock MapPack_IsAdmin(playerid)
 {
 	return (PlayerInfo[playerid][pAdmin] >= MP_ADMIN_LEVEL);
+}
+
+// Accesseur pour afrp_mapmove.inc, qui est inclus AVANT ce fichier et ne peut
+// donc pas lire mpActif directement (le compilateur ne connaitrait pas encore
+// la variable). Passer par une fonction contourne proprement l'ordre d'include.
+stock MapPack_EstAllumee(carte)
+{
+	if(carte < 0 || carte >= MP_MAX_CARTES) return 0;
+	return (mpActif[carte] == 1);
 }
 
 // Appele par le code genere a chaque objet cree : c'est ce qui rend une carte
