@@ -324,7 +324,14 @@ stock MapPack_Carte(playerid, carte)
 stock MapPack_Aller(playerid, carte)
 {
 	if(carte < 0 || carte >= MP_MAX_CARTES) return 0;
-	SafeTeleportPlayer(playerid, mpVoirX[carte], mpVoirY[carte], mpVoirZ[carte], 0, 0);
+	// [FIX] Le Coffee Shop est la seule carte du pack deplacable (/a deplacer
+	// coffee) : sans ce cas particulier, "aller voir" continuait d'utiliser
+	// mpVoirX/Y/Z (le point d'observation d'origine, jamais mis a jour) et
+	// emmenait l'admin a l'ancien emplacement au lieu du nouveau.
+	if(carte == MM_COFFEE_MP)
+		SafeTeleportPlayer(playerid, MM_AnchorX(MM_COFFEE), MM_AnchorY(MM_COFFEE), MM_AnchorZ(MM_COFFEE) + 1.0, 0, 0);
+	else
+		SafeTeleportPlayer(playerid, mpVoirX[carte], mpVoirY[carte], mpVoirZ[carte], 0, 0);
 	new s[190];
 	format(s, sizeof(s), "{00FF00}Sur place : %s.%s", mpNom[carte],
 		(mpActif[carte] == 1) ? ("") : (" {FFFF00}Attention, la carte est eteinte : il n'y a rien a voir."));

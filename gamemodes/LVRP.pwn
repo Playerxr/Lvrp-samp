@@ -5145,6 +5145,9 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 // map : ce sont eux qui appellent MM_Begin/MM_Obj, et leurs constantes
 // (MM_HOPITAL, MM_CONCESSION...) doivent deja etre connues du preprocesseur.
 #include <afrp_mapmove>
+// [BATIMENT] /a batiment : retirer a la main un batiment GTA qui gene une map
+// deplacee ou installee (voir afrp_batiment.inc).
+#include <afrp_batiment>
 
 // [CONCESSION] Decor de la 4e concession (map communautaire de garage,
 // reconvertie/rebrandee en concession d'occasion) - voir afrp_concession_map.inc.
@@ -23451,6 +23454,7 @@ public OnPlayerConnect(playerid)
     MapEd_OnConnect(playerid); // [MAPEDIT] reset de l'objet selectionne
     MapPack_OnConnect(playerid); // [MAPPACK] retire les batiments remplaces par les cartes allumees
     Hopital_MapRemoveBuildings(playerid); // [HOPITAL] retire les 7 batiments GTA remplaces par le QG (par joueur, exige par RemoveBuildingForPlayer)
+    Bat_OnConnect(playerid); // [BATIMENT] rejoue les retraits manuels (/a batiment), ex: collisions apres /a deplacer
     Commerces_MapRemoveBuildings(playerid); // [COMMERCES] idem pour les 11 batiments remplaces par le 24/7, le mini market et le magasin de vetements
     Portes_OnConnect(playerid); // [PORTES] rien a reinitialiser, garde le crochet pret
     Sp2_OnConnect(playerid); // [SPEEDO2] sinon le slot garde la preference du precedent occupant
@@ -29908,6 +29912,8 @@ public OnGameModeInit()
 	// elles doivent naitre directement au bon endroit plutot que d'apparaitre a
 	// leur position d'origine puis sauter ailleurs sous les yeux des joueurs.
 	MM_Init();
+	// [BATIMENT] Relit les retraits manuels de batiments GTA (voir /a batiment)
+	Bat_Init();
 	// Prison_CreateCompound(); // [PRISON] DESACTIVE (doublon + emplacement sur l'eau, voir /a creer prison)
 	// [PRISON] Vraie map interieure fournie par le proprio (525 objets, monde
 	// 871 / interieur 14) : desormais LA prison utilisee par /a jail.
@@ -62545,8 +62551,8 @@ public OnPlayerCommandText(playerid, cmdtext[])
 					msg_Client(playerid, COLOR_WHITE, "{FF6347} Admin {A98500}Admin level {FF0000}3{A98500}:{FFFFB2} kickall - reboot - an - musique - cnnn - event - divorce");
 					msg_Client(playerid, COLOR_WHITE, "{FF6347} Admin {A98500}Admin level {FF0000}3{A98500}:{FFFFB2} ip - recup - donner - lotto - jackpot - desarmer - argent");
 					msg_Client(playerid, COLOR_WHITE, "{FF6347} Admin {A98500}Admin level {FF0000}3{A98500}:{FFFFB2} id - supprimer - creer - spawn - payday - edit");
-					msg_Client(playerid, COLOR_WHITE, "{FF6347}» Admin «{A98500}Admin level {FF0000}3{A98500}:{FFFFB2} deplacer (repositionner une map communautaire)");
-					msg_Client(playerid, COLOR_WHITE, "{FF6347}» Admin «{A98500}Admin level {FF0000}3{A98500}:{FFFFB2} poste (poser un poste de police routiere)");
+					msg_Client(playerid, COLOR_WHITE, "{FF6347}ï¿½ Admin ï¿½{A98500}Admin level {FF0000}3{A98500}:{FFFFB2} deplacer (repositionner une map communautaire)");
+					msg_Client(playerid, COLOR_WHITE, "{FF6347}ï¿½ Admin ï¿½{A98500}Admin level {FF0000}3{A98500}:{FFFFB2} poste (poser un poste de police routiere)");
 				}
 				if (PlayerInfo[playerid][pAdmin] >= 4)
 				{
@@ -62619,6 +62625,19 @@ public OnPlayerCommandText(playerid, cmdtext[])
 				tmp = strtok(cmdtext, idx);
 				if(strlen(tmp)) strmid(mmArg2, tmp, 0, 31, 32);
 				return MM_Cmd(playerid, mmArg1, mmArg2);
+			}
+			// [BATIMENT] /a batiment <modelid> [rayon] - retire a la main un batiment
+			// GTA qui gene une map deplacee/installee. Voir afrp_batiment.inc.
+			else if(strcmp(tmp, "batiment", true) == 0)
+			{
+			    if (PlayerInfo[playerid][pAdmin] < 3)
+		  			{return 1;}
+				new batArg1[32], batArg2[32];
+				tmp = strtok(cmdtext, idx);
+				if(strlen(tmp)) strmid(batArg1, tmp, 0, 31, 32);
+				tmp = strtok(cmdtext, idx);
+				if(strlen(tmp)) strmid(batArg2, tmp, 0, 31, 32);
+				return Bat_Cmd(playerid, batArg1, batArg2);
 			}
 			else if(strcmp(tmp, "veprice", true) == 0)
 			{
@@ -66977,8 +66996,8 @@ public OnPlayerCommandText(playerid, cmdtext[])
 					msg_Client(playerid, COLOR_WHITE, "{FF6347} Admin {A98500}Admin level {FF0000}3{A98500}:{FFFFB2} kickall - reboot - an - musique - cnnn - event - divorce");
 					msg_Client(playerid, COLOR_WHITE, "{FF6347} Admin {A98500}Admin level {FF0000}3{A98500}:{FFFFB2} ip - recup - donner - lotto - jackpot - desarmer - argent");
 					msg_Client(playerid, COLOR_WHITE, "{FF6347} Admin {A98500}Admin level {FF0000}3{A98500}:{FFFFB2} id - supprimer - creer - spawn - payday - edit");
-					msg_Client(playerid, COLOR_WHITE, "{FF6347}» Admin «{A98500}Admin level {FF0000}3{A98500}:{FFFFB2} deplacer (repositionner une map communautaire)");
-					msg_Client(playerid, COLOR_WHITE, "{FF6347}» Admin «{A98500}Admin level {FF0000}3{A98500}:{FFFFB2} poste (poser un poste de police routiere)");
+					msg_Client(playerid, COLOR_WHITE, "{FF6347}ï¿½ Admin ï¿½{A98500}Admin level {FF0000}3{A98500}:{FFFFB2} deplacer (repositionner une map communautaire)");
+					msg_Client(playerid, COLOR_WHITE, "{FF6347}ï¿½ Admin ï¿½{A98500}Admin level {FF0000}3{A98500}:{FFFFB2} poste (poser un poste de police routiere)");
 				}
 				if (PlayerInfo[playerid][pAdmin] >= 4)
 				{
