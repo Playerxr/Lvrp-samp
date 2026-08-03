@@ -1,0 +1,6 @@
+# Contient le token du bot et le mot de passe MySQL : ne doit JAMAIS etre
+# versionne. Seul config.example.json (vide) est suivi par git.
+config.json
+.env
+node_modules/
+npm-debug.log*
