@@ -15,6 +15,14 @@
 	                                  actuelle (rayon par defaut 30.0)
 	  /a batiment liste               liste les retraits enregistres
 	  /a batiment supprimer <n>       annule un retrait de la liste
+	  /a batiment objets              combien d'objets le streamer affiche ici
+
+	"objets" sert a diagnostiquer l'autre cause de mapping invisible, qui n'a
+	rien a voir avec les batiments GTA : le streamer n'affiche qu'un nombre
+	limite d'objets par joueur (Streamer_SetVisibleItems dans streamer_Init).
+	Au-dela, il garde les plus proches et n'affiche pas le reste - la map est
+	bien creee, on se cogne dedans, mais elle ne se dessine pas. Si le compteur
+	affiche par cette commande touche le plafond, c'est ca et pas autre chose.
 
 	COMMENT TROUVER LE modelid : SA-MP ne donne aucun moyen serveur de savoir
 	quel batiment se trouve sous les pieds de quelqu'un - il faut un outil
@@ -41,6 +49,12 @@
 	#endinput
 #endif
 #define AFRP_BATIMENT_INCLUDED
+
+// Doit rester egal a la valeur passee a Streamer_SetVisibleItems(
+// STREAMER_TYPE_OBJECT, ...) dans streamer_Init() (LVRP.pwn) : c'est cette
+// constante qui est affichee et comparee par /a batiment objets. Definie ici
+// et utilisee des deux cotes pour que les deux ne puissent pas diverger.
+#define STREAMER_OBJ_VISIBLE_MAX  1000
 
 #define BAT_ADMIN_LEVEL     3
 #define BAT_FILE            "batiments.cfg"
@@ -162,6 +176,24 @@ stock Bat_Cmd(playerid, const arg1[], const arg2[])
 
 	if(!strlen(arg1) || strcmp(arg1, "liste", true) == 0)
 		return Bat_Liste(playerid);
+
+	// Diagnostic "mapping invisible" : compare ce que le streamer affiche
+	// reellement a ce joueur au plafond fixe dans streamer_Init(). Si les deux
+	// se touchent, la map manquante n'est pas absente - elle est juste au-dela
+	// du quota d'affichage.
+	if(strcmp(arg1, "objets", true) == 0)
+	{
+		new visibles = Streamer_CountVisibleItems(playerid, STREAMER_TYPE_OBJECT, 0);
+		new total = Streamer_CountItems(STREAMER_TYPE_OBJECT, 1);
+		new s[190];
+		format(s, sizeof(s), "{FFFF00}Objets affiches ici {FFFFFF}: %d {AAAAAA}(plafond %d) {FFFFFF}- total serveur : %d", visibles, STREAMER_OBJ_VISIBLE_MAX, total);
+		Bat_Msg(playerid, s);
+		if(visibles >= STREAMER_OBJ_VISIBLE_MAX - 5)
+			Bat_Msg(playerid, "{FF4444}Plafond atteint : c'est pour ca qu'une map peut sembler invisible ici (elle existe, on se cogne dedans, mais elle n'est pas dessinee).");
+		else
+			Bat_Msg(playerid, "{00FF00}Sous le plafond : si une map est invisible ici, la cause est ailleurs (previens-moi).");
+		return 1;
+	}
 
 	if(strcmp(arg1, "supprimer", true) == 0 || strcmp(arg1, "sup", true) == 0)
 	{

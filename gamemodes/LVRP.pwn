@@ -29466,7 +29466,23 @@ stock streamer_Init()
     // [FIX LAG VEHICULES] Limites de rendu cote client pour eviter le drop FPS
     // dans les zones avec beaucoup de v�hicules / tunings / labels.
     // Defauts SAMP : OBJECTS=800, 3DLABELS=1024, PICKUPS=800 -> on baisse.
-    Streamer_SetVisibleItems(STREAMER_TYPE_OBJECT, 500);
+    //
+    // [FIX MAPPING INVISIBLE] Ce plafond etait a 500. C'est le nombre d'objets
+    // que le streamer accepte d'afficher A UN JOUEUR A LA FOIS : au-dela, il
+    // garde les 500 plus proches et n'affiche simplement pas le reste. Depuis
+    // que le pack de mappings (~3800 objets sur 13 cartes allumees) et les
+    // maps ajoutees ensuite (prison, hopital, concession, commerces, poste de
+    // police : ~1900 objets de plus) cohabitent, deplacer une grosse map dans
+    // un secteur deja charge faisait depasser ce quota : la map etait bien
+    // creee mais ne s'affichait pas - d'ou "le mapping est invisible alors
+    // que je me cogne dedans". 1000 est le maximum que le client SA-MP 0.3.7
+    // sait afficher, on prend toute la marge disponible.
+    // Si des joueurs en petite config signalent une chute de FPS dans les
+    // secteurs tres mappes, c'est CETTE valeur qu'il faut redescendre (et non
+    // supprimer des maps) : 700 est un compromis raisonnable.
+    // Valeur definie dans afrp_batiment.inc pour que /a batiment objets
+    // affiche exactement le meme plafond que celui applique ici.
+    Streamer_SetVisibleItems(STREAMER_TYPE_OBJECT, STREAMER_OBJ_VISIBLE_MAX);
     // [FIX GANG TAG] 64 etait trop bas : les noms de gang/mafia (un label par
     // joueur) disparaissaient des qu'un rassemblement depassait le quota avec
     // les autres labels (maisons/biz/parkings) du secteur. Priorite donnee en
