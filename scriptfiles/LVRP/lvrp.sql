@@ -1875,6 +1875,7 @@ CREATE TABLE IF NOT EXISTS `lvrp_users` (
   `RadioFm` smallint(5) NOT NULL DEFAULT '0',
   `MP3` smallint(5) NOT NULL DEFAULT '0',
   `Tokens` smallint(5) NOT NULL DEFAULT '0',
+  `active` smallint(5) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=18 ;
 
@@ -1884,6 +1885,12 @@ CREATE TABLE IF NOT EXISTS `lvrp_users` (
 
 INSERT INTO `lvrp_users` (`id`, `Name`, `Pass`, `Level`, `AdminLevel`, `DonateRank`, `VipTime`, `ConnectedTime`, `Registered`, `Sex`, `Origin`, `Muted`, `Respect`, `Cash`, `Bank`, `Loan`, `Deaths`, `Wanted`, `Phonebook`, `LottoNr`, `Fishes`, `Job`, `JobLvl`, `JobExp`, `Paycheck`, `Jailed`, `JailTime`, `Materials`, `Leader`, `Member`, `Rank`, `Skin`, `Spawn`, `Faim`, `Soif`, `Disease`, `Interior`, `PhoneNr`, `Operator`, `Formul`, `Car1`, `Car2`, `Car3`, `Car4`, `Car5`, `Car6`, `CarUnLock4`, `CarUnLock5`, `CarUnLock6`, `Bizz1`, `Bizz2`, `Bizz3`, `Garage1`, `Garage2`, `Garage3`, `House1`, `House2`, `House3`, `Pos_x`, `Pos_y`, `Pos_z`, `CarLic`, `FlyLic`, `BoatLic`, `FishLic`, `LourdLic`, `MotoLic`, `TrainLic`, `GunLic`, `Gun1`, `Gun2`, `Gun3`, `Gun4`, `Ammo1`, `Ammo2`, `Ammo3`, `Ammo4`, `Weed`, `SeedWeed`, `Heroine`, `Cocaine`, `Ecstasie`, `Tabac`, `Leaf`, `PayDay`, `PayDayHad`, `Watch`, `GPS`, `Identie`, `PointsRename`, `ChangeNum`, `Decodeur`, `Crashed`, `InfoReg`, `Tutoriel`, `PointPermis`, `Warnings`, `VirWorld`, `Married`, `MarriedTo`, `FishTool`, `InvWeapon1`, `InvWeapon2`, `InvWeapon3`, `InvWeapon4`, `InvAmmo1`, `InvAmmo2`, `InvAmmo3`, `InvAmmo4`, `Lighter`, `Cigarettes`, `Mask`, `Lunette`, `Bandana`, `Casque`, `WT`, `WTc`, `Skill_Pistol`, `Skill_Pistol_Silenced`, `Skill_Shotgun`, `Skill_Uzi`, `Skill_Tec9`, `Skill_Mp5`, `Skill_Ak47`, `Skill_M4`, `Train_Wep_Time`, `Jerricain`, `JerricainFuel`, `Lang1`, `Lang2`, `Work`, `CanRobTime`, `CanRobTimeCar`, `CanRobTimePocket`, `CanRobTimeBizz`, `Locked`, `Email`, `CombatStyle`, `RadioFm`, `MP3`, `Tokens`) VALUES
 (8, 'Tonio_Rascalov', 'jean123', 1, 7, 0, 0, 8, 1, 1, 1, 0, 3, 1260, 1267, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1083, 0, 0, 123, 50, 50, 6, 299, 0, 55, 43, 0, 0, 1871, 0, 0, -1, -1, -1, -1, -1, -1, 0, 0, 0, -1, -1, -1, -1, -1, -1, 0, -1, 0, 1928.66833, -1776.29529, 13.54690, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 49, 12, 10, 32, 22, 0, 0, 3, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 'Aucun', 0, 23, 0, 31, 0, 250, 0, 300, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 6, 2, 0, 0, 0, 0, 0, 0, 'jeanbaptiste29@live.fr', 5, 1, 0, 12);
+
+-- [WHITELIST] Le compte d'exemple ci-dessus est insere sans `active`, il
+-- prendrait donc la valeur par defaut 0 et resterait bloque en whitelist sur
+-- une install neuve. On le debloque explicitement (n'affecte que ce dump de
+-- demonstration, la base de production n'est jamais rejouee depuis ce fichier).
+UPDATE `lvrp_users` SET `active` = 1;
 
 -- --------------------------------------------------------
 
@@ -1905,6 +1912,44 @@ CREATE TABLE IF NOT EXISTS `lvrp_users_casiers` (
   `Arrested` int(11) NOT NULL DEFAULT '0',
   `Used` smallint(5) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `lvrp_whitelist`
+-- [WHITELIST] Candidatures des nouveaux joueurs, validees depuis Discord.
+-- Cette table est la BOITE AUX LETTRES entre le gamemode et le bot Discord :
+-- SA-MP ne sait pas faire de HTTPS et on refuse d'ajouter un plugin natif sur
+-- un serveur de production, donc l'aller-retour passe par la base.
+--   Statut : -1 brouillon (formulaire en cours), 0 en attente de decision,
+--            1 accepte, 2 refuse (Motif rempli par le staff).
+--   Poste  : 1 = le bot a deja publie le dossier sur Discord (anti-doublon).
+--   Traite : 1 = le gamemode a deja applique la decision (anti-doublon).
+-- Le gamemode la cree aussi tout seul au demarrage (Whitelist_Init), la base
+-- de production n'etant jamais rejouee depuis ce fichier.
+--
+
+CREATE TABLE IF NOT EXISTS `lvrp_whitelist` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `SQLid` int(11) NOT NULL DEFAULT '0',
+  `Name` varchar(32) NOT NULL DEFAULT '',
+  `NomRP` varchar(32) NOT NULL DEFAULT '',
+  `AgeRP` smallint(6) NOT NULL DEFAULT '0',
+  `Background` varchar(255) NOT NULL DEFAULT '',
+  `AgeReel` smallint(6) NOT NULL DEFAULT '0',
+  `Source` varchar(80) NOT NULL DEFAULT '',
+  `Etape` smallint(6) NOT NULL DEFAULT '1',
+  `Statut` smallint(6) NOT NULL DEFAULT '-1',
+  `Motif` varchar(128) NOT NULL DEFAULT '',
+  `DecidePar` varchar(64) NOT NULL DEFAULT '',
+  `Poste` smallint(6) NOT NULL DEFAULT '0',
+  `Traite` smallint(6) NOT NULL DEFAULT '0',
+  `DateSoumission` int(11) NOT NULL DEFAULT '0',
+  `DateDecision` int(11) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  KEY `SQLid` (`SQLid`),
+  KEY `Statut` (`Statut`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

@@ -5331,6 +5331,10 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 #include <afrp_portarme>
 #include <afrp_gangcreation>
 #include <afrp_tablecraft>
+// [WHITELIST] Candidature en 5 questions validee depuis Discord (via MySQL,
+// sans plugin). A inclure APRES afrp_discord : il reutilise Discord_Send pour
+// signaler l'arrivee d'un dossier.
+#include <afrp_whitelist>
 
 // [NGG COMPAT] DESACTIVE - suspect du hang pawncc (test bisect)
 //#include <ngg_compat>
@@ -10808,10 +10812,10 @@ public OnPlayerLogin(playerid,pass[])
 		PlayerEnAttente[playerid] = true;
 		gPlayerLogged[playerid] = 1;
 		LoginSound_Stop(playerid); // [LOGIN SOUND] mot de passe valide, on arrete l'ambiance
-		ShowPlayerDialog(playerid, 9903, DIALOG_STYLE_MSGBOX,
-			"{FFAA00}>>> AFRP - En attente de validation <<<",
-			"{FFFFFF}Votre compte est en attente de validation.\n\n{FFAA00}Un administrateur doit approuver votre inscription\n{FFFFFF}avant que vous puissiez jouer.\n\n{AAAAAA}Merci de patienter.",
-			"Patienter", "");
+		// [WHITELIST] Le module decide seul quoi afficher : formulaire a
+		// remplir, reprise d'une saisie interrompue, ou ecran d'attente si le
+		// dossier est deja parti sur Discord.
+		Whitelist_Demarrer(playerid);
 		NotifyAdminsNouveauJoueur(PlayerInfo[playerid][pName]);
 		return 1;
 	}
@@ -10864,13 +10868,10 @@ public OnPlayerLogin(playerid,pass[])
 	SetTimerEx("UnsetFirstSpawn", 8000, false, "i", playerid);
 	SetTimerEx("CommeBackOff", 60000, false, "i", playerid);
 	SetSpawnInfo(playerid, 3, PlayerInfo[playerid][pChar], PlayerInfo[playerid][pPos_x], PlayerInfo[playerid][pPos_y], PlayerInfo[playerid][pPos_z], 1.0, -1, -1, -1, -1, -1, -1);
-	// === [APPROBATION] Ne pas spawner si en attente de validation admin ===
+	// === [APPROBATION] Ne pas spawner si en attente de validation ===
 	if(PlayerEnAttente[playerid])
 	{
-		ShowPlayerDialog(playerid, 9903, DIALOG_STYLE_MSGBOX,
-			"{FFAA00}>>> AFRP - En attente de validation <<<",
-			"{FFFFFF}Votre compte a �t� cree !\n\n{FFAA00}Un administrateur doit valider votre inscription\n{FFFFFF}avant que vous puissiez jouer.\n\n{AAAAAA}Merci de patienter.",
-			"Patienter", "");
+		Whitelist_Demarrer(playerid); // [WHITELIST] formulaire ou ecran d'attente
 		return 1;
 	}
 	SpawnPlayer(playerid);
@@ -23522,6 +23523,7 @@ public OnPlayerConnect(playerid)
 
     // === [APPROBATION] Reset flag attente ===
     PlayerEnAttente[playerid] = false;
+    Whitelist_Reset(playerid); // [WHITELIST] etat du formulaire (memoire volatile)
     // === [ADMIN APPROBATION] Reset flag candidature ===
     PlayerHasPendingDemande[playerid] = false;
     // Verifier si ce joueur a deja une candidature en attente
@@ -24118,6 +24120,9 @@ public OnPlayerDisconnect(playerid, reason)
     waGroupDelay[playerid] = 0;
     smsTarget[playerid] = 0;
     PlayerEnAttente[playerid] = false;
+    // [WHITELIST] La progression du formulaire vit en base (colonne Etape),
+    // pas ici : une deconnexion en plein questionnaire se reprend intacte.
+    Whitelist_Reset(playerid);
     // === AFRP PHONE - Sauvegarder credit telephone ===
     // [FIX CRASH] mysql_format + %e pour echapper le nom proprement
     if(hasPhone[playerid] == 1 && PlayerInfo[playerid][pName][0] != 0)
@@ -25658,10 +25663,7 @@ public OnPlayerSpawn(playerid)
 	// === [APPROBATION] Bloquer si compte non approuve ===
 	if(PlayerEnAttente[playerid])
 	{
-		ShowPlayerDialog(playerid, 9903, DIALOG_STYLE_MSGBOX,
-			"{FFAA00}>>> AFRP - En attente de validation <<<",
-			"{FFFFFF}Votre compte a �t� cree !\n\n{FFAA00}Un administrateur doit valider votre inscription\n{FFFFFF}avant que vous puissiez jouer.\n\n{AAAAAA}Merci de patienter.",
-			"Patienter", "");
+		Whitelist_Demarrer(playerid); // [WHITELIST] formulaire ou ecran d'attente
 		// [FIX SPAWN] 0,0,0 = en pleine mer pres de Blueberry : le joueur en
 		// attente de validation apparaissait sous l'eau et pouvait s'y promener.
 		// On le pose au spawn de Los Santos et on le gele tant qu'il n'est pas valide.
@@ -30139,6 +30141,9 @@ public OnGameModeInit()
     // Init Discord + annonce "serveur en ligne @everyone" (si configure)
     Discord_Init();
     Discord_AnnonceOnline();
+    // [WHITELIST] Cree la table des candidatures si absente et demarre la
+    // relecture des decisions prises depuis Discord (voir afrp_whitelist.inc).
+    Whitelist_Init();
     // Init systeme casino (charge scriptfiles/casinos.cfg)
     Casino_Init();
     // Sauvegarde auto de parkings.cfg/casinos.cfg (voir afrp_autobackup.inc)
@@ -30635,6 +30640,10 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     // cette fonction : leurs ID (9610-9620) n'entrent en conflit avec aucun
     // autre, donc les servir d'abord est sans risque et garantit qu'aucun
     // handler place avant eux ne puisse les avaler.
+    // [WHITELIST] En TOUT PREMIER : un joueur non valide ne doit pas pouvoir
+    // atteindre un autre handler de dialog. Ses ID (9810-9816 + 9903) sont
+    // exclusifs, donc aucun risque d'avaler le dialog d'un autre module.
+    if(Whitelist_OnDialog(playerid, dialogid, response, listitem, inputtext)) return 1;
     if(Ev_OnDialog(playerid, dialogid, response, listitem, inputtext)) return 1;
     if(TopJour_OnDialog(playerid, dialogid, response, listitem)) return 1;
     if(ArmBase_OnDialog(playerid, dialogid, response, listitem)) return 1;
@@ -43793,12 +43802,22 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
         {
             if(response==1)
             {
-                // === [APPROBATION] Enregistrer compte + dialog attente ===
+                // === [APPROBATION] Enregistrer compte + candidature whitelist ===
                 OnPlayerRegister(playerid, PlayerInfo[playerid][pKey]);
                 PlayerInfo[playerid][pActive] = 0;
                 PlayerEnAttente[playerid] = true;
                 TimerConnectOff(playerid);
-                ShowPlayerDialog(playerid, 9903, DIALOG_STYLE_MSGBOX, "{FFAA00}>>> AFRP - En attente <<<", "{FFFFFF}Votre compte a �t� cree !\n\n{FFAA00}Un administrateur doit valider votre inscription\n{FFFFFF}avant que vous puissiez jouer.\n\n{AAAAAA}Merci de patienter.", "Patienter", "");
+                // [WHITELIST] MySQLCreateAccount ne renseigne pas `active` : la
+                // colonne a ete ajoutee a la main sur la base de production et on
+                // ne peut pas parier sur sa valeur par defaut. On force 0 pour que
+                // le compte reste bloque meme apres une reconnexion, sinon toute
+                // la whitelist se contournerait en se deconnectant.
+                {
+                    new wlReg[128];
+                    format(wlReg, sizeof(wlReg), "UPDATE lvrp_users SET active=0 WHERE id=%d LIMIT 1", PlayerInfo[playerid][pSQLID]);
+                    mysql_tquery(MYSQL, wlReg, "", "");
+                }
+                Whitelist_Demarrer(playerid);
                 NotifyAdminsNouveauJoueur(PlayerInfo[playerid][pName]);
                 return 1;
             }
@@ -47056,13 +47075,14 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 	    }
 		return 1;
 	}
-	// === [APPROBATION] Dialog attente - bloqu� jusqu'� validation admin ===
+	// === [APPROBATION] Dialog attente - bloque jusqu'a la decision du staff ===
+	// [WHITELIST] Normalement inatteignable : Whitelist_OnDialog() est appele
+	// en tete de OnDialogResponse et consomme deja 9903. Conserve comme filet
+	// de securite, et delegue au module pour ne pas laisser diverger le texte.
 	if(dialogid == 9903)
 	{
 		if(IsPlayerConnected(playerid) && PlayerEnAttente[playerid])
-		{
-			ShowPlayerDialog(playerid, 9903, DIALOG_STYLE_MSGBOX, "{FFAA00}>>> AFRP - En attente <<<", "{FFFFFF}Votre compte a �t� cree !\n\n{FFAA00}Un administrateur doit valider\n{FFFFFF}avant que vous puissiez jouer.\n\n{AAAAAA}Merci de patienter.", "Patienter", "");
-		}
+			Whitelist_Demarrer(playerid);
 		return 1;
 	}
 	if(dialogid == 999) // /armee equiper
@@ -50938,38 +50958,21 @@ public OnPlayerCommandText(playerid, cmdtext[])
 			if(!PlayerEnAttente[ap_target])
 				return msg_Client(playerid, COLOR_RED, "{FF6347}Ce joueur n'est pas en attente d'approbation.");
 
-			// === [APPROBATION] Approuver : valider et spawn direct ===
-			// [FIX] L'ancien code lancait inscription_StartIntro qui finit par appeler
-			// OnPlayerRegister -> MySQLCreateAccount -> sha1(pass) sur un pKey qui contient
-			// deja le HASH SHA1 (charge depuis la BDD lors du login en attente).
-			// Resultat: double-hash = mot de passe corrompu en BDD = login impossible.
-			// On fait un spawn direct du joueur deja authentifie.
-			PlayerEnAttente[ap_target] = false;
-			PlayerInfo[ap_target][pActive] = 1;
-			inscription_Step[ap_target] = 0;
-
-			// Mettre a jour en DB
-			new ap_query[128];
-			format(ap_query, sizeof(ap_query), "UPDATE lvrp_users SET active=1 WHERE id=%d LIMIT 1", PlayerInfo[ap_target][pSQLID]);
-			mysql_tquery(MYSQL, ap_query, "", "");
-
-			// Notifier le joueur
-			SendClientMessage(ap_target, 0x00FF00FF, "{9EC73D}[APPROBATION]{FFFFFF} Votre compte a �t� approuve ! Bienvenue sur AFRP !");
-
-			// [FIX BLOQUE] Le joueur a encore le dialog "En attente de validation"
-			// (9903) ouvert sur son ecran depuis la connexion. Le spawn server-side
-			// ne suffit pas a debloquer le client tant que CE dialog reste affiche -
-			// d'ou "reste bloque jusqu'a ce qu'il sorte et revienne" (une reconnexion
-			// force un nouvel etat qui n'a pas ce dialog ouvert). On le ferme
-			// explicitement (dialogid -1 = fermer le dialog actif) avant de spawner.
-			ShowPlayerDialog(ap_target, -1, DIALOG_STYLE_MSGBOX, "", "", "", "");
-
-			// Sortir du spectating si besoin et spawn le joueur (deja loge)
-			server_TogglePlayerSpectating(ap_target, 0);
-			server_SetPlayerVirtualWorld(ap_target, 0);
-			SpawnPlayer(ap_target);
-			// Garde-fou : s'assurer que les controles sont bien actifs post-spawn
-			TogglePlayerControllable(ap_target, 1);
+			// === [WHITELIST] Override manuel du staff ===
+			// /approuver et /refuser sont CONSERVES volontairement : si le bot
+			// Discord ou l'hebergement du bot tombe, le staff doit pouvoir
+			// continuer a faire entrer des joueurs depuis son propre serveur.
+			//
+			// Tout le corps de la validation vit maintenant dans
+			// Whitelist_LaisserEntrer() (afrp_whitelist.inc), utilise a
+			// l'identique par le chemin Discord. C'est volontaire : les deux
+			// corrections durement gagnees de cette commande (pas de
+			// re-inscription qui double-hashe le mot de passe, et fermeture
+			// explicite du dialog 9903 sans laquelle le client reste fige)
+			// sont ainsi ecrites UNE SEULE FOIS et ne peuvent plus etre
+			// perdues en dupliquant le code pour un nouveau chemin.
+			Whitelist_MarquerDecision(PlayerInfo[ap_target][pSQLID], 1, "", PlayerInfo[playerid][pName]);
+			Whitelist_LaisserEntrer(ap_target);
 
 			// Log admin
 			new ap_log[128];
@@ -50998,19 +51001,12 @@ public OnPlayerCommandText(playerid, cmdtext[])
 			strmid(ap_raison, cmdtext, idx, strlen(cmdtext), 64);
 			if(!strlen(ap_raison)) format(ap_raison, 64, "Compte refus� par l'administration.");
 
-			// Supprimer le compte de la DB
-			new ap_query[128];
-			format(ap_query, sizeof(ap_query),
-				"DELETE FROM lvrp_users WHERE id=%d LIMIT 1",
-				PlayerInfo[ap_target][pSQLID]);
-			mysql_tquery(MYSQL, ap_query, "", "");
-
-			// Notifier et kick
-			new ap_msg[256];
-			format(ap_msg, sizeof(ap_msg),
-				"{FF6347}[REFUS]{FFFFFF} Votre compte a �t� refus�. Raison : %s", ap_raison);
-			SendClientMessage(ap_target, 0xFF0000FF, ap_msg);
-			SetTimerEx("TimerKick", 2000, 0, "i", ap_target);
+			// [WHITELIST] Meme logique que /approuver : la decision est d'abord
+			// ecrite dans lvrp_whitelist (pour que le bot ne reposte pas un
+			// dossier deja tranche), puis appliquee par la fonction partagee
+			// qui supprime le compte, previent le joueur et le kick.
+			Whitelist_MarquerDecision(PlayerInfo[ap_target][pSQLID], 2, ap_raison, PlayerInfo[playerid][pName]);
+			Whitelist_AppliquerRefus(PlayerInfo[ap_target][pSQLID], ap_target, ap_raison);
 
 			new ap_log[128];
 			format(ap_log, sizeof(ap_log), "{FF6347}[REFUSE]{FFFFFF} %s a refus� le joueur %s. Raison : %s",

@@ -1772,6 +1772,7 @@ CREATE TABLE IF NOT EXISTS `lvrp_users` (
   `Ip` varchar(16) NOT NULL DEFAULT '0.0.0.0',
   `LastLog` varchar(64) NOT NULL DEFAULT 'Jamais',
   `BoomBox` smallint(5) NOT NULL DEFAULT '0',
+  `active` smallint(5) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=18 ;
 
@@ -1796,6 +1797,44 @@ CREATE TABLE IF NOT EXISTS `lvrp_users_casiers` (
   `Used` smallint(5) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB  DEFAULT CHARSET=latin1 AUTO_INCREMENT=2 ;
+
+-- --------------------------------------------------------
+
+--
+-- Structure de la table `lvrp_whitelist`
+-- [WHITELIST] Candidatures des nouveaux joueurs, validees depuis Discord.
+-- Cette table est la BOITE AUX LETTRES entre le gamemode et le bot Discord :
+-- SA-MP ne sait pas faire de HTTPS et on refuse d'ajouter un plugin natif sur
+-- un serveur de production, donc l'aller-retour passe par la base.
+--   Statut : -1 brouillon (formulaire en cours), 0 en attente de decision,
+--            1 accepte, 2 refuse (Motif rempli par le staff).
+--   Poste  : 1 = le bot a deja publie le dossier sur Discord (anti-doublon).
+--   Traite : 1 = le gamemode a deja applique la decision (anti-doublon).
+-- Le gamemode la cree aussi tout seul au demarrage (Whitelist_Init), la base
+-- de production n'etant jamais rejouee depuis ce fichier.
+--
+
+CREATE TABLE IF NOT EXISTS `lvrp_whitelist` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `SQLid` int(11) NOT NULL DEFAULT '0',
+  `Name` varchar(32) NOT NULL DEFAULT '',
+  `NomRP` varchar(32) NOT NULL DEFAULT '',
+  `AgeRP` smallint(6) NOT NULL DEFAULT '0',
+  `Background` varchar(255) NOT NULL DEFAULT '',
+  `AgeReel` smallint(6) NOT NULL DEFAULT '0',
+  `Source` varchar(80) NOT NULL DEFAULT '',
+  `Etape` smallint(6) NOT NULL DEFAULT '1',
+  `Statut` smallint(6) NOT NULL DEFAULT '-1',
+  `Motif` varchar(128) NOT NULL DEFAULT '',
+  `DecidePar` varchar(64) NOT NULL DEFAULT '',
+  `Poste` smallint(6) NOT NULL DEFAULT '0',
+  `Traite` smallint(6) NOT NULL DEFAULT '0',
+  `DateSoumission` int(11) NOT NULL DEFAULT '0',
+  `DateDecision` int(11) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  KEY `SQLid` (`SQLid`),
+  KEY `Statut` (`Statut`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 AUTO_INCREMENT=1 ;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
