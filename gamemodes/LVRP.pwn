@@ -5195,6 +5195,9 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 // [JOBS] Mise en evidence des jobs : icones carte + /jobs GPS + streak + bonus debutant
 #include <afrp_jobs>
 
+// [JOBS NEW] Boucle de jeu des metiers qui n'existaient que de nom (Bucheron, Jardinier)
+#include <afrp_jobs_new>
+
 // [FAQ] Aide auto dans le chat + guide rapide /aide pour reduire les appels admin
 #include <afrp_faq>
 
@@ -9969,6 +9972,12 @@ public job_SetSkin(playerid,jobid)
 	    {
 	        if(tmpGenre==1)
 	            {SetPlayerSkin(playerid,61);}
+		}
+		// [JOBS NEW] Tenue du Jardinier (le Bucheron en avait deja une, plus bas).
+		// On reprend le modele de son employeur PNJ pour rester coherent.
+		case 15:
+	    {
+	        SetPlayerSkin(playerid,161);
 		}
 		case 7:
 	    {
@@ -16146,8 +16155,12 @@ stock init_Actors()
 	CreateDynamicLvrpActor(86, 1710.5000,1608.3000,10.0547,270.0, 0, true ,3, 12,"Employeur\n(( Touche 'N' ))"); // Bagagiste - Aroport LV
 	CreateDynamicLvrpActor(52, 2120.0000,2072.5000,10.8203,90.0, 0, true ,3, 20,"Employeur\n(( Touche 'N' ))"); // Chauffeur de Taxi - LV
 	// BB/RedCounty - Bucheron
-	CreateDynamicLvrpActor(163, 1174.0000,-485.0000,26.5400,200.0, 0, true ,3, 14,"Employeur\n(( Touche 'N' ))"); // Bucheron - Red County
+	// [JOBS NEW] Correction du libelle : 1174/-485 est a Mulholland (Los Santos),
+	// pas a Red County. La position n'a pas ete deplacee, seul le nom etait faux.
+	CreateDynamicLvrpActor(163, 1174.0000,-485.0000,26.5400,200.0, 0, true ,3, 14,"Employeur\n(( Touche 'N' ))"); // Bucheron - Mulholland (LS)
 	CreateDynamicLvrpActor(163, -62.5000,83.0000,3.1172,90.0, 0, true ,3, 14,"Employeur\n(( Touche 'N' ))"); // Bucheron - Blueberry
+	// [JOBS NEW] Jardinier : a cote de l'employeur Voiturier de Richman, meme altitude.
+	CreateDynamicLvrpActor(161, 325.5000,-1516.5000,36.0391,90.0, 0, true ,3, 15,"Employeur\n(( Touche 'N' ))"); // Jardinier - Richman (LS)
 	
 	// SF
 	CreateDynamicLvrpActor(155, -1815.3105,943.3864,24.8759,191.6203, 0, true ,3, 1,"Employeur\n(( Touche 'N' ))"); // Pizza
@@ -25844,6 +25857,12 @@ public OnPlayerEnterCheckpoint(playerid)
 {
 	new string[128];
 	new carid = GetPlayerVehicleID(playerid);
+
+	// [JOBS NEW] Checkpoints des metiers ajoutes (afrp_jobs_new.inc). Ils
+	// utilisent des numeros de checkpoint libres (31+), donc rien ci-dessous
+	// ne peut etre concerne : on sort des que le module a traite l'entree.
+	if(JobsNew_OnEnterCheckpoint(playerid))
+		{return 1;}
 
 	// -------------------------------------------------------------
 
@@ -35647,7 +35666,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 		{
 		    if(listitem == 0)
 		    {
-		        ShowPlayerDialog(playerid,145,DIALOG_STYLE_LIST," ANPE ","- Livreur de Pizza\n- Fermier\n- Eboueur\n- Pilote de Ligne\n- Facteur\n- Pcheur\n- Voiturier\n- Camionneur\n- Mcanicien\n- Convoyeur de fond","Valider","Annuler");
+		        ShowPlayerDialog(playerid,145,DIALOG_STYLE_LIST," ANPE ","- Livreur de Pizza\n- Fermier\n- Eboueur\n- Pilote de Ligne\n- Facteur\n- Pcheur\n- Voiturier\n- Camionneur\n- Mcanicien\n- Convoyeur de fond\n- Bucheron\n- Jardinier","Valider","Annuler");
                 player_Dialog[playerid]=1;
 			}
 		    if(listitem == 1)
@@ -35680,7 +35699,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 		    }
 		    if(listitem == 7)
 		    {
-		        ShowPlayerDialog(playerid,145,DIALOG_STYLE_LIST," ANPE ","- Fermier","Valider","Annuler");
+		        ShowPlayerDialog(playerid,145,DIALOG_STYLE_LIST," ANPE ","- Fermier\n- Bucheron","Valider","Annuler");
 		        player_Dialog[playerid]=8;
 		    }
 		    if(listitem == 8)
@@ -35730,6 +35749,12 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 		        {SetPlayerCheckpoint(playerid,1008.4938,-1358.3921,13.3909,5.0);}
             if(listitem==9)
 		        {SetPlayerCheckpoint(playerid,1516.9620,-1022.1600,23.8301,5.0);}
+            // [JOBS NEW] Bucheron (Mulholland) et Jardinier (Richman) : ajoutes
+            // en FIN de liste, aucun index existant n'est donc decale.
+            if(listitem==10)
+		        {SetPlayerCheckpoint(playerid,1174.0000,-485.0000,26.5400,5.0);}
+            if(listitem==11)
+		        {SetPlayerCheckpoint(playerid,325.5000,-1516.5000,36.0391,5.0);}
 		}
 		else if(player_Dialog[playerid] == 2)
 		{
@@ -35770,6 +35795,9 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 		{
 		    if(listitem==0)
 		        {SetPlayerCheckpoint(playerid,-58.2886,86.8920,3.1172,5.0);}
+            // [JOBS NEW] Bucheron de Blueberry, ajoute APRES le Fermier.
+            if(listitem==1)
+		        {SetPlayerCheckpoint(playerid,-62.5000,83.0000,3.1172,5.0);}
 		}
 		else if(player_Dialog[playerid] == 13)
 		{
@@ -47029,7 +47057,10 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 				if(PlayerInfo[playerid][pJob] == 12)
 					{format(aidestring1,sizeof(aidestring1),"{FF9900}[Job - Bagagiste]{FFFFFF}\nRendez-vous a l'a�roport et gerez les bagages.\n/job - Commandes");}
                 if(PlayerInfo[playerid][pJob] == 14)
-					{format(aidestring1,sizeof(aidestring1),"{FF9900}[Job - Bucheron]{FFFFFF}\nCoupez du bois dans la foret.\n/job - Commandes");}
+					{format(aidestring1,sizeof(aidestring1),"{FF9900}[Job - Bucheron]{FFFFFF}\n/job debut, puis abattez les arbres marques et rapportez les rondins.\n/job - Commandes");}
+                // [JOBS NEW] Jardinier
+                if(PlayerInfo[playerid][pJob] == 15)
+					{format(aidestring1,sizeof(aidestring1),"{FF9900}[Job - Jardinier]{FFFFFF}\n/job debut, puis entretenez les parcelles marquees a Richman.\n/job - Commandes");}
                 if(PlayerInfo[playerid][pJob] == 19)
 					{format(aidestring1,sizeof(aidestring1),"{FF9900}[Job - Transporteur de fonds]{FFFFFF}\nMonter juste dans un fourgon.\n/job - Commandes");}
                 if(PlayerInfo[playerid][pJob] == 20)
@@ -47535,6 +47566,11 @@ public OnPlayerKeyStateChange(playerid, newkeys, oldkeys)
 	    }
 	    if(job_Start[playerid] == 1)
 		{
+		    // [JOBS NEW] Metiers ajoutes (afrp_jobs_new.inc). Le module ne
+		    // repond que pour les metiers 14 et 15, aucun des tests suivants
+		    // ne les concerne : on peut sortir directement.
+		    if(JobsNew_OnKeyYes(playerid))
+		        {return 1;}
 		    if(PlayerInfo[playerid][pJob] == 1 && GetPlayerState(playerid) == PLAYER_STATE_ONFOOT)
 		    {
 				if(job_ObjectN[playerid] == 0 && (IsPlayerInRangeOfPoint(playerid, 2.0, 2109.1106,-1788.5276,13.5608) || IsPlayerInRangeOfPoint(playerid, 2.0, -1809.9154,941.4058,24.8733) || IsPlayerInRangeOfPoint(playerid, 2.0, 2078.3313,2229.9302,11.0234)))
@@ -67153,6 +67189,11 @@ public OnPlayerCommandText(playerid, cmdtext[])
 			// (13 a 18, 20, 21) qui n'ont tout simplement aucune mission codee -
 			// un joueur avec ce metier ne pouvait jamais savoir pourquoi rien ne
 			// se passait. On distingue maintenant les deux cas.
+			// [JOBS NEW] Bucheron et Jardinier demarrent bien par /job debut.
+			else if(PlayerInfo[playerid][pJob] == 14 || PlayerInfo[playerid][pJob] == 15)
+			{
+				JobsNew_Start(playerid);
+			}
 			else
 			{
 				switch(PlayerInfo[playerid][pJob])
@@ -67203,6 +67244,9 @@ public OnPlayerCommandText(playerid, cmdtext[])
 		        {SetPlayerCheckpoint(playerid,1174.0000,-485.0000,26.5400,5.0);}
             else if(PlayerInfo[playerid][pJob] == 20)
 		        {SetPlayerCheckpoint(playerid,1059.8000,-1350.6000,13.5469,5.0);}
+            // [JOBS NEW] Jardinier : employeur de Richman (Los Santos)
+            else if(PlayerInfo[playerid][pJob] == 15)
+		        {SetPlayerCheckpoint(playerid,325.5000,-1516.5000,36.0391,5.0);}
 		}
 		else if(strcmp(tmp,"quitter", true) == 0)
 		{
