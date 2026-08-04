@@ -422,6 +422,14 @@ Fix loading string from DataBase
 // temps a grossir. Valeurs inchangees, simplement regroupees ici.
 #define JOB_XP_APIED_PARLVL       20                                            // metiers a pied
 #define JOB_XP_VEHICULE_PARLVL     8                                            // metiers en vehicule / de service
+
+// [PLAFONDS SALAIRES] Montant maximum saisissable dans l'editeur en jeu
+// (Mairie -> Gestion -> Salaire, dialog 46). Ce sont les limites voulues par
+// la proprietaire. Ils ne bornent QUE la saisie en jeu : une valeur mise
+// directement en base (table lvrp_factions_governements, ligne id=4) n'est
+// pas verifiee par ce garde-fou.
+#define SALAIRE_MAX_JOB        50000                                            // metiers
+#define SALAIRE_MAX_FACTION   300000                                            // factions legales (police, FBI, gouvernement, CIA)
 // ---------------------------------------------------------------------------
 #define DUTY_TIME 30                                                            // Temps de travail pour obtenir la paye (factions lgales)
 #define MAX_CHANNEL 50                                                          // Max de canaux pour TSConnector
@@ -35067,10 +35075,23 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 		}
 		else if(gouv_DialogGestion[playerid]==11)
 		{
-		    if(!strlen(inputtext) || strval(inputtext) > 10000 || strval(inputtext) < 100)
-		    	{return ShowPlayerDialog(playerid,46,DIALOG_STYLE_INPUT,"{FF6E00} Gouvernement {FFFFFF} Gestion - Salaire","{FF0000}Salaire compris entre $100 et $10000 !\n{FFFFFF}Entrez le nouveau montant salaire :","Valider","Retour");}
+		    // [PLAFONDS SALAIRES] L'ancienne limite unique de $10.000 rendait
+		    // l'editeur en jeu inutilisable : avec un vehicule le moins cher a
+		    // 5.000.000$, la proprietaire ne pouvait regler ses salaires que
+		    // par SQL. Deux plafonds distincts, comme elle les a definis :
+		    //   metiers  (salaryType 5)   : SALAIRE_MAX_JOB
+		    //   factions (salaryType 1-4) : SALAIRE_MAX_FACTION
+		    // Plancher garde a 100$ (evite un salaire nul par faute de frappe).
 		    new salaryType = GetPVarInt(playerid,"salaryType"),
 		        salaryRow = GetPVarInt(playerid,"salaryRow");
+
+		    new salaryMax = (salaryType == 5) ? (SALAIRE_MAX_JOB) : (SALAIRE_MAX_FACTION);
+		    if(!strlen(inputtext) || strval(inputtext) > salaryMax || strval(inputtext) < 100)
+		    {
+		        new salErr[192];
+		        format(salErr, sizeof(salErr), "{FF0000}Salaire compris entre $100 et $%d !\n{FFFFFF}Entrez le nouveau montant salaire :", salaryMax);
+		    	return ShowPlayerDialog(playerid,46,DIALOG_STYLE_INPUT,"{FF6E00} Gouvernement {FFFFFF} Gestion - Salaire",salErr,"Valider","Retour");
+		    }
 
 			switch(salaryType)
 			{
