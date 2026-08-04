@@ -72,7 +72,23 @@ stock Discord_Init()
 	if(strlen(discord_RelayUrl) > 4) // au moins "a.fr"
 	{
 		discord_Enabled = true;
-		printf("[Discord] Relais configure (%s), annonces Discord actives.", discord_RelayUrl);
+		// [FIX FUITE] Ne JAMAIS afficher l'URL entiere : si la cle secrete a
+		// ete collee dans la ligne 1 (cas vu en production : ".../?key=xxxx"),
+		// elle se retrouvait en clair dans server_log.txt, un fichier qui
+		// circule par mail/Discord au moindre depannage. On coupe au premier
+		// '?' pour ne journaliser que l'hote.
+		new hoteSeul[160];
+		strcat(hoteSeul, discord_RelayUrl, sizeof(hoteSeul));
+		new qm = strfind(hoteSeul, "?", true);
+		if(qm != -1) hoteSeul[qm] = 0;
+		printf("[Discord] Relais configure (%s), annonces Discord actives.", hoteSeul);
+
+		// [DIAGNOSTIC 403] La cle doit etre en LIGNE 2 de discord.cfg, pas
+		// collee dans l'URL : Discord_Send ajoute deja "?key=...", donc une
+		// URL qui contient deja un '?' produit deux '?' dans la requete finale
+		// -> query string malformee -> le relais refuse (HTTP 403).
+		if(qm != -1)
+			printf("[Discord] ATTENTION : la ligne 1 de discord.cfg contient un '?' (parametres). Mets UNIQUEMENT l'adresse en ligne 1 et la cle secrete en ligne 2, sinon la requete part avec deux '?' et le relais repond 403.");
 		if(schemeRetire == 8)
 			printf("[Discord] ATTENTION : discord.cfg indique https://. SA-MP ne sait pas faire de HTTPS : la requete partira en HTTP simple (port 80). Si ton hebergement ne repond qu'en HTTPS, le relais doit etre joignable en http:// sans redirection.");
 	}
