@@ -182,12 +182,24 @@ stock MenuRapide_Ouvrir(playerid)
 	return 1;
 }
 
-stock MenuRapide_Fermer(playerid)
+// [FIX INVENTAIRE QUI DISPARAIT SEUL] CancelSelectTextDraw() ne se contente
+// pas de sortir du mode selection : il declenche lui-meme
+// OnPlayerClickTextDraw avec INVALID_TEXT_DRAW. Or c'est exactement le signal
+// que le sac (SacV_OnClickHorsZone) et le telephone interpretent comme "le
+// joueur a appuye sur Echap, on ferme".
+// Enchainement observe en jeu : clic sur "Inventory" -> on fermait le menu
+// avec CancelSelectTextDraw -> /sac ouvrait la grille -> le INVALID_TEXT_DRAW
+// de NOTRE annulation arrivait juste apres et refermait la grille aussitot.
+// D'ou "l'inventaire disparait tout seul".
+// Les ecrans qui reprennent la main (sac, telephone) appellent deja
+// SelectTextDraw eux-memes : on leur passe la main sans annuler. On n'annule
+// que quand rien ne prend le relais (croix, Echap, dialogue, message).
+stock MenuRapide_Fermer(playerid, bool:annulerSelection = true)
 {
 	if(!mrOuvert[playerid]) return 1;
 	mrOuvert[playerid] = false;
 	for(new k = 0; k < 10; k++) PlayerTextDrawHide(playerid, mrTD[playerid][k]);
-	CancelSelectTextDraw(playerid);
+	if(annulerSelection) CancelSelectTextDraw(playerid);
 	return 1;
 }
 
@@ -221,15 +233,18 @@ stock MenuRapide_OnClickPlayerText(playerid, PlayerText:playertextid)
 		MenuRapide_Fermer(playerid);
 		return 1;
 	}
+	// false = on n'annule PAS la selection : le sac appelle SelectTextDraw
+	// juste apres, et annuler ici refermerait la grille aussitot ouverte.
 	if(playertextid == mrTD[playerid][0]) // Inventory -> vraie commande /sac
 	{
-		MenuRapide_Fermer(playerid);
+		MenuRapide_Fermer(playerid, false);
 		CallLocalFunction("OnPlayerCommandText", "is", playerid, "/sac");
 		return 1;
 	}
+	// Idem : le telephone reprend la selection lui-meme.
 	if(playertextid == mrTD[playerid][1]) // Phone -> vraie commande /tel
 	{
-		MenuRapide_Fermer(playerid);
+		MenuRapide_Fermer(playerid, false);
 		CallLocalFunction("OnPlayerCommandText", "is", playerid, "/tel");
 		return 1;
 	}
