@@ -9601,9 +9601,16 @@ stock job_GetXp(playerid,job)
     {
         case 0:
             {return 0;}
-        case 1,2,3,4,5,7,8,9,19:
+        // [FIX XP] Tout metier absent de ce switch tombait dans "default: return 1",
+		// c'est a dire "1 point d'XP suffit pour monter d'un niveau" : le joueur
+		// passait niveau 10 des ses premieres actions. On classe donc chaque
+		// metier reellement joignable (= qui a un employeur PNJ) dans une bande.
+		// Bande "a pied" : action rapide et repetable -> beaucoup d'XP demandee.
+        case 1,2,3,4,5,7,8,9,14,15,19:
             {xp = (PlayerInfo[playerid][pJobLvl]*20);}
-		case 6,10, 11:
+		// Bande "vehicule / service" : une action prend plus de temps (trajet,
+		// ou depend d'un autre joueur) -> on demande moins d'XP par niveau.
+		case 6,10,11,12,17,20:
 		    {xp = (PlayerInfo[playerid][pJobLvl]*8);}
 		default:
 			{return 1;}
@@ -9637,14 +9644,27 @@ stock GetJobName(id)
 	    case 10: {name="Camionneur";}
 	    case 11: {name="Medecin";}
 	    case 12: {name="Bagagiste";}
+	    // [PAS IMPLEMENTE] 13 Demenageur : aucun employeur PNJ, aucune mission codee.
+	    // Le nom existe uniquement pour l'affichage ; un joueur ne peut pas l'obtenir.
 	    case 13: {name="Dmnageur";}
 	    case 14: {name="Bucheron";}
 	    case 15: {name="Jardinier";}
+	    // [PAS IMPLEMENTE] 16 Pompier : aucun employeur PNJ, aucune mission codee.
+	    // (a ne pas confondre avec la faction de secours, qui elle fonctionne)
 	    case 16: {name="Pompier";}
 	    case 17: {name="Mcanicien";}
+	    // [PAS IMPLEMENTE] 18 Recuperateur de Carcasse : aucune mission codee. Les
+	    // carcasses existantes (trashcar_*) sont deja remorquees par le Mecanicien
+	    // via /mecano rem : implanter ce metier demande d'abord de trancher qui
+	    // ramasse quoi. Decision a prendre par la direction du serveur.
 	    case 18: {name="Rcuprateur de Carcasse";}
 	    case 19: {name="Convoyeur de fond";}
+	    // [ATTENTION] 20 Chauffeur de taxi : un employeur PNJ existe (LS/SF/LV) donc
+	    // le metier est PRENABLE, mais aucune mission n'est codee. /job debut affiche
+	    // bien "pas encore de mission jouable". A implanter ou a retirer.
 	    case 20: {name="Chauffeur de taxi";}
+	    // [PAS IMPLEMENTE] 21 Avocat : aucune mission codee. Recoupe le module
+	    // Justice (Justice_*) : a concevoir avant d'etre code.
 	    case 21: {name="Avocat";}
 	}
     return name;
@@ -14019,11 +14039,19 @@ stock job_TakePay(playerid,job)
     {
         case 0:
 			{return 0;}
-        case 1,7,19:
+        // [FIX PAIE] Les metiers absents de ce switch repartaient avec cashes=0 :
+		// le joueur travaillait pour rien (aucun bonus ajoute a la paye). On
+		// range chaque metier joignable dans une des trois bandes existantes.
+		// Bande BASSE : action tres rapide / tres repetable.
+		// 17 (Mecanicien) y est mis car il encaisse deja directement ses clients :
+		// ce bonus n'est qu'un complement, pas son revenu principal.
+        case 1,7,17,19,20:
 		    {cashes=PlayerInfo[playerid][pJobLvl]*2+3+(random(15));}
-		case 2,3,4,5,9:
+		// Bande MOYENNE : travail manuel a pied (recolte, port de charge).
+		case 2,3,4,5,9,14,15:
 		    {cashes=PlayerInfo[playerid][pJobLvl]*2+(random(20));}
-		case 6,8,10:
+		// Bande HAUTE : metiers en vehicule, une action = un long trajet.
+		case 6,8,10,12:
 		    {cashes=PlayerInfo[playerid][pJobLvl]*3+(random(40));}
     }
     // [JOBS] Applique prime de serie (streak) + bonus debutant sur le gain
@@ -35619,23 +35647,23 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 		{
 		    if(listitem == 0)
 		    {
-		        ShowPlayerDialog(playerid,145,DIALOG_STYLE_LIST," ANPE ","- Livreur de Pizza\n- Fermier\n- Eboueur\n- Pilote de Ligne\n- Facteur\n- Pcheur\n- Voiturier\n- Camionneur\n- Medecin\n- Mcanicien\n- Convoyeur de fond","Valider","Annuler");
+		        ShowPlayerDialog(playerid,145,DIALOG_STYLE_LIST," ANPE ","- Livreur de Pizza\n- Fermier\n- Eboueur\n- Pilote de Ligne\n- Facteur\n- Pcheur\n- Voiturier\n- Camionneur\n- Mcanicien\n- Convoyeur de fond","Valider","Annuler");
                 player_Dialog[playerid]=1;
 			}
 		    if(listitem == 1)
 		    {
-		        ShowPlayerDialog(playerid,145,DIALOG_STYLE_LIST," ANPE ","- Livreur de Pizza\n- Eboueur\n- Pilote de Ligne\n- Facteur\n- Voiturier\n- Camionneur\n- Medecin","Valider","Annuler");
+		        ShowPlayerDialog(playerid,145,DIALOG_STYLE_LIST," ANPE ","- Livreur de Pizza\n- Eboueur\n- Pilote de Ligne\n- Facteur\n- Voiturier\n- Camionneur","Valider","Annuler");
                 player_Dialog[playerid]=2;
 			}
 		    if(listitem == 2)
 		    {
-		        ShowPlayerDialog(playerid,145,DIALOG_STYLE_LIST," ANPE ","- Livreur de Pizza\n- Eboueur\n- Ouvrier\n- Pilote de Ligne\n- Facteur\n- Camionneur\n- Medecin","Valider","Annuler");
+		        ShowPlayerDialog(playerid,145,DIALOG_STYLE_LIST," ANPE ","- Livreur de Pizza\n- Eboueur\n- Ouvrier\n- Pilote de Ligne\n- Facteur\n- Camionneur","Valider","Annuler");
                 player_Dialog[playerid]=3;
 			}
 		    if(listitem == 3)
 		    {
-		        ShowPlayerDialog(playerid,145,DIALOG_STYLE_LIST," ANPE ","- Medecin","Valider","Annuler");
-                player_Dialog[playerid]=4;
+		        // [MEDECIN SUPPRIME] Fort Carson ne proposait que Medecin : plus aucun job ici.
+		        SetActorChatBubble(tmpId,"Il n'y a actuellement pas de job dans cette ville.",0xFFFFFFDD,NAME_DISTANCE,5000);
 			}
 		    if(listitem == 4)
 		    {
@@ -35657,8 +35685,8 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 		    }
 		    if(listitem == 8)
 		    {
-		        ShowPlayerDialog(playerid,145,DIALOG_STYLE_LIST," ANPE ","- Mdecin","Valider","Annuler");
-		        player_Dialog[playerid]=9;
+		        // [MEDECIN SUPPRIME] Montgomery ne proposait que Medecin : plus aucun job ici.
+		        SetActorChatBubble(tmpId,"Il n'y a actuellement pas de job dans cette ville.",0xFFFFFFDD,NAME_DISTANCE,5000);
 		    }
 		    if(listitem == 9)
 		    {
@@ -35699,10 +35727,8 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
             if(listitem==7)
 		        {SetPlayerCheckpoint(playerid,2422.7007,-2075.9539,13.5538,5.0);}
             if(listitem==8)
-		        {SetPlayerCheckpoint(playerid,1181.7336,-1330.5524,13.5849,5.0);}
-            if(listitem==9)
 		        {SetPlayerCheckpoint(playerid,1008.4938,-1358.3921,13.3909,5.0);}
-            if(listitem==10)
+            if(listitem==9)
 		        {SetPlayerCheckpoint(playerid,1516.9620,-1022.1600,23.8301,5.0);}
 		}
 		else if(player_Dialog[playerid] == 2)
@@ -35719,8 +35745,6 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 		        {SetPlayerCheckpoint(playerid,-1748.5485,962.6849,24.8828,5.0);}
             if(listitem==5)
 		        {SetPlayerCheckpoint(playerid,-1829.5662,109.6234,15.1172,5.0);}
-            if(listitem==6)
-		        {SetPlayerCheckpoint(playerid,-2675.3901,633.9665,14.4531,5.0);}
 		}
 		else if(player_Dialog[playerid] == 3)
 		{
@@ -35736,13 +35760,6 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 		        {SetPlayerCheckpoint(playerid,2275.0439,2292.1929,10.8203,5.0);}
             if(listitem==5)
 		        {SetPlayerCheckpoint(playerid,2778.1799,901.4272,10.8984,5.0);}
-            if(listitem==6)
-		        {SetPlayerCheckpoint(playerid,1595.1428,1820.1161,10.8203,5.0);}
-		}
-		else if(player_Dialog[playerid] == 4)
-		{
-		    if(listitem==0)
-		        {SetPlayerCheckpoint(playerid,-314.7763,1050.0546,20.3403,5.0);}
 		}
 		else if(player_Dialog[playerid] == 5)
 		{
@@ -35753,11 +35770,6 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 		{
 		    if(listitem==0)
 		        {SetPlayerCheckpoint(playerid,-58.2886,86.8920,3.1172,5.0);}
-		}
-		else if(player_Dialog[playerid] == 9)
-		{
-		    if(listitem==0)
-		        {SetPlayerCheckpoint(playerid,1249.3186,326.0113,19.7578,5.0);}
 		}
 		else if(player_Dialog[playerid] == 13)
 		{
@@ -41432,6 +41444,18 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			    SafeGivePlayerMoney(playerid, -mecano_Price[playerid],"Job, rparation");
 			    SafeGivePlayerMoney(mecano_Offer[playerid], mecano_Price[playerid],"Payement rparation mcano");
 			    SafeSetVehicleHealth(carid,1000.0);
+			    // [FIX MECANO] Le Mecanicien etait le seul metier a ne jamais gagner
+			    // d'XP ni de bonus de paye : il n'appelait nulle part job_TakePay.
+			    // Resultat : niveau de job bloque a 0 et paye de fin d'heure vide.
+			    // Une reparation acceptee par le client est SA tache de metier :
+			    // c'est donc ici, et seulement ici, qu'on la comptabilise.
+			    new mecanoWorkerId = mecano_Offer[playerid];
+			    if(IsPlayerConnected(mecanoWorkerId) && PlayerInfo[mecanoWorkerId][pJob] == 17)
+			    {
+			        PlayerInfo[mecanoWorkerId][pJobExp]++;
+			        job_UpdateTexts(mecanoWorkerId);
+			        job_TakePay(mecanoWorkerId,17);
+			    }
 			    mecano_Offer[playerid] = 0;
 		    	mecano_Price[playerid] = 0;
 		    }
