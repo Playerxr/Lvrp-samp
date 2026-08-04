@@ -11,8 +11,15 @@
 	   hebergement web, et a configurer avec l'URL de ton webhook Discord.
 
 	Configuration cote serveur : scriptfiles/discord.cfg
-	  Ligne 1 : URL du relais (ex: http://ton-site.com/discord_relay.php)
+	  Ligne 1 : adresse du relais, AVEC OU SANS http:// (les deux marchent
+	            depuis le fix ci-dessous ; en interne le prefixe est retire
+	            car le natif HTTP() de SA-MP veut un hote nu)
+	            ex: ton-site.com/discord_relay.php
 	  Ligne 2 : cle secrete partagee (doit etre identique dans le PHP)
+
+	/!\ Le relais doit repondre en HTTP SIMPLE (port 80), sans redirection
+	    automatique vers HTTPS : SA-MP ne sait pas parler TLS, une redirection
+	    301/302 vers https:// fait echouer l'envoi.
 	Si le fichier est absent ou l'URL vide, la fonctionnalite est
 	silencieusement desactivee (aucune erreur, aucun spam).
 
@@ -58,16 +65,44 @@ stock Discord_Init()
 	}
 	fclose(f);
 
-	if(strlen(discord_RelayUrl) > 7) // au moins "http://"
+	// [FIX] Retire http:// ou https:// AVANT tout le reste : voir
+	// Discord_StripScheme ci-dessous, c'est la cause de "Echec annonce (code 1)".
+	new schemeRetire = Discord_StripScheme(discord_RelayUrl);
+
+	if(strlen(discord_RelayUrl) > 4) // au moins "a.fr"
 	{
 		discord_Enabled = true;
-		printf("[Discord] Relais configure, annonces Discord actives.");
+		printf("[Discord] Relais configure (%s), annonces Discord actives.", discord_RelayUrl);
+		if(schemeRetire == 8)
+			printf("[Discord] ATTENTION : discord.cfg indique https://. SA-MP ne sait pas faire de HTTPS : la requete partira en HTTP simple (port 80). Si ton hebergement ne repond qu'en HTTPS, le relais doit etre joignable en http:// sans redirection.");
 	}
 	else
 	{
 		printf("[Discord] URL de relais vide : annonces Discord desactivees.");
 	}
 	return 1;
+}
+
+// [FIX ANNONCE JAMAIS PARTIE] Le natif HTTP() de SA-MP veut un hote NU
+// ("mon-site.com/relay.php"), PAS une URL complete : lui passer
+// "http://mon-site.com/..." echoue avec HTTP_ERROR_BAD_HOST (code 1). C'est
+// exactement ce que faisait ce module, parce que sa propre doc de config
+// demandait de mettre le http:// dans discord.cfg - l'annonce "serveur en
+// ligne" n'est donc JAMAIS partie depuis l'installation du relais, et le log
+// le repetait a chaque demarrage. On accepte les deux formes et on retire le
+// prefixe ici, pour ne pas avoir a corriger les discord.cfg deja ecrits.
+// (Reference : l'appel HTTP() de FCNPC.inc, qui passe bien un hote nu.)
+stock Discord_StripScheme(string[])
+{
+	new decale = 0;
+	if(strfind(string, "https://", true) == 0)      decale = 8;
+	else if(strfind(string, "http://", true) == 0)  decale = 7;
+	if(decale == 0) return 0;
+
+	new i = 0;
+	while(string[decale + i]) { string[i] = string[decale + i]; i++; }
+	string[i] = 0;
+	return decale;
 }
 
 stock Discord_Trim(string[])
@@ -149,7 +184,16 @@ public Discord_OnResponse(index, response_code, data[])
 	#pragma unused data
 	if(response_code >= 200 && response_code < 300)
 		printf("[Discord] Annonce transmise (code %d).", response_code);
+	// Codes 1-6 = erreurs CLIENT de SA-MP (a_http.inc), pas des codes HTTP :
+	// les distinguer evite de chercher un probleme cote Discord alors que la
+	// requete n'est jamais sortie du serveur.
+	else if(response_code == 1)
+		printf("[Discord] Echec annonce : hote introuvable (BAD_HOST). Verifie l'adresse en ligne 1 de discord.cfg (nom de domaine correct, joignable en HTTP simple).");
+	else if(response_code == 2 || response_code == 3)
+		printf("[Discord] Echec annonce : connexion impossible au relais (code %d). Le site repond-il bien en http:// sans redirection vers https:// ?", response_code);
+	else if(response_code >= 4 && response_code <= 6)
+		printf("[Discord] Echec annonce : reponse du relais invalide (code %d). Le fichier discord_relay.php est-il bien en place et renvoie-t-il du texte simple ?", response_code);
 	else
-		printf("[Discord] Echec annonce (code %d). Verifie l'URL du relais / la cle / que le relais est en HTTP accessible.", response_code);
+		printf("[Discord] Echec annonce (code HTTP %d). Verifie la cle secrete (ligne 2 de discord.cfg = $SECRET du PHP) et l'URL du webhook dans discord_relay.php.", response_code);
 	return 1;
 }

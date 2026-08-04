@@ -63,9 +63,38 @@ public VipSync_Poll()
 // Reponse Firebase :
 //   {"-Nabc123":"Jackson_Smith|1|0|43200","-Nqrs456":"Fatou_M|0|3250000|0"}
 // ou "null" s'il n'y a rien en attente.
+// [DIAGNOSTIC] Ce module echouait en SILENCE : tout code != 200 sortait sans
+// un mot, donc rien dans les logs ne disait que la synchro VIP ne marche pas.
+// Or l'appel vise "https://" alors que le natif HTTP() de SA-MP ne sait pas
+// faire de TLS - meme cause exacte que l'annonce Discord qui ne partait jamais
+// (HTTP_ERROR_BAD_HOST, code 1). On rend l'echec visible sans inonder le log :
+// premier echec, puis un rappel tous les 20 essais (~10 min a 30s d'interval).
+// Volontairement PAS "repare" ici : contrairement au relais Discord (qu'on
+// heberge et qu'on peut servir en HTTP simple), l'hote vise ici est un service
+// externe. Le corriger demande de savoir s'il peut repondre en HTTP simple ou
+// s'il faut lui aussi passer par un relais PHP - une decision a prendre avec
+// la proprietaire, pas a deviner a sa place.
+new vipSyncEchecs = 0;
+
 public VipSync_OnPollResponse(index, response_code, data[])
 {
-    if (response_code != 200) return 1;
+    if (response_code != 200)
+    {
+        if(vipSyncEchecs == 0 || (vipSyncEchecs % 20) == 0)
+        {
+            if(response_code >= 1 && response_code <= 6)
+                printf("[VIPSYNC] Echec synchro (erreur client SA-MP %d) : la requete ne sort meme pas du serveur. L'URL visee est en https://, or SA-MP ne sait pas faire de HTTPS.", response_code);
+            else
+                printf("[VIPSYNC] Echec synchro (code HTTP %d).", response_code);
+        }
+        vipSyncEchecs++;
+        return 1;
+    }
+    if(vipSyncEchecs > 0)
+    {
+        printf("[VIPSYNC] Synchro retablie apres %d echec(s).", vipSyncEchecs);
+        vipSyncEchecs = 0;
+    }
     if (strcmp(data, "null", true) == 0) return 1;
 
     new vsPos = 0;
