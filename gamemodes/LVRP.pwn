@@ -382,6 +382,47 @@ Fix loading string from DataBase
 #define TAX_CAR 	25                                                          // Taxe par voiture
 #define TAX_GARAGE  10                                                          // Taxe par garage
 #define JOB_TIME 30                                                             // Temps de travail pour obtenir la paye (jobs)
+
+// ---------------------------------------------------------------------------
+// [EQUILIBRAGE JOBS] Tous les reglages du BONUS DE TACHE sont ici.
+//
+// A LIRE AVANT DE MODIFIER : voir docs/equilibrage_jobs.md
+//
+// Le revenu d'un joueur qui travaille est fait de DEUX morceaux :
+//   1. le SALAIRE, verse a la paye (toutes les heures). Il n'est PAS dans le
+//      code : il vit dans la base de donnees, table lvrp_factions_governements,
+//      ligne id=4, colonnes job1 a job20 (job1 = metier 1, etc.).
+//   2. le BONUS DE TACHE, cumule a chaque action reussie (une pizza livree,
+//      un rondin depose...) et verse en meme temps que le salaire. C'est
+//      CE morceau-la que les constantes ci-dessous controlent.
+//
+// Formule d'une tache : PARLVL x niveau_du_metier + FIXE + un tirage au sort
+// entre 0 et ALEA-1. Le resultat passe ensuite par Jobs_ComputeReward()
+// (afrp_jobs.inc) qui applique la prime de serie et le bonus debutant.
+//
+// Les trois bandes correspondent a l'effort demande par une tache :
+//   BASSE   : action tres rapide et tres repetable (pizza, lettre, ATM...)
+//   MOYENNE : travail manuel a pied (recolte, minerai, rondin...)
+//   HAUTE   : metier en vehicule, une action = un long trajet
+// Les valeurs ci-dessous sont EXACTEMENT celles d'avant : rien n'a change,
+// elles sont simplement rassemblees ici pour etre modifiables en un endroit.
+#define JOB_BONUS_BASSE_PARLVL     2                                            // x niveau du metier
+#define JOB_BONUS_BASSE_FIXE       3                                            // montant garanti
+#define JOB_BONUS_BASSE_ALEA      15                                            // part aleatoire (0 a 14)
+#define JOB_BONUS_MOYENNE_PARLVL   2
+#define JOB_BONUS_MOYENNE_FIXE     0
+#define JOB_BONUS_MOYENNE_ALEA    20
+#define JOB_BONUS_HAUTE_PARLVL     3
+#define JOB_BONUS_HAUTE_FIXE       0
+#define JOB_BONUS_HAUTE_ALEA      40
+
+// [EQUILIBRAGE JOBS] Experience necessaire pour monter d'un niveau de metier
+// (niveau max = 10). Formule : PARLVL x niveau actuel. Plus le chiffre est
+// grand, plus il faut de taches pour progresser - donc plus le bonus met de
+// temps a grossir. Valeurs inchangees, simplement regroupees ici.
+#define JOB_XP_APIED_PARLVL       20                                            // metiers a pied
+#define JOB_XP_VEHICULE_PARLVL     8                                            // metiers en vehicule / de service
+// ---------------------------------------------------------------------------
 #define DUTY_TIME 30                                                            // Temps de travail pour obtenir la paye (factions lgales)
 #define MAX_CHANNEL 50                                                          // Max de canaux pour TSConnector
 #define MAX_ACCOUNT_IP 3                                                        // Max compte par ip
@@ -9610,11 +9651,11 @@ stock job_GetXp(playerid,job)
 		// metier reellement joignable (= qui a un employeur PNJ) dans une bande.
 		// Bande "a pied" : action rapide et repetable -> beaucoup d'XP demandee.
         case 1,2,3,4,5,7,8,9,14,15,19:
-            {xp = (PlayerInfo[playerid][pJobLvl]*20);}
+            {xp = (PlayerInfo[playerid][pJobLvl]*JOB_XP_APIED_PARLVL);}
 		// Bande "vehicule / service" : une action prend plus de temps (trajet,
 		// ou depend d'un autre joueur) -> on demande moins d'XP par niveau.
 		case 6,10,11,12,17,20:
-		    {xp = (PlayerInfo[playerid][pJobLvl]*8);}
+		    {xp = (PlayerInfo[playerid][pJobLvl]*JOB_XP_VEHICULE_PARLVL);}
 		default:
 			{return 1;}
     }
@@ -11766,8 +11807,12 @@ stock governement_Save(id,bool:saveTax,bool:saveJob,bool:saveLicense,bool:savePo
 	}
 	if(saveJob==true)
 	{
+	    // [FIX SALAIRE] La 4e valeur envoyee etait governement[id][tax][3] (la taxe
+	    // d'electricite) au lieu du salaire du metier 4. Resultat : a CHAQUE
+	    // sauvegarde des salaires, la colonne job4 (Eboueur) etait ecrasee par un
+	    // montant de taxe qui n'a rien a voir. Corrige ici en salaryJob[3].
 	    format(sql, sizeof(sql), "UPDATE lvrp_factions_governements SET job1=%d, job2=%d, job3=%d, job4=%d, job5=%d, job6=%d, job7=%d, job8=%d, job9=%d, job10=%d, job11=%d, job12=%d, job13=%d, job14=%d, job15=%d, job16=%d, job17=%d, job18=%d, job19=%d, job20=%d  WHERE id=%d",
-		governement[id][salaryJob][0],governement[id][salaryJob][1],governement[id][salaryJob][2],governement[id][tax][3],governement[id][salaryJob][4],governement[id][salaryJob][5],governement[id][salaryJob][6],governement[id][salaryJob][7],governement[id][salaryJob][8],governement[id][salaryJob][9],
+		governement[id][salaryJob][0],governement[id][salaryJob][1],governement[id][salaryJob][2],governement[id][salaryJob][3],governement[id][salaryJob][4],governement[id][salaryJob][5],governement[id][salaryJob][6],governement[id][salaryJob][7],governement[id][salaryJob][8],governement[id][salaryJob][9],
 		governement[id][salaryJob][10],governement[id][salaryJob][11],governement[id][salaryJob][12],governement[id][salaryJob][13],governement[id][salaryJob][14],governement[id][salaryJob][15],governement[id][salaryJob][16],governement[id][salaryJob][17],governement[id][salaryJob][18],governement[id][salaryJob][19],id+1);
 		mysql_pquery(MYSQL,sql);
 	}
@@ -14055,13 +14100,13 @@ stock job_TakePay(playerid,job)
 		// 17 (Mecanicien) y est mis car il encaisse deja directement ses clients :
 		// ce bonus n'est qu'un complement, pas son revenu principal.
         case 1,7,17,19,20:
-		    {cashes=PlayerInfo[playerid][pJobLvl]*2+3+(random(15));}
+		    {cashes=PlayerInfo[playerid][pJobLvl]*JOB_BONUS_BASSE_PARLVL+JOB_BONUS_BASSE_FIXE+(random(JOB_BONUS_BASSE_ALEA));}
 		// Bande MOYENNE : travail manuel a pied (recolte, port de charge).
 		case 2,3,4,5,9,14,15:
-		    {cashes=PlayerInfo[playerid][pJobLvl]*2+(random(20));}
+		    {cashes=PlayerInfo[playerid][pJobLvl]*JOB_BONUS_MOYENNE_PARLVL+JOB_BONUS_MOYENNE_FIXE+(random(JOB_BONUS_MOYENNE_ALEA));}
 		// Bande HAUTE : metiers en vehicule, une action = un long trajet.
 		case 6,8,10,12:
-		    {cashes=PlayerInfo[playerid][pJobLvl]*3+(random(40));}
+		    {cashes=PlayerInfo[playerid][pJobLvl]*JOB_BONUS_HAUTE_PARLVL+JOB_BONUS_HAUTE_FIXE+(random(JOB_BONUS_HAUTE_ALEA));}
     }
     // [JOBS] Applique prime de serie (streak) + bonus debutant sur le gain
     cashes = Jobs_ComputeReward(playerid, cashes);
