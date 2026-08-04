@@ -48,16 +48,88 @@ native HTTP(index, HTTP_METHOD:type, const url[], const data[], const callback[]
 forward VipSync_Poll();
 forward VipSync_OnPollResponse(index, response_code, data[]);
 
+// [FIX SYNCHRO JAMAIS PARTIE] Ce module visait Firebase en direct, en
+// https://. Or le natif HTTP() de SA-MP ne sait PAS faire de TLS : la requete
+// echouait a chaque essai (HTTP_ERROR_BAD_HOST) depuis l'installation, et
+// silencieusement. Firebase n'accepte que le HTTPS : impossible de le joindre
+// directement, quoi qu'on fasse cote Pawn.
+//
+// Solution : le meme montage que les annonces Discord de ce serveur - un
+// petit relais (Cloudflare Worker) joignable en HTTP simple, qui va lui
+// chercher l'URL Firebase en HTTPS et renvoie le JSON tel quel.
+// Voir vipsync_worker.js a la racine du depot + scriptfiles/vipsync.cfg :
+//   Ligne 1 : adresse du relais, avec ou sans http:// (ex: mon-worker.workers.dev/)
+// Sans ce fichier, la synchro est desactivee proprement au lieu de taper
+// dans le vide toutes les 30 secondes.
+#define VIPSYNC_CFG_FILE "vipsync.cfg"
+
+new vipSyncRelay[160];
+new bool:vipSyncEnabled = false;
+
+// Nettoyage local (trim + retrait du prefixe http:// ou https://). Volontairement
+// autonome : afrp_discord.inc, qui a les memes helpers, est inclus APRES ce
+// fichier - ses fonctions n'existent pas encore ici.
+stock VipSync_CleanUrl(string[])
+{
+    new len = strlen(string);
+    while(len > 0 && (string[len-1] == '\r' || string[len-1] == '\n' || string[len-1] == ' ' || string[len-1] == '\t'))
+        { string[len-1] = 0; len--; }
+
+    new decale = 0;
+    if(strfind(string, "https://", true) == 0)      decale = 8;
+    else if(strfind(string, "http://", true) == 0)  decale = 7;
+    if(decale > 0)
+    {
+        new vi = 0;
+        while(string[decale + vi]) { string[vi] = string[decale + vi]; vi++; }
+        string[vi] = 0;
+    }
+    return strlen(string);
+}
+
 VipSync_Init()
 {
     mysql_tquery(MYSQL, "CREATE TABLE IF NOT EXISTS vip_sync_processed (push_id VARCHAR(40) PRIMARY KEY, processed_at INT UNSIGNED DEFAULT 0) ENGINE=InnoDB", "", "");
-    SetTimer("VipSync_Poll", VIP_SYNC_POLL_MS, true);
-    print("[VIPSYNC] Module demarre - verification VIP/Cash toutes les 30s");
+
+    vipSyncRelay[0] = 0;
+    vipSyncEnabled = false;
+
+    if(fexist(VIPSYNC_CFG_FILE))
+    {
+        new File:vf = fopen(VIPSYNC_CFG_FILE, io_read);
+        if(vf)
+        {
+            new vline[160];
+            if(fread(vf, vline))
+            {
+                VipSync_CleanUrl(vline); // trim + retrait http(s):// : HTTP() veut un hote nu
+                strcat(vipSyncRelay, vline, sizeof(vipSyncRelay));
+            }
+            fclose(vf);
+        }
+    }
+
+    if(strlen(vipSyncRelay) > 4)
+    {
+        vipSyncEnabled = true;
+        SetTimer("VipSync_Poll", VIP_SYNC_POLL_MS, true);
+        print("[VIPSYNC] Module demarre - verification VIP/Cash toutes les 30s via le relais.");
+    }
+    else
+    {
+        // Pas de timer : inutile de lancer 2 requetes/minute vouees a echouer.
+        print("[VIPSYNC] DESACTIVE : scriptfiles/vipsync.cfg absent ou vide.");
+        print("[VIPSYNC] SA-MP ne sait pas faire de HTTPS, et Firebase n'accepte que le HTTPS : il faut un relais (voir vipsync_worker.js).");
+    }
 }
 
 public VipSync_Poll()
 {
-    HTTP(1, HTTP_GET, "https://"VIP_SYNC_HOST"/pending_vip_grants.json", "", "VipSync_OnPollResponse");
+    if(!vipSyncEnabled) return 1;
+    new vsUrl[240];
+    format(vsUrl, sizeof(vsUrl), "%s?path=pending_vip_grants", vipSyncRelay);
+    HTTP(1, HTTP_GET, vsUrl, "", "VipSync_OnPollResponse");
+    return 1;
 }
 
 // Reponse Firebase :
