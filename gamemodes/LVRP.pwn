@@ -5361,6 +5361,9 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 #include <afrp_banque>
 // [RADIO VOICE] vrai canal vocal SampVoice derriere /radio et /local
 #include <afrp_radiovoice>
+// [VOIX LOCALE] Voix de proximite 20m. APRES afrp_radiovoice : il appelle
+// RadioVoice_Disable() pour que les deux modes s'excluent.
+#include <afrp_voixlocale>
 // [BASKET] dribble, paniers et points (remet en marche le basket existant)
 #include <afrp_basket>
 // [SPEEDO2] tableau de bord moderne (habillage alternatif du compteur)
@@ -23570,6 +23573,7 @@ public OnPlayerConnect(playerid)
     GangTag_OnConnect(playerid); // [GANG TAG] init slot label
     LegalTag_OnConnect(playerid); // [LEGAL TAG] init slot label
     RadioVoice_OnConnect(playerid); // [RADIO VOICE] detecte plugin SampVoice + micro
+    VoixLocale_OnConnect(playerid); // [VOIX LOCALE] reset du stream de proximite
     Obj_OnPlayerConnect(playerid); // [OBJECTIFS] reset de l'etat avant login
     TopJour_OnConnect(playerid); // [TOP DU JOUR] reset des compteurs anti-AFK
     Annonce_OnConnect(playerid); // [ANNONCE] reset du bandeau
@@ -24225,6 +24229,7 @@ public OnPlayerDisconnect(playerid, reason)
     Raccourcis_OnDisconnect(playerid); // [RACCOURCIS] annule un maintien en cours
     RadioWidget_OnDisconnect(playerid); // [RADIO WIDGET] evite un affichage fantome a la reconnexion
     RadioVoice_OnDisconnect(playerid); // [RADIO VOICE] detache du canal vocal en cours
+    VoixLocale_OnDisconnect(playerid); // [VOIX LOCALE] detruit le stream de proximite du slot
     TopJour_OnDisconnect(playerid); // [TOP DU JOUR] detruit le panneau
     Annonce_OnDisconnect(playerid); // [ANNONCE] detruit le bandeau
     Cv_OnDisconnect(playerid); // [CONVOI] retire de l'escorte / du braquage
@@ -30245,6 +30250,7 @@ public OnGameModeInit()
     Banque_Init();
     // [RADIO VOICE] cree un canal vocal SampVoice par faction legale
     RadioVoice_Init();
+    VoixLocale_Init(); // [VOIX LOCALE] timer de suivi des streams de proximite
     // [ANNOUNCE] cree le bandeau de /a an (une seule fois, affiche/cache pour tous)
     Announce_Init();
     // [SPEEDO2] cree le timer du tableau de bord moderne
@@ -55964,6 +55970,9 @@ public OnPlayerCommandText(playerid, cmdtext[])
 			// [RADIO VOICE] rejoint le vrai canal vocal SampVoice de la faction
 			// (message dedie si le joueur n'a pas le plugin/micro) - talkStats
 			// reste bascule dans tous les cas, en phase avec ce canal.
+			// [VOIX LOCALE] la proximite et la radio s'excluent : sans ca le
+			// joueur diffuserait sur les deux canaux sans s'en rendre compte.
+			VoixLocale_StopPourRadio(playerid);
 			RadioVoice_Enable(playerid);
 			SetPVarInt(playerid, "talkStats", 3);
 			msg_Client(playerid, COLOR_WHITE, "{8B8B00}\xbb VOIP \xab{FFFFFF} Mode radio active.");
@@ -70517,11 +70526,11 @@ public OnPlayerCommandText(playerid, cmdtext[])
 	// Fusionne dans ce premier bloc, voir plus haut.
 	else if(strcmp(cmd, "/local", true) == 0)
 	{
-		// [RADIO VOICE] quitte le canal vocal de faction en meme temps que talkStats
-		RadioVoice_Disable(playerid);
-		SetPVarInt(playerid, "talkStats", 0);
-		msg_Client(playerid, COLOR_WHITE, "{8B8B00}\xbb VOIP \xab{FFFFFF} Mode local activ\xe9.");
-		return 1;
+		// [VOIX LOCALE] /local ne faisait que quitter la radio. Il active/coupe
+		// maintenant la VRAIE voix de proximite (20 m), qui n'avait jamais
+		// fonctionne (voir afrp_voixlocale.inc). VoixLocale_Toggle coupe
+		// lui-meme la radio et remet talkStats a 0 quand il s'active.
+		return VoixLocale_Toggle(playerid);
 	}
 	else if(strcmp(cmd, "/voipstats", true) == 0)
 	{
