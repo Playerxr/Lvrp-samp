@@ -12,6 +12,8 @@
 	  /a deplacer                  liste les maps deplacables et leur etat
 	  /a deplacer <nom>            repose la map sur sa position et son angle
 	  /a deplacer reset <nom>      remet la map ou son auteur l'avait mise
+	  /a deplacer aller <nom>      teleporte sur la map et dit si elle existe
+	  /a deplacer hauteur <n> <v>  remonte (v>0) ou descend (v<0) la map
 	(admin niveau 3, comme les autres /a de creation/edition)
 
 	COMMENT UNE MAP EST DEPLACEE : chaque objet garde sa position d'origine
@@ -379,7 +381,7 @@ stock MM_Liste(playerid)
 }
 
 // arg1 = mot-clef de la map, ou "reset" ; arg2 = mot-clef si arg1 vaut "reset".
-stock MM_Cmd(playerid, const arg1[], const arg2[])
+stock MM_Cmd(playerid, const arg1[], const arg2[], const arg3[] = "")
 {
 	if(PlayerInfo[playerid][pAdmin] < MM_ADMIN_LEVEL)
 	{
@@ -388,6 +390,74 @@ stock MM_Cmd(playerid, const arg1[], const arg2[])
 		return MM_Msg(playerid, err);
 	}
 	if(!strlen(arg1)) return MM_Liste(playerid);
+
+	// [DIAGNOSTIC MAP INVISIBLE] "aller" teleporte exactement au point d'ancrage
+	// courant de la map et dit combien d'objets y ont ete crees. C'est ce qui
+	// permet de trancher sans voir le jeu : s'il y a des objets et qu'on ne voit
+	// rien sur place, le probleme est la hauteur (voir "hauteur" ci-dessous) ;
+	// s'il n'y en a aucun, c'est la reconstruction qui a echoue.
+	if(strcmp(arg1, "aller", true) == 0)
+	{
+		new mapA = MM_Trouver(arg2);
+		if(mapA == -1) { MM_Msg(playerid, "{FF4444}Nom de map inconnu."); return MM_Liste(playerid); }
+
+		SetPlayerPos(playerid, MM_AnchorX(mapA), MM_AnchorY(mapA), MM_AnchorZ(mapA) + 3.0);
+		SetPlayerInterior(playerid, 0);
+		SetPlayerVirtualWorld(playerid, 0);
+
+		new sa[190];
+		format(sa, sizeof(sa), "{00FF00}Sur le point d'ancrage de %s : %.1f / %.1f / %.1f", mmNom[mapA], MM_AnchorX(mapA), MM_AnchorY(mapA), MM_AnchorZ(mapA));
+		MM_Msg(playerid, sa);
+		format(sa, sizeof(sa), "{FFFF00}Objets suivis pour cette map : %d{FFFFFF} (0 = la map n'a pas ete reconstruite ici).", mmNb[mapA]);
+		MM_Msg(playerid, sa);
+		MM_Msg(playerid, "{AAAAAA}Tu ne vois rien mais tu te cognes ? La map est enterree : /a deplacer hauteur <nom> <valeur> pour la remonter.");
+		return 1;
+	}
+
+	// [FIX MAP ENTERREE] Le point de reference en hauteur de chaque map a ete
+	// ESTIME (hauteur la plus frequente de ses objets), jamais mesure en jeu.
+	// Si cette estimation tombe sur le milieu des murs plutot que sur le sol,
+	// la map se pose trop bas : le rez-de-chaussee passe sous le terrain, on ne
+	// voit plus rien mais on se cogne toujours dedans - exactement le symptome
+	// remonte. Impossible de corriger a l'aveugle depuis ici : cette commande
+	// donne la molette a celle qui voit le jeu.
+	if(strcmp(arg1, "hauteur", true) == 0)
+	{
+		new mapH = MM_Trouver(arg2);
+		if(mapH == -1 || !strlen(arg3))
+		{
+			MM_Msg(playerid, "{FF4444}Usage : {FFFFFF}/a deplacer hauteur <nom> <valeur>");
+			MM_Msg(playerid, "{AAAAAA}Valeur positive = remonter la map, negative = la descendre. Ex : 2.5 ou -1");
+			return MM_Liste(playerid);
+		}
+
+		new Float:delta = floatstr(arg3);
+		if(delta > -0.001 && delta < 0.001)
+			return MM_Msg(playerid, "{FF4444}Valeur nulle : indique de combien remonter (ex 2.5) ou descendre (ex -1).");
+
+		// Une map jamais deplacee a ancrage == pivot : on l'inscrit comme
+		// deplacee pour que la correction de hauteur soit conservee elle aussi.
+		if(mmDeplacee[mapH] == 0)
+		{
+			mmAncX[mapH] = mmPivotX[mapH];
+			mmAncY[mapH] = mmPivotY[mapH];
+			mmAncRot[mapH] = 0.0;
+			mmDeplacee[mapH] = 1;
+		}
+		mmAncZ[mapH] += delta;
+
+		new nH = MM_Reconstruire(mapH);
+		MM_Save();
+
+		new sh[190];
+		if(nH == -1)
+			format(sh, sizeof(sh), "{FFFF00}%s : hauteur enregistree, mais la carte est eteinte (/mappack).", mmNom[mapH]);
+		else
+			format(sh, sizeof(sh), "{00FF00}%s %s de %.2f m (%d objets reposes). Nouvelle hauteur : %.2f", mmNom[mapH], (delta > 0.0) ? ("remontee") : ("descendue"), floatabs(delta), nH, mmAncZ[mapH]);
+		MM_Msg(playerid, sh);
+		MM_Msg(playerid, "{AAAAAA}Repete la commande jusqu'a ce que le sol de la map affleure. /a deplacer reset <nom> annule tout.");
+		return 1;
+	}
 
 	new bool:reset = (strcmp(arg1, "reset", true) == 0 || strcmp(arg1, "annuler", true) == 0);
 	new map = reset ? MM_Trouver(arg2) : MM_Trouver(arg1);

@@ -62807,12 +62807,15 @@ public OnPlayerCommandText(playerid, cmdtext[])
 			{
 			    if (PlayerInfo[playerid][pAdmin] < 3)
 		  			{return 1;}
-				new mmArg1[32], mmArg2[32];
+				new mmArg1[32], mmArg2[32], mmArg3[32];
 				tmp = strtok(cmdtext, idx);
 				if(strlen(tmp)) strmid(mmArg1, tmp, 0, 31, 32);
 				tmp = strtok(cmdtext, idx);
 				if(strlen(tmp)) strmid(mmArg2, tmp, 0, 31, 32);
-				return MM_Cmd(playerid, mmArg1, mmArg2);
+				// 3e argument : valeur de "hauteur" (ex: /a deplacer hauteur hopital 2.5)
+				tmp = strtok(cmdtext, idx);
+				if(strlen(tmp)) strmid(mmArg3, tmp, 0, 31, 32);
+				return MM_Cmd(playerid, mmArg1, mmArg2, mmArg3);
 			}
 			// [BATIMENT] /a batiment <modelid> [rayon] - retire a la main un batiment
 			// GTA qui gene une map deplacee/installee. Voir afrp_batiment.inc.
