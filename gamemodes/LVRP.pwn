@@ -5236,9 +5236,6 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 // [JOBS] Mise en evidence des jobs : icones carte + /jobs GPS + streak + bonus debutant
 #include <afrp_jobs>
 
-// [JOBS NEW] Boucle de jeu des metiers qui n'existaient que de nom (Bucheron, Jardinier)
-#include <afrp_jobs_new>
-
 // [FAQ] Aide auto dans le chat + guide rapide /aide pour reduire les appels admin
 #include <afrp_faq>
 
@@ -5314,6 +5311,13 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 #include <afrp_coffrefix>
 #include <afrp_meublesdehors>
 #include <afrp_cargomission>
+// [JOBS NEW] Boucle de jeu des metiers qui n'existaient que de nom.
+// DOIT rester APRES afrp_entreprise et afrp_cargomission : le metier Benevole
+// d'entreprise lit entreprises[] (l'employeur choisi) et cargoDepot[] (les
+// depots poses par un admin). Deplace ici depuis sa position d'origine (juste
+// apres afrp_jobs) pour cette seule raison ; rien entre les deux n'utilise ses
+// fonctions, l'ordre relatif du reste est donc inchange.
+#include <afrp_jobs_new>
 #include <afrp_entcommerce>
 #include <afrp_entmarket>
 #include <afrp_justice>
@@ -9650,7 +9654,9 @@ stock job_GetXp(playerid,job)
 		// passait niveau 10 des ses premieres actions. On classe donc chaque
 		// metier reellement joignable (= qui a un employeur PNJ) dans une bande.
 		// Bande "a pied" : action rapide et repetable -> beaucoup d'XP demandee.
-        case 1,2,3,4,5,7,8,9,14,15,19:
+		// [JOBS NEW] 13 (Benevole d'entreprise) y est range : une tache = une
+		// caisse portee a la main, meme effort qu'un rondin de bucheron.
+        case 1,2,3,4,5,7,8,9,13,14,15,19:
             {xp = (PlayerInfo[playerid][pJobLvl]*JOB_XP_APIED_PARLVL);}
 		// Bande "vehicule / service" : une action prend plus de temps (trajet,
 		// ou depend d'un autre joueur) -> on demande moins d'XP par niveau.
@@ -9688,9 +9694,12 @@ stock GetJobName(id)
 	    case 10: {name="Camionneur";}
 	    case 11: {name="Medecin";}
 	    case 12: {name="Bagagiste";}
-	    // [PAS IMPLEMENTE] 13 Demenageur : aucun employeur PNJ, aucune mission codee.
-	    // Le nom existe uniquement pour l'affichage ; un joueur ne peut pas l'obtenir.
-	    case 13: {name="Dmnageur";}
+	    // [JOBS NEW] 13 : la case s'appelait "Demenageur" et n'avait aucune
+	    // mission derriere. On l'a recyclee en Benevole d'entreprise plutot que
+	    // de creer un metier 22 : la paye lit governement[3][salaryJob][pJob-1]
+	    // et ce tableau n'a que 20 cases (voir le commentaire du metier 21).
+	    // Son salaire horaire se regle donc dans la colonne job13 en base.
+	    case 13: {name="Benevole d'entreprise";}
 	    case 14: {name="Bucheron";}
 	    case 15: {name="Jardinier";}
 	    // [PAS IMPLEMENTE] 16 Pompier : aucun employeur PNJ, aucune mission codee.
@@ -10019,6 +10028,12 @@ public job_SetSkin(playerid,jobid)
 		case 15:
 	    {
 	        SetPlayerSkin(playerid,161);
+		}
+		// [JOBS NEW] Tenue du Benevole d'entreprise : skin 260, le meme que
+		// l'Ouvrier. Deja utilise plus haut, donc sur d'exister.
+		case 13:
+	    {
+	        SetPlayerSkin(playerid,260);
 		}
 		case 7:
 	    {
@@ -14102,7 +14117,10 @@ stock job_TakePay(playerid,job)
         case 1,7,17,19,20:
 		    {cashes=PlayerInfo[playerid][pJobLvl]*JOB_BONUS_BASSE_PARLVL+JOB_BONUS_BASSE_FIXE+(random(JOB_BONUS_BASSE_ALEA));}
 		// Bande MOYENNE : travail manuel a pied (recolte, port de charge).
-		case 2,3,4,5,9,14,15:
+		// [JOBS NEW] 13 (Benevole d'entreprise) : il porte des caisses a la main,
+		// c'est exactement cette bande. Sa part de la course va en caisse
+		// d'entreprise (afrp_jobs_new.inc), sa paye a lui passe ici.
+		case 2,3,4,5,9,13,14,15:
 		    {cashes=PlayerInfo[playerid][pJobLvl]*JOB_BONUS_MOYENNE_PARLVL+JOB_BONUS_MOYENNE_FIXE+(random(JOB_BONUS_MOYENNE_ALEA));}
 		// Bande HAUTE : metiers en vehicule, une action = un long trajet.
 		case 6,8,10,12:
@@ -16206,6 +16224,11 @@ stock init_Actors()
 	CreateDynamicLvrpActor(163, -62.5000,83.0000,3.1172,90.0, 0, true ,3, 14,"Employeur\n(( Touche 'N' ))"); // Bucheron - Blueberry
 	// [JOBS NEW] Jardinier : a cote de l'employeur Voiturier de Richman, meme altitude.
 	CreateDynamicLvrpActor(161, 325.5000,-1516.5000,36.0391,90.0, 0, true ,3, 15,"Employeur\n(( Touche 'N' ))"); // Jardinier - Richman (LS)
+	// [JOBS NEW] Benevole d'entreprise : docks de Los Santos, 6 m a l'est de
+	// l'employeur Camionneur existant (2422.9304/-2075.8716) et a la MEME
+	// altitude, donc sur le meme quai. Ajoute EN FIN de la liste LS : aucun
+	// acteur existant ne change de place ni d'index.
+	CreateDynamicLvrpActor(50, 2428.9304,-2075.8716,13.5538,270.0, 0, true ,3, 13,"Employeur\n(( Touche 'N' ))"); // Benevole d'entreprise - Docks LS
 	
 	// SF
 	CreateDynamicLvrpActor(155, -1815.3105,943.3864,24.8759,191.6203, 0, true ,3, 1,"Employeur\n(( Touche 'N' ))"); // Pizza
@@ -31337,6 +31360,12 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
         return Cargo_OnDialogResponse(playerid, dialogid, response, listitem);
     }
 
+    // [JOBS NEW] Choix de l'entreprise employeuse du Benevole (9656)
+    if(dialogid == JOBNEW_DLG_BENEVOLE)
+    {
+        return JobsNew_OnDialogResponse(playerid, dialogid, response, listitem);
+    }
+
     // [COMMERCE ENTREPRISE] Dispatch des dialogs 9965-9968
     if(dialogid >= 9965 && dialogid <= 9968)
     {
@@ -35711,7 +35740,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 		{
 		    if(listitem == 0)
 		    {
-		        ShowPlayerDialog(playerid,145,DIALOG_STYLE_LIST," ANPE ","- Livreur de Pizza\n- Fermier\n- Eboueur\n- Pilote de Ligne\n- Facteur\n- Pcheur\n- Voiturier\n- Camionneur\n- Mcanicien\n- Convoyeur de fond\n- Bucheron\n- Jardinier","Valider","Annuler");
+		        ShowPlayerDialog(playerid,145,DIALOG_STYLE_LIST," ANPE ","- Livreur de Pizza\n- Fermier\n- Eboueur\n- Pilote de Ligne\n- Facteur\n- Pcheur\n- Voiturier\n- Camionneur\n- Mcanicien\n- Convoyeur de fond\n- Bucheron\n- Jardinier\n- Benevole d'entreprise","Valider","Annuler");
                 player_Dialog[playerid]=1;
 			}
 		    if(listitem == 1)
@@ -35800,6 +35829,10 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 		        {SetPlayerCheckpoint(playerid,1174.0000,-485.0000,26.5400,5.0);}
             if(listitem==11)
 		        {SetPlayerCheckpoint(playerid,325.5000,-1516.5000,36.0391,5.0);}
+            // [JOBS NEW] Benevole d'entreprise (docks LS) : ajoute EN FIN de
+            // liste, les index 0 a 11 ci-dessus ne bougent pas.
+            if(listitem==12)
+		        {SetPlayerCheckpoint(playerid,2428.9304,-2075.8716,13.5538,5.0);}
 		}
 		else if(player_Dialog[playerid] == 2)
 		{
@@ -67231,11 +67264,14 @@ public OnPlayerCommandText(playerid, cmdtext[])
 			}
 			// [FIX MESSAGE] Le message "vous devez etre dans un vehicule" etait
 			// affiche pour TOUS les autres jobs sans distinction, y compris ceux
-			// (13 a 18, 20, 21) qui n'ont tout simplement aucune mission codee -
+			// (16, 18, 20, 21) qui n'ont tout simplement aucune mission codee -
 			// un joueur avec ce metier ne pouvait jamais savoir pourquoi rien ne
 			// se passait. On distingue maintenant les deux cas.
-			// [JOBS NEW] Bucheron et Jardinier demarrent bien par /job debut.
-			else if(PlayerInfo[playerid][pJob] == 14 || PlayerInfo[playerid][pJob] == 15)
+			// [JOBS NEW] Bucheron, Jardinier et Benevole d'entreprise demarrent
+			// bien par /job debut. Le Benevole ouvre d'abord le choix de son
+			// entreprise employeuse : sa prise de service se fait a la reponse
+			// du dialogue, pas tout de suite.
+			else if(PlayerInfo[playerid][pJob] == 13 || PlayerInfo[playerid][pJob] == 14 || PlayerInfo[playerid][pJob] == 15)
 			{
 				JobsNew_Start(playerid);
 			}
@@ -67292,6 +67328,9 @@ public OnPlayerCommandText(playerid, cmdtext[])
             // [JOBS NEW] Jardinier : employeur de Richman (Los Santos)
             else if(PlayerInfo[playerid][pJob] == 15)
 		        {SetPlayerCheckpoint(playerid,325.5000,-1516.5000,36.0391,5.0);}
+            // [JOBS NEW] Benevole d'entreprise : employeur des docks de LS
+            else if(PlayerInfo[playerid][pJob] == 13)
+		        {SetPlayerCheckpoint(playerid,2428.9304,-2075.8716,13.5538,5.0);}
 		}
 		else if(strcmp(tmp,"quitter", true) == 0)
 		{

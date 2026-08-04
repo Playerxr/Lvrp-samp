@@ -49,7 +49,10 @@ static const Float:jobEmployer[][4] = {
 	{14.0, 1174.0000,  -485.0000, 26.5400}, // Bucheron
 	{17.0, 1008.4938, -1358.3921, 13.3909}, // Mecanicien
 	{19.0, 1516.9620, -1022.1600, 23.8301}, // Transporteur de fonds
-	{20.0, 1059.8000, -1350.6000, 13.5469}  // Chauffeur de Taxi
+	{20.0, 1059.8000, -1350.6000, 13.5469}, // Chauffeur de Taxi
+	// [JOBS NEW] Ajoute EN FIN de tableau : les index precedents, qui servent
+	// aussi de numero de ligne dans le dialogue /jobs, ne bougent pas.
+	{13.0, 2428.9304, -2075.8716, 13.5538}  // Benevole d'entreprise (docks LS)
 };
 
 new jobStreak[MAX_PLAYERS];
