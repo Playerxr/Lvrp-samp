@@ -9724,9 +9724,17 @@ stock GetJobName(id)
 	    // le metier est PRENABLE, mais aucune mission n'est codee. /job debut affiche
 	    // bien "pas encore de mission jouable". A implanter ou a retirer.
 	    case 20: {name="Chauffeur de taxi";}
-	    // [PAS IMPLEMENTE] 21 Avocat : aucune mission codee. Recoupe le module
-	    // Justice (Justice_*) : a concevoir avant d'etre code.
-	    case 21: {name="Avocat";}
+	    // [RETIRE] 21 "Avocat" : supprime a la demande de la proprietaire.
+	    // Avocat est deja le rang 3 de la faction Justice (Justice_RankNames,
+	    // FACTION_JUSTICE 14) : le metier faisait doublon avec la faction.
+	    //
+	    // Le retirer corrige aussi un vrai bug d'argent : la table des
+	    // salaires n'a que 20 cases (salaryJob[20]), et la paye lit
+	    // governement[3][salaryJob][pJob-1]. Avec pJob=21 l'index vaut 20,
+	    // soit une case APRES la fin du tableau - dans l'enum, juste apres
+	    // salaryJob[20] vient salaryPolice[8]. Un avocat touchait donc un
+	    // salaire de POLICIER, sans que rien ne plante.
+	    // Ne jamais ajouter de metier au-dela de 20 sans agrandir salaryJob.
 	}
     return name;
 }
