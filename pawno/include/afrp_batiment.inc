@@ -181,7 +181,11 @@ stock Bat_Cmd(playerid, const arg1[], const arg2[])
 	// reellement a ce joueur au plafond fixe dans streamer_Init(). Si les deux
 	// se touchent, la map manquante n'est pas absente - elle est juste au-dela
 	// du quota d'affichage.
-	if(strcmp(arg1, "objets", true) == 0)
+	// [FIX ORTHOGRAPHE] N'acceptait que "objets" (francais) : tape "objects"
+	// (anglais, reflexe naturel) tombait dans le bloc modelid plus bas et
+	// affichait "donne-moi un modelid" - message trompeur pour ce qui etait
+	// en realite la bonne commande, juste mal orthographiee.
+	if(strcmp(arg1, "objets", true) == 0 || strcmp(arg1, "objects", true) == 0 || strcmp(arg1, "obj", true) == 0)
 	{
 		new visibles = Streamer_CountVisibleItems(playerid, STREAMER_TYPE_OBJECT, 0);
 		new total = Streamer_CountItems(STREAMER_TYPE_OBJECT, 1);
