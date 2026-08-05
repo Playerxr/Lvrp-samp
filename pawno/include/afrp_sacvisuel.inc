@@ -624,12 +624,13 @@ stock SacV_Details(playerid)
 	return SacV_Msg(playerid, s);
 }
 
-// [LIEN REEL] /utiliser aliment existe deja dans le gamemode (dialogue 147)
-// et consomme exactement ces memes modeles depuis le meme inventaire : on
-// l'appelle au lieu de refaire la consommation ici. Pour tout le reste
-// (drogues, outils...), chaque objet a deja sa propre commande dediee dans le
-// gamemode ; en inventer une nouvelle ici aurait fait deux chemins pour la
-// meme action, avec le risque qu'ils divergent.
+// [LIEN REEL] /utiliser aliment et /utiliser drogue <nom> existent deja dans
+// le gamemode (LVRP.pwn ~70372) et consomment exactement ces memes modeles
+// depuis le meme inventaire : on les appelle au lieu de refaire la
+// consommation ici. En inventer une deuxieme aurait fait deux chemins pour la
+// meme action (doses en cours, ingredients requis...), avec le risque qu'ils
+// divergent - c'est pour ca que le bouton "Utiliser" ne faisait jusqu'ici que
+// les aliments : personne n'avait fini le reste de ce branchement.
 stock SacV_Utiliser(playerid)
 {
 	new slot = SacV_SlotSel(playerid);
@@ -640,6 +641,53 @@ stock SacV_Utiliser(playerid)
 	{
 		SacV_Fermer(playerid);
 		return CallLocalFunction("OnPlayerCommandText", "is", playerid, "/utiliser aliment");
+	}
+
+	// [DROGUES] memes modeles que /utiliser drogue <nom>, voir GetItemName().
+	switch(modelid)
+	{
+		case 1575: // Weed brute -> se roule en joint (consomme Feuilles + Tabac)
+		{
+			SacV_Fermer(playerid);
+			return CallLocalFunction("OnPlayerCommandText", "is", playerid, "/utiliser drogue weed rouler");
+		}
+		case 1485: // Joint deja roule -> s'allume et se fume (consomme un Briquet)
+		{
+			SacV_Fermer(playerid);
+			return CallLocalFunction("OnPlayerCommandText", "is", playerid, "/utiliser drogue weed utiliser");
+		}
+		case 1579: // Heroine -> injection directe
+		{
+			SacV_Fermer(playerid);
+			return CallLocalFunction("OnPlayerCommandText", "is", playerid, "/utiliser drogue heroine");
+		}
+		case 1578: // Cocaine -> sniff direct
+		{
+			SacV_Fermer(playerid);
+			return CallLocalFunction("OnPlayerCommandText", "is", playerid, "/utiliser drogue cocaine");
+		}
+		case 1580: // Ecstasy -> avale directement
+		{
+			SacV_Fermer(playerid);
+			return CallLocalFunction("OnPlayerCommandText", "is", playerid, "/utiliser drogue ecstasy");
+		}
+		case 19897: // Cigarettes -> meme commande que /fumer (consomme un Briquet)
+		{
+			SacV_Fermer(playerid);
+			return CallLocalFunction("OnPlayerCommandText", "is", playerid, "/fumer");
+		}
+		case 328, 2751, 2351: // Feuilles, Tabac, Briquet : ingredients, pas d'usage seul
+		{
+			return SacV_Msg(playerid, "{FF8888}Cet objet sert d'ingr\xe9dient (roulage ou allumage) : il s'utilise tout seul au bon moment, pas depuis ce bouton.");
+		}
+		case 1950: // Morphine -> matiere premiere de la Mafia (/mafia drogue hero synt), pas un usage simple
+		{
+			return SacV_Msg(playerid, "{FF8888}La morphine est une mati\xe8re premi\xe8re de fabrication (voir {FFFFFF}/mafia drogue heroine synth\xe9tiser{FF8888}), pas un objet \xe0 utiliser directement.");
+		}
+		case 2966: // Talkie Walkie -> radio vocale, deplacee dans le menu Y (touche Y, bouton Phone)
+		{
+			return SacV_Msg(playerid, "{8B8B00}Talkie Walkie {FFFFFF}: ouvre le menu Y (touche Y) puis {FFFF00}Phone{FFFFFF} pour rejoindre une radio.");
+		}
 	}
 
 	new s[190];
