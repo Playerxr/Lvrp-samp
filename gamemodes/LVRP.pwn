@@ -70571,10 +70571,36 @@ public OnPlayerCommandText(playerid, cmdtext[])
 	}
 	else if(strcmp(cmd, "/voipstats", true) == 0)
 	{
-		new hasVoice = GetPVarInt(playerid, "hasVoiceOnClient");
-		if(hasVoice == 0)      msg_Client(playerid, COLOR_WHITE, "{8B8B00}\xbb VOIP \xab{FF0000} Aucun plugin VOIP install\xe9.");
-		else if(hasVoice == 2) msg_Client(playerid, COLOR_WHITE, "{8B8B00}\xbb VOIP \xab{FFFF00} Plugin install\xe9 - SANS micro.");
-		else if(hasVoice == 1) msg_Client(playerid, COLOR_WHITE, "{8B8B00}\xbb VOIP \xab{00FF00} Plugin install\xe9 - AVEC micro.");
+		// [FIX DIAGNOSTIC] Cette commande lisait le PVar "hasVoiceOnClient",
+		// pose par l'ancien filterscript sampvoice.amx. Or ce filterscript est
+		// ecrit pour une AUTRE version du plugin : ses appels echouent tous, le
+		// PVar n'est donc jamais renseigne et la commande repondait "aucun
+		// plugin" a tout le monde, y compris aux joueurs qui l'ont vraiment.
+		// On interroge desormais le plugin en direct, et on affiche les valeurs
+		// BRUTES : c'est la seule facon de savoir ce que le serveur voit
+		// reellement, sans intermediaire qui puisse mentir.
+		new vsVer = SvGetVersion(playerid);
+		new vsMic = SvHasMicro(playerid);
+		new vsMsg[190];
+
+		format(vsMsg, sizeof(vsMsg), "{8B8B00}\xbb VOIP \xab{FFFFFF} Valeurs brutes vues par le serveur : version = {FFFF00}%d{FFFFFF} | micro = {FFFF00}%d", vsVer, vsMic);
+		msg_Client(playerid, COLOR_WHITE, vsMsg);
+
+		if(vsVer == SV_NULL)
+		{
+			msg_Client(playerid, COLOR_WHITE, "{8B8B00}\xbb VOIP \xab{FF0000} Le plugin client SampVoice n'est PAS detecte sur ton jeu.");
+			msg_Client(playerid, COLOR_WHITE, "{AAAAAA}Version = 0 signifie que ton client n'a jamais annonce SampVoice au serveur. Aucun reglage cote serveur ne peut y changer quelque chose : c'est le jeu, cote joueur, qui doit avoir le composant SampVoice.");
+		}
+		else if(vsMic != SV_TRUE)
+		{
+			msg_Client(playerid, COLOR_WHITE, "{8B8B00}\xbb VOIP \xab{FFFF00} Plugin detecte, mais AUCUN micro utilisable.");
+			msg_Client(playerid, COLOR_WHITE, "{AAAAAA}Verifie le micro par defaut de ton appareil et l'autorisation micro donnee au jeu.");
+		}
+		else
+		{
+			msg_Client(playerid, COLOR_WHITE, "{8B8B00}\xbb VOIP \xab{00FF00} Plugin ET micro detectes : la voix doit fonctionner.");
+			msg_Client(playerid, COLOR_WHITE, "{AAAAAA}Si tu n'entends toujours rien : /radio (faction) ou /local (proximite 20m) pour ouvrir le micro.");
+		}
 		return 1;
 	}
 	else if(strcmp(cmd, "/frequency", true) == 0)
