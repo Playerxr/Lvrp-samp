@@ -5355,8 +5355,6 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 #include <afrp_sacvisuel>
 // [RACCOURCIS] menu qui regroupe /sac, /job, /emotes, /maison, /vehicule
 #include <afrp_raccourcis>
-// [RADIO WIDGET] icone affichee pendant qu'on parle en mode radio
-#include <afrp_radiowidget>
 // [BANQUE] panneau visuel bancoverde.pwn + emprunt (remplace le menu liste dialog 86)
 #include <afrp_banque>
 // [RADIO VOICE] vrai canal vocal SampVoice derriere /radio et /local
@@ -5364,6 +5362,12 @@ new const TRADE_NAMES[4][] = {"Bitcoin AFRP","Ethereum AFRP","Or (once)","Action
 // [VOIX LOCALE] Voix de proximite 20m. APRES afrp_radiovoice : il appelle
 // RadioVoice_Disable() pour que les deux modes s'excluent.
 #include <afrp_voixlocale>
+// [TALKIE] interface talkie-walkie des factions legales. REMPLACE l'ancien
+// afrp_radiowidget.inc (meme export de textdraws, sans aucun texte dessus) :
+// les deux auraient dessine les 23 memes formes au meme endroit. A INCLURE
+// APRES afrp_radiovoice : il utilise RadioVoice_IsLegalFaction et
+// radioVoiceCapable.
+#include <afrp_talkie>
 // [BASKET] dribble, paniers et points (remet en marche le basket existant)
 #include <afrp_basket>
 // [SPEEDO2] tableau de bord moderne (habillage alternatif du compteur)
@@ -24227,7 +24231,7 @@ public OnPlayerDisconnect(playerid, reason)
     Banque_OnDisconnect(playerid); // [BANQUE] reset des flags (textdraws globaux, rien a detruire)
     MenuRapide_OnDisconnect(playerid); // [MENU RAPIDE] detruit les textdraws Inventory/Phone/Anims/Toys
     Raccourcis_OnDisconnect(playerid); // [RACCOURCIS] annule un maintien en cours
-    RadioWidget_OnDisconnect(playerid); // [RADIO WIDGET] evite un affichage fantome a la reconnexion
+    Talkie_OnDisconnect(playerid); // [TALKIE] evite un talkie fantome a la reconnexion + libere ses 2 textdraws joueur
     RadioVoice_OnDisconnect(playerid); // [RADIO VOICE] detache du canal vocal en cours
     VoixLocale_OnDisconnect(playerid); // [VOIX LOCALE] detruit le stream de proximite du slot
     TopJour_OnDisconnect(playerid); // [TOP DU JOUR] detruit le panneau
@@ -30249,8 +30253,8 @@ public OnGameModeInit()
     Portes_Init();
     // [RESIDENCE] recharge le proprietaire et les points de la residence
     Residence_Init();
-    // [RADIO WIDGET] cree l'icone (une seule fois, affichee/cachee par joueur)
-    RadioWidget_Init();
+    // [TALKIE] cree les 23 formes du talkie (une seule fois, affichees/cachees par joueur)
+    Talkie_Init();
     // [BANQUE] cree le panneau bancoverde.pwn (une seule fois, affiche/cache par joueur)
     Banque_Init();
     // [RADIO VOICE] cree un canal vocal SampVoice par faction legale
@@ -49915,9 +49919,9 @@ public OnVehiclePaintjob(playerid, vehicleid, paintjobid)
 public OnPlayerVoiceStart(playerid)
 {
     if(!IsPlayerConnected(playerid) || IsPlayerNPC(playerid)) return 0;
-    // [RADIO WIDGET] avant le "return" vehicule ci-dessous : la radio marche
+    // [TALKIE] avant le "return" vehicule ci-dessous : la radio marche
     // aussi bien au volant qu'a pied.
-    RadioWidget_OnVoiceStart(playerid);
+    Talkie_OnVoiceStart(playerid);
     // FIX BUG : pas d'animation si le joueur est dans un vehicule (sinon il sort tout seul)
     if(IsPlayerInAnyVehicle(playerid)) return 1;
     // pvarTalkStats : utilise dans les conditions ci-dessous
@@ -49941,8 +49945,8 @@ public OnPlayerVoiceStart(playerid)
 public OnPlayerVoiceStop(playerid)
 {
     if(!IsPlayerConnected(playerid) || IsPlayerNPC(playerid)) return 0;
-    // [RADIO WIDGET] avant le "return" vehicule ci-dessous, meme raison qu'au demarrage.
-    RadioWidget_OnVoiceStop(playerid);
+    // [TALKIE] avant le "return" vehicule ci-dessous, meme raison qu'au demarrage.
+    Talkie_OnVoiceStop(playerid);
     // FIX : si en vehicule, on ne touche pas aux animations (sinon ejection)
     if(IsPlayerInAnyVehicle(playerid)) return 1;
     // En appel telephonique : on garde l'anim phone_in (main a l'oreille statique)
@@ -55980,6 +55984,12 @@ public OnPlayerCommandText(playerid, cmdtext[])
 			VoixLocale_StopPourRadio(playerid);
 			RadioVoice_Enable(playerid);
 			SetPVarInt(playerid, "talkStats", 3);
+			// [TALKIE] ouvre le talkie-walkie a l'ecran. Appele ICI et pas
+			// seulement via OnPlayerVoiceStart : un joueur sans plugin/micro
+			// n'atteint jamais ce callback (RadioVoice_Enable sort avant),
+			// alors que la radio ECRITE lui marche - son talkie s'affiche donc
+			// avec la mention "TEXTE SEUL" au lieu de ne pas s'afficher.
+			Talkie_OnRadioMode(playerid);
 			msg_Client(playerid, COLOR_WHITE, "{8B8B00}\xbb VOIP \xab{FFFFFF} Mode radio active.");
 			return 1;
 		}
@@ -70538,7 +70548,14 @@ public OnPlayerCommandText(playerid, cmdtext[])
 		// maintenant la VRAIE voix de proximite (20 m), qui n'avait jamais
 		// fonctionne (voir afrp_voixlocale.inc). VoixLocale_Toggle coupe
 		// lui-meme la radio et remet talkStats a 0 quand il s'active.
-		return VoixLocale_Toggle(playerid);
+		new talkieResLocal = VoixLocale_Toggle(playerid);
+		// [TALKIE] /local fait toujours sortir du mode radio : on ferme le
+		// talkie. Apres le toggle, et sans condition, car un joueur sans
+		// plugin/micro n'etait attache a aucun canal - RadioVoice_Disable
+		// n'appelle donc pas OnPlayerVoiceStop chez lui et son talkie
+		// resterait affiche indefiniment.
+		Talkie_Hide(playerid);
+		return talkieResLocal;
 	}
 	else if(strcmp(cmd, "/voipstats", true) == 0)
 	{

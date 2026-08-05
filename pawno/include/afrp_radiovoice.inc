@@ -42,7 +42,8 @@
 	=== ICONE DU WIDGET ===
 	Comme SvPlay/SvStop demarrent/arretent le micro de facon deterministe (pas
 	de touche a surveiller, pas de polling necessaire), on appelle directement
-	OnPlayerVoiceStart/Stop (afrp_radiowidget.inc) au moment ou on appelle
+	OnPlayerVoiceStart/Stop (afrp_talkie.inc, qui a remplace afrp_radiowidget.inc)
+	au moment ou on appelle
 	SvPlay/SvStop : l'icone s'allume des l'entree en mode radio et s'eteint des
 	la sortie, sans dependre d'un evenement du plugin qui n'existe pas dans
 	cette version (pas de callback "le joueur parle" cote serveur).
@@ -127,7 +128,7 @@ stock RadioVoice_DetachCurrent(playerid)
 	if(pm <= 0 || pm >= RADIOVOICE_MAX_FACTION) return 0;
 
 	SvStop(playerid, RADIOVOICE_CHANNEL);
-	OnPlayerVoiceStop(playerid); // eteint l'icone du widget
+	OnPlayerVoiceStop(playerid); // ferme le talkie a l'ecran (afrp_talkie.inc)
 
 	new voiceStream = radioVoiceStream[pm];
 	if(voiceStream == SV_NULL) return 0;
@@ -162,7 +163,7 @@ stock RadioVoice_Enable(playerid)
 	SvAttachStream(playerid, voiceStream, RADIOVOICE_CHANNEL);
 	SvPlay(playerid, RADIOVOICE_CHANNEL); // demarre reellement le micro sur ce canal
 	radioVoiceAttachedTo[playerid] = pm;
-	OnPlayerVoiceStart(playerid); // allume l'icone du widget
+	OnPlayerVoiceStart(playerid); // ouvre le talkie a l'ecran (afrp_talkie.inc)
 	return 1;
 }
 
