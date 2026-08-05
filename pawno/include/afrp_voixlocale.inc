@@ -159,6 +159,12 @@ stock VoixLocale_Activer(playerid)
 	voixDernierY[playerid] = vy;
 	voixDernierZ[playerid] = vz;
 
+	// [FIX VOIX MUETTE] Activer le role Speaker sur CE canal avant de diffuser.
+	// Le plugin separe le role Listener (entendre) du role Speaker (micro) :
+	// sans SvEnableSpeaker, SvAttachStream + SvPlay ne transmettent rien, sans
+	// la moindre erreur. C'etait la cause de la voix muette cote radio, la
+	// meme omission existait ici.
+	SvEnableSpeaker(playerid, VOIXLOCALE_CHANNEL);
 	SvAttachStream(playerid, voixStream[playerid], VOIXLOCALE_CHANNEL);
 	SvPlay(playerid, VOIXLOCALE_CHANNEL);
 	voixActive[playerid] = true;

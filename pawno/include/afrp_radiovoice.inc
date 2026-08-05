@@ -108,7 +108,20 @@ stock RadioVoice_OnConnect(playerid)
 {
 	radioVoiceAttachedTo[playerid] = 0;
 	radioVoiceCapable[playerid] = bool:(SvGetVersion(playerid) != SV_NULL && SvHasMicro(playerid) == SV_TRUE);
-	if(radioVoiceCapable[playerid]) SvEnableListener(playerid);
+	if(radioVoiceCapable[playerid])
+	{
+		SvEnableListener(playerid);
+		// [FIX VOIX MUETTE] Le plugin separe DEUX roles par joueur : Listener
+		// (il entend les streams auxquels il est abonne) et Speaker (son micro
+		// peut alimenter un stream). On n'activait que le premier. Resultat :
+		// tout le monde pouvait entendre, PERSONNE ne pouvait parler - et
+		// comme aucune de ces fonctions ne renvoie d'erreur visible, rien dans
+		// les logs ne le disait. C'est la cause de "la voix ne passe pas"
+		// malgre un plugin bien charge et des natives toutes presentes.
+		// Le canal est active explicitement plutot que "tous" (0), pour ne pas
+		// ouvrir des canaux que le gamemode n'utilise pas.
+		SvEnableSpeaker(playerid, RADIOVOICE_CHANNEL);
+	}
 	return 1;
 }
 

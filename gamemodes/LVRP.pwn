@@ -48776,6 +48776,18 @@ public OnPlayerModelSelectionEx(playerid, response, extraid, modelid)
 					return 1;
 	        	}
 			}
+	    	// [FIX INDEX NEGATIF] player_Dialog sert de numero d'article (1..9) et
+	    	// indexe itemCost[20]. Il etait lu sans aucun controle : un
+	    	// player_Dialog nul ou negatif produisait un index hors tableau
+	    	// ("Run time error 4: negative index -7" repete en boucle dans les
+	    	// logs, depuis OnPlayerModelSelectionEx). On refuse proprement au
+	    	// lieu de lire n'importe ou en memoire.
+	    	if(player_Dialog[playerid] < 1 || player_Dialog[playerid] > 20)
+	    	{
+	    	    msg_Client(playerid, COLOR_INFO, "{CF9756}\xbb Info \xab{FFFFFF} Article invalide, recommence depuis le menu du magasin.");
+	    	    player_Dialog[playerid] = 0;
+	    	    return 1;
+	    	}
 	    	// [FIX] Prix 500 par defaut si le biz n'a pas configure ses prix
 	    	pay_tempPrice[playerid] = bizz[bizid][itemCost][player_Dialog[playerid]-1];
 	    	if(pay_tempPrice[playerid] <= 0) pay_tempPrice[playerid] = 500;
