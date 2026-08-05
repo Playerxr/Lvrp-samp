@@ -524,3 +524,35 @@ stock MM_Init()
 	printf("[DEPLACER MAP] %d map(s) deplacee(s) sur %d.", n, MM_MAX_MAPS);
 	return n;
 }
+
+// [DIAGNOSTIC MAP INVISIBLE] A appeler a la FIN d'OnGameModeInit, une fois
+// toutes les maps creees (y compris le Coffee Shop, qui nait avec le pack de
+// mappings, plus tard que les autres).
+// Raison d'etre : le symptome "la map est deplacee mais on ne la voit pas" ne
+// peut pas etre tranche a distance. Ce recapitulatif ecrit dans server_log.txt
+// l'ancrage reel ET le nombre d'objets reellement construits pour chaque map,
+// donc un simple envoi de log suffit a savoir si les objets existent (donc
+// probleme de hauteur/emplacement) ou si la reconstruction a echoue (0 objet).
+// Cela evite de faire taper une commande a quelqu'un qui joue deja.
+stock MM_LogEtat()
+{
+	print("[DEPLACER MAP] --- Etat des maps deplacables ---");
+	for(new m = 0; m < MM_MAX_MAPS; m++)
+	{
+		// Le Coffee Shop est compte par le pack de mappings, pas ici : son
+		// mmNb reste a 0 par construction (MM_Begin(..., false)), ne pas le
+		// lire comme un echec.
+		if(m == MM_COFFEE)
+		{
+			printf("[DEPLACER MAP] %-28s %s | ancre %.1f / %.1f / %.1f | objets comptes par /mappack",
+				mmNom[m], (mmDeplacee[m] == 1) ? ("DEPLACEE") : ("origine  "),
+				MM_AnchorX(m), MM_AnchorY(m), MM_AnchorZ(m));
+			continue;
+		}
+		printf("[DEPLACER MAP] %-28s %s | ancre %.1f / %.1f / %.1f | %d objet(s) crees",
+			mmNom[m], (mmDeplacee[m] == 1) ? ("DEPLACEE") : ("origine  "),
+			MM_AnchorX(m), MM_AnchorY(m), MM_AnchorZ(m), mmNb[m]);
+	}
+	print("[DEPLACER MAP] --- 0 objet sur une map DEPLACEE = reconstruction ratee ---");
+	return 1;
+}

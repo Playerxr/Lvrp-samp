@@ -30238,6 +30238,11 @@ public OnGameModeInit()
     MapEd_Init();
     // [MAPPACK] recree les cartes importees qui sont allumees
     MapPack_Init();
+    // [DEPLACER MAP] Recapitulatif APRES creation de toutes les maps (le Coffee
+    // Shop nait avec le pack ci-dessus) : ancrage + nombre d'objets reellement
+    // construits, ecrits dans server_log.txt pour diagnostiquer a distance une
+    // map deplacee mais invisible.
+    MM_LogEtat();
     // [POSTE POLICE] recree les exemplaires poses du poste de police routiere
     Pp_Init();
     // [PORTES] recharge les portes reliant les mappings au jeu
