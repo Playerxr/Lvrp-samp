@@ -58,14 +58,14 @@
 	pour corriger sans toucher au reste si l'affichage tombe a cote.
 
 	=== POURQUOI PAS DE LIGNE "TRANSMISSION" QUI CLIGNOTE ===
-	Le plugin SampVoice installe ne previent PAS le serveur quand un joueur
-	parle reellement (voir l'en-tete d'afrp_radiovoice.inc : aucun callback de
-	ce genre dans cette version). Afficher "TRANSMISSION" en alternance avec
-	"EN ECOUTE" aurait donc ete de la pure decoration, deconnectee de ce qui
-	se passe vraiment - exactement le piege qui a laisse la voix de ce serveur
-	muette pendant des mois. Ce qu'on sait de facon certaine, c'est que
-	/radio ouvre le micro en continu sur le canal de la faction (SvPlay), donc
-	l'ecran dit "MICRO OUVERT". C'est vrai, et ca ne promet rien de plus.
+	Le vrai filterscript (sampvoice.pwn) appelle bien OnPlayerVoiceStart/Stop
+	a chaque appui/relachement de la touche talkie (OnPlayerActivationKeyPress/
+	Release cote filterscript, via CallRemoteFunction) : le serveur SAIT donc
+	quand quelqu'un parle vraiment. Mais ce module ne distingue pas encore
+	"micro ouvert" de "en train de parler la seconde presente" - Talkie_Show/
+	Hide suivent le mode (radio actif ou non), pas l'instant du appui. Ecrire
+	"MICRO OUVERT" reste donc vrai : le canal est ouvert, prêt a transmettre
+	des que le joueur appuie sur la touche talkie.
 
 	=== JOUEUR SANS PLUGIN OU SANS MICRO ===
 	Il voit quand meme le talkie, avec "TEXTE SEUL" en ligne d'etat. Le cacher
@@ -408,8 +408,8 @@ stock Talkie_MajTexte(playerid)
 	PlayerTextDrawSetString(playerid, talkieTdFaction[playerid], talkieNom);
 
 	// Etat : on ne dit que ce qui est verifiable (voir l'en-tete).
-	// radioVoiceCapable est renseigne a la connexion par afrp_radiovoice.inc.
-	if(radioVoiceCapable[playerid])
+	// RadioVoice_IsCapable lit le PVar "hasVoiceOnClient", pose par sampvoice.pwn.
+	if(RadioVoice_IsCapable(playerid))
 		PlayerTextDrawSetString(playerid, talkieTdStatut[playerid], "MICRO OUVERT");
 	else
 		PlayerTextDrawSetString(playerid, talkieTdStatut[playerid], "TEXTE SEUL");
