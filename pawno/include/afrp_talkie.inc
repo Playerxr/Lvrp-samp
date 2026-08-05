@@ -526,7 +526,17 @@ public Talkie_Tick()
 {
 	for(new talkieI = 0; talkieI < MAX_PLAYERS_CURRENT + 1; talkieI++)
 	{
-		if(!talkieAffiche[talkieI]) continue;
+		if(!talkieAffiche[talkieI])
+		{
+			// Rattrapage : le joueur EST en mode radio mais n'a pas le talkie.
+			// Cas normal - il avait le sac ou le telephone ouvert au moment du
+			// /radio, Talkie_Show a refuse pour ne pas superposer deux
+			// panneaux. Des qu'il les referme, le talkie apparait enfin au
+			// lieu de rester absent jusqu'au prochain /local puis /radio.
+			if(IsPlayerConnected(talkieI) && GetPVarInt(talkieI, "talkStats") == 3)
+				Talkie_Show(talkieI);
+			continue;
+		}
 		if(!IsPlayerConnected(talkieI)) { Talkie_Hide(talkieI); continue; }
 
 		new talkiePm = PlayerInfo[talkieI][pMember];
