@@ -23590,6 +23590,7 @@ public OnPlayerConnect(playerid)
     Hopital_MapRemoveBuildings(playerid); // [HOPITAL] retire les 7 batiments GTA remplaces par le QG (par joueur, exige par RemoveBuildingForPlayer)
     Bat_OnConnect(playerid); // [BATIMENT] rejoue les retraits manuels (/a batiment), ex: collisions apres /a deplacer
     Commerces_MapRemoveBuildings(playerid); // [COMMERCES] idem pour les 11 batiments remplaces par le 24/7, le mini market et le magasin de vetements
+    MM_NettoyerBatiments(playerid); // [DEPLACER MAP] retire (-1 = tous) les batiments GTA du NOUVEL emplacement de chaque map deplacee - les listes precises ci-dessus ne visent que l'ancien
     Portes_OnConnect(playerid); // [PORTES] rien a reinitialiser, garde le crochet pret
     Sp2_OnConnect(playerid); // [SPEEDO2] sinon le slot garde la preference du precedent occupant
     Bsk_OnConnect(playerid); // [BASKET] libere un ballon reste au nom du precedent occupant

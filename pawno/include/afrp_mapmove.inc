@@ -14,6 +14,8 @@
 	  /a deplacer reset <nom>      remet la map ou son auteur l'avait mise
 	  /a deplacer aller <nom>      teleporte sur la map et dit si elle existe
 	  /a deplacer hauteur <n> <v>  remonte (v>0) ou descend (v<0) la map
+	  /a deplacer nettoyer <n> <r> regle le rayon de retrait auto des batiments
+	                                GTA du nouvel endroit (0 = desactive)
 	(admin niveau 3, comme les autres /a de creation/edition)
 
 	COMMENT UNE MAP EST DEPLACEE : chaque objet garde sa position d'origine
@@ -43,14 +45,35 @@
 	  - Project_1 : les deux points d'entree/sortie passent par MM_Point a
 	    chaque test, donc ils suivent sans etat a synchroniser.
 
-	CE QUI NE SUIT PAS, ET IL FAUT LE SAVOIR : les RemoveBuildingForPlayer.
-	Une map qui remplace un batiment GTA le fait disparaitre a l'ancienne
-	adresse. Si on deplace la map, le trou reste la-bas et le batiment GTA du
-	nouvel endroit, lui, ne disparait pas. SA-MP ne sait retirer un batiment
-	qu'a la connexion du joueur, donc meme en recalculant on ne pourrait rien
-	faire pour les joueurs deja en ligne. C'est une limite du jeu : un
-	deplacement de quelques metres passe inapercu, un deplacement de quartier
-	demande de me redonner la nouvelle liste de batiments a retirer.
+	CE QUI NE SUIT PAS TOUT SEUL, ET COMMENT C'EST CORRIGE : les
+	RemoveBuildingForPlayer d'origine (Hopital_MapRemoveBuildings,
+	MapPack_Retraits...) visent des batiments GTA precis, a leurs coordonnees
+	REELLES et fixes dans le jeu - ils ne bougent pas avec la map. Deplacer la
+	map ailleurs laisse donc le(s) batiment(s) GTA du NOUVEL endroit bien
+	debout, solides, par-dessus/autour du nouveau decor : la map deplacee
+	"semble invisible" alors qu'elle est bien creee (confirme par
+	MM_LogEtat - Hopital et Coffee Shop ont ete reconstruits avec leur plein
+	compte d'objets apres un deplacement, le 5 aout).
+	[NETTOYAGE AUTO] Comme on ne connait jamais a l'avance quels batiments
+	occupent un nouvel emplacement, MM_NettoyerBatiments() appelle
+	RemoveBuildingForPlayer(playerid, -1, ancre, rayon) sur chaque map
+	DEPLACEE : modelid -1 retire TOUS les batiments GTA dans le rayon autour
+	du point d'ancrage, sans avoir besoin de connaitre leur modelid un par un
+	(confirme par la doc officielle open.mp/SA-MP 0.3.7 : "-1 pour le modelid
+	retire tous les objets dans le rayon donne"). Rayon par defaut
+	MM_CLEAR_RADIUS_DEFAUT, ajustable par map via /a deplacer nettoyer <nom>
+	<rayon>.
+	[POURQUOI FUSIONNER LES ZONES QUI SE CHEVAUCHENT] La doc previent aussi :
+	retirer DEUX FOIS le meme objet fait planter le client. Si deux maps
+	deplacees tombent pres l'une de l'autre (c'est arrive : Hopital et Coffee
+	Shop n'etaient qu'a 1 m d'ecart le 5 aout), leurs deux cercles de
+	nettoyage se recouperaient et cibleraient les memes vrais batiments deux
+	fois. MM_NettoyerBatiments() fusionne ces cas en UN seul appel qui
+	couvre les deux zones, au lieu de faire les appels independamment.
+	Toujours vrai malgre tout ca : SA-MP ne retire un batiment qu'a la
+	connexion du joueur, donc rien de tout ceci ne change quoi que ce soit
+	pour un joueur deja connecte - seule une reconnexion applique un nouveau
+	nettoyage.
 
 	PERSISTANCE : meme principe que MapPack_Save/MapPack_Load
 	(afrp_mappack.inc) - un fichier texte dans scriptfiles, relu au demarrage
@@ -126,6 +149,13 @@ new Float:mmAncY[MM_MAX_MAPS];
 new Float:mmAncZ[MM_MAX_MAPS];
 new Float:mmAncRot[MM_MAX_MAPS];
 new mmDeplacee[MM_MAX_MAPS];
+
+// [NETTOYAGE AUTO] Rayon de retrait "-1" (voir en-tete) autour de l'ancrage
+// d'une map DEPLACEE. Point de depart raisonnable, pas une mesure : a
+// ajuster au vu du jeu avec /a deplacer nettoyer <nom> <rayon>. N'a aucun
+// effet tant que la map n'est pas deplacee (mmDeplacee[m] == 0).
+#define MM_CLEAR_RADIUS_DEFAUT   45.0
+new Float:mmClearRadius[MM_MAX_MAPS] = {MM_CLEAR_RADIUS_DEFAUT, ...};
 
 // Carte en cours de construction (MM_Begin/MM_End) et suivi de ses objets.
 new mmCourante = -1;
@@ -240,11 +270,11 @@ stock MM_Save()
 	if(fexist(MM_FILE)) fremove(MM_FILE);
 	new File:f = fopen(MM_FILE, io_write);
 	if(!f) return 0;
-	new line[128];
+	new line[160];
 	for(new m = 0; m < MM_MAX_MAPS; m++)
 	{
 		if(mmDeplacee[m] != 1) continue;
-		format(line, sizeof(line), "%d|%f|%f|%f|%f\n", m, mmAncX[m], mmAncY[m], mmAncZ[m], mmAncRot[m]);
+		format(line, sizeof(line), "%d|%f|%f|%f|%f|%f\n", m, mmAncX[m], mmAncY[m], mmAncZ[m], mmAncRot[m], mmClearRadius[m]);
 		fwrite(f, line);
 	}
 	fclose(f);
@@ -279,6 +309,7 @@ stock MM_Load()
 		mmAncY[m] = mmPivotY[m];
 		mmAncZ[m] = mmPivotZ[m];
 		mmAncRot[m] = 0.0;
+		mmClearRadius[m] = MM_CLEAR_RADIUS_DEFAUT;
 		mmNb[m] = 0;
 	}
 	if(!fexist(MM_FILE)) return 0;
@@ -295,6 +326,11 @@ stock MM_Load()
 		MM_Champ(line, 2, buf, sizeof(buf)); mmAncY[m] = floatstr(buf);
 		MM_Champ(line, 3, buf, sizeof(buf)); mmAncZ[m] = floatstr(buf);
 		MM_Champ(line, 4, buf, sizeof(buf)); mmAncRot[m] = floatstr(buf);
+		// [COMPAT] Fichiers ecrits avant l'ajout du rayon de nettoyage (5e champ) :
+		// MM_Champ rend une chaine vide, floatstr("") = 0.0, qui DESACTIVERAIT le
+		// nettoyage pour une map deja deplacee. On garde le defaut dans ce cas.
+		mmClearRadius[m] = MM_CLEAR_RADIUS_DEFAUT;
+		if(MM_Champ(line, 5, buf, sizeof(buf)) > 0) mmClearRadius[m] = floatstr(buf);
 		mmDeplacee[m] = 1;
 		n++;
 	}
@@ -459,6 +495,34 @@ stock MM_Cmd(playerid, const arg1[], const arg2[], const arg3[] = "")
 		return 1;
 	}
 
+	// [NETTOYAGE AUTO] Regle le rayon de retrait des batiments GTA autour de
+	// l'ancrage actuel (voir MM_NettoyerBatiments, en-tete du fichier). 0 =
+	// desactive le nettoyage pour cette map (les batiments GTA du nouvel
+	// endroit resteront visibles).
+	if(strcmp(arg1, "nettoyer", true) == 0)
+	{
+		new mapN = MM_Trouver(arg2);
+		if(mapN == -1 || !strlen(arg3))
+		{
+			MM_Msg(playerid, "{FF4444}Usage : {FFFFFF}/a deplacer nettoyer <nom> <rayon>");
+			MM_Msg(playerid, "{AAAAAA}Rayon en metres autour du point d'ancrage. 0 desactive le nettoyage pour cette map.");
+			return MM_Liste(playerid);
+		}
+		new Float:rayonN = floatstr(arg3);
+		if(rayonN < 0.0) return MM_Msg(playerid, "{FF4444}Le rayon ne peut pas etre negatif.");
+		mmClearRadius[mapN] = rayonN;
+		MM_Save();
+
+		new sn[190];
+		if(rayonN <= 0.0)
+			format(sn, sizeof(sn), "{00FF00}%s : nettoyage automatique desactive.", mmNom[mapN]);
+		else
+			format(sn, sizeof(sn), "{00FF00}%s : rayon de nettoyage regle a %.0f m.", mmNom[mapN], rayonN);
+		MM_Msg(playerid, sn);
+		MM_Msg(playerid, "{AAAAAA}Reconnecte-toi pour appliquer le nouveau rayon (SA-MP ne retire les batiments qu'a la connexion).");
+		return 1;
+	}
+
 	new bool:reset = (strcmp(arg1, "reset", true) == 0 || strcmp(arg1, "annuler", true) == 0);
 	new map = reset ? MM_Trouver(arg2) : MM_Trouver(arg1);
 	if(map == -1)
@@ -509,8 +573,60 @@ stock MM_Cmd(playerid, const arg1[], const arg2[], const arg3[] = "")
 	else
 		format(s, sizeof(s), "{00FF00}%s deplacee ici (%d objets recrees, angle %.0f).", mmNom[map], n, mmAncRot[map]);
 	MM_Msg(playerid, s);
-	MM_Msg(playerid, "{AAAAAA}Les batiments GTA retires restent retires a l'ancienne adresse : sur un gros deplacement, previens-moi pour refaire la liste.");
+	if(reset)
+	{
+		MM_Msg(playerid, "{AAAAAA}Reconnecte-toi pour revoir les batiments GTA d'origine a cette adresse (SA-MP ne les remet qu'a la connexion).");
+	}
+	else
+	{
+		format(s, sizeof(s), "{AAAAAA}Les batiments GTA du nouvel endroit seront retires automatiquement (rayon %.0f m) a la PROCHAINE connexion. Pas assez ou trop retire ? /a deplacer nettoyer %s <rayon>.", mmClearRadius[map], mmCle[map]);
+		MM_Msg(playerid, s);
+	}
 	return 1;
+}
+
+// ============================================================================
+// NETTOYAGE AUTOMATIQUE DES BATIMENTS GTA (voir en-tete du fichier)
+// ============================================================================
+// A appeler a OnPlayerConnect, apres Hopital_MapRemoveBuildings et
+// Commerces_MapRemoveBuildings (leurs listes precises, a l'ancienne adresse,
+// restent utiles et ne font pas double emploi : elles visent l'ANCIEN
+// emplacement, celui-ci vise le NOUVEL emplacement de chaque map DEPLACEE).
+stock MM_NettoyerBatiments(playerid)
+{
+	new bool:mmZoneFaite[MM_MAX_MAPS];
+	new n = 0;
+	for(new m = 0; m < MM_MAX_MAPS; m++)
+	{
+		if(mmDeplacee[m] != 1 || mmClearRadius[m] <= 0.0 || mmZoneFaite[m]) continue;
+
+		new Float:cx = MM_AnchorX(m), Float:cy = MM_AnchorY(m), Float:cz = MM_AnchorZ(m);
+		new Float:cr = mmClearRadius[m];
+
+		// [ANTI CRASH] Fusionne avec toute autre map deplacee dont le cercle de
+		// nettoyage chevauche celui-ci : appeler RemoveBuildingForPlayer(-1,...)
+		// deux fois sur une zone qui se recoupe reciblerait les memes vrais
+		// batiments deux fois, ce que la doc SA-MP dit explicitement faire
+		// planter le client. Cas reel constate le 5 aout (Hopital et Coffee
+		// Shop a environ 1 m l'un de l'autre).
+		for(new m2 = m + 1; m2 < MM_MAX_MAPS; m2++)
+		{
+			if(mmDeplacee[m2] != 1 || mmClearRadius[m2] <= 0.0 || mmZoneFaite[m2]) continue;
+			new Float:dx = MM_AnchorX(m2) - cx, Float:dy = MM_AnchorY(m2) - cy;
+			new Float:dist = floatsqroot(dx * dx + dy * dy);
+			if(dist < cr + mmClearRadius[m2])
+			{
+				new Float:besoin = dist + mmClearRadius[m2];
+				if(besoin > cr) cr = besoin;
+				mmZoneFaite[m2] = true;
+			}
+		}
+
+		RemoveBuildingForPlayer(playerid, -1, cx, cy, cz, cr);
+		mmZoneFaite[m] = true;
+		n++;
+	}
+	return n;
 }
 
 // ============================================================================
