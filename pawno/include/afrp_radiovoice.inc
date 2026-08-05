@@ -56,8 +56,6 @@
 #endif
 #define AFRP_RADIOVOICE_INCLUDED
 
-// pMember va jusqu'a 55 (Marine) dans la regle de faction legale ci-dessous.
-#define RADIOVOICE_MAX_FACTION   56
 // Reconciliation faction/canal (rattrape un changement de faction sans /local).
 #define RADIOVOICE_RECONCILE_MS  8000
 
@@ -101,18 +99,30 @@ stock RadioVoice_OnDisconnect(playerid)
 	return 1;
 }
 
-// Quitte le canal radio actuellement rejoint (si il y en a un). Utilise par
-// /local, par la deconnexion, et par la reconciliation faction/canal.
-stock RadioVoice_DetachCurrent(playerid)
+// [SORTIE UNIQUE] Quitte n'importe quel canal de groupe en cours - radio de
+// faction (/radio) OU frequence manuelle (/frequency) : les deux partagent le
+// MEME canal cote filterscript (un seul slot par joueur, voice_radiocall_radioid
+// dans sampvoice.pwn), donc une seule fonction de sortie evite que les deux
+// bookkeeping (radioVoiceAttachedTo ici, isUsingRadioVoip dans LVRP.pwn) se
+// desynchronisent. Utilisee par /frequency 0, /local, la deconnexion, la
+// reconciliation faction/canal, et le sous-menu talkie du menu Y.
+stock RadioVoice_LeaveAny(playerid)
 {
-	new pm = radioVoiceAttachedTo[playerid];
-	radioVoiceAttachedTo[playerid] = 0;
-	if(pm <= 0 || pm >= RADIOVOICE_MAX_FACTION) return 0;
+	if(!isUsingRadioVoip[playerid] && radioVoiceAttachedTo[playerid] == 0) return 0;
 
 	CallRemoteFunction("LeaveGroupVoiceChannel", "i", playerid);
-	isUsingRadioVoip[playerid] = false; // meme garde partagee que /frequency
+	isUsingRadioVoip[playerid] = false;
+	radioVoiceAttachedTo[playerid] = 0;
+	if(GetPVarInt(playerid, "talkStats") == 3) SetPVarInt(playerid, "talkStats", 0);
 	OnPlayerVoiceStop(playerid); // ferme le talkie a l'ecran (afrp_talkie.inc)
 	return 1;
+}
+
+// Quitte le canal radio actuellement rejoint (si il y en a un). Utilise par
+// /local et par la reconciliation faction/canal.
+stock RadioVoice_DetachCurrent(playerid)
+{
+	return RadioVoice_LeaveAny(playerid);
 }
 
 // Appele par /radio (sans texte), avant de basculer talkStats a 3.
@@ -131,14 +141,10 @@ stock RadioVoice_Enable(playerid)
 
 	if(radioVoiceAttachedTo[playerid] == pm) return 1; // deja sur le bon canal
 
-	// Deja sur /frequency (walkie manuel) : meme mecanisme cote filterscript,
-	// un seul canal de groupe actif a la fois. On le quitte proprement avant.
-	if(isUsingRadioVoip[playerid] && radioVoiceAttachedTo[playerid] == 0)
-	{
-		CallRemoteFunction("LeaveGroupVoiceChannel", "i", playerid);
-		isUsingRadioVoip[playerid] = false;
-	}
-	RadioVoice_DetachCurrent(playerid); // au cas ou la faction a change depuis le dernier /radio
+	// Quitte proprement tout canal en cours - faction precedente (changement
+	// depuis le dernier /radio) OU /frequency manuel : meme canal cote
+	// filterscript, un seul actif a la fois (voir RadioVoice_LeaveAny).
+	RadioVoice_LeaveAny(playerid);
 
 	CallRemoteFunction("JoinGroupVoiceChannel", "ii", playerid, pm);
 	isUsingRadioVoip[playerid] = true;

@@ -34,18 +34,36 @@
 	actuellement. Le menu ne s'ouvre donc que quand Y est "libre", pour ne
 	rien casser des jobs ou de la police.
 
+	=== "Phone" : TALKIE OU TELEPHONE ? ===
+	Demande de la proprietaire : si le joueur possede un Talkie Walkie (objet
+	2966), "Phone" propose d'abord un choix au lieu d'ouvrir /tel directement.
+	"Talkie-walkie" ouvre la RADIO VOCALE (canaux VOIP - /radio de faction ou
+	/frequency manuelle, deja cables dans afrp_radiovoice.inc), pas l'ancien
+	systeme texte (/freq + /ta) : la proprietaire a choisi explicitement la
+	radio vocale, celle qui vient d'etre reparee. Comme pour Inventory/Anims,
+	on rappelle les vraies commandes (CallLocalFunction) au lieu de dupliquer
+	leurs verifications (item possede, plugin/micro, faction legale...).
+
 	Hooks a brancher dans LVRP.pwn :
 	- OnPlayerConnect              -> MenuRapide_OnConnect(playerid)
 	- OnPlayerDisconnect            -> MenuRapide_OnDisconnect(playerid)
 	- OnPlayerClickTextDraw         -> if(MenuRapide_OnClick(playerid, clickedid)) return 1;
 	- OnPlayerClickPlayerTextDraw   -> if(MenuRapide_OnClickPlayerText(playerid, playertextid)) return 1;
 	- OnPlayerKeyStateChange        -> quand KEY_YES est libre (voir plus haut), MenuRapide_Toggle(playerid)
+	- OnDialogResponse              -> if(MenuRapide_OnDialog(playerid, dialogid, response, listitem, inputtext)) return 1;
 */
 
 #if defined AFRP_MENURAPIDE_INCLUDED
 	#endinput
 #endif
 #define AFRP_MENURAPIDE_INCLUDED
+
+// Choix Talkie-walkie / Telephone (DIALOG_STYLE_LIST, 2 lignes).
+#define DIALOG_MR_TALKIE_CHOIX   9670
+// Sous-menu radio vocale : rejoindre faction / frequence manuelle / quitter.
+#define DIALOG_MR_TALKIE_RADIO   9671
+// Saisie du numero de frequence a rejoindre (relaie vers /frequency <id>).
+#define DIALOG_MR_TALKIE_FREQ    9672
 
 new PlayerText:mrTD[MAX_PLAYERS][10];
 new bool:mrOuvert[MAX_PLAYERS];
@@ -241,9 +259,17 @@ stock MenuRapide_OnClickPlayerText(playerid, PlayerText:playertextid)
 		CallLocalFunction("OnPlayerCommandText", "is", playerid, "/sac");
 		return 1;
 	}
-	// Idem : le telephone reprend la selection lui-meme.
-	if(playertextid == mrTD[playerid][1]) // Phone -> vraie commande /tel
+	if(playertextid == mrTD[playerid][1]) // Phone -> /tel, ou choix talkie si l'objet est possede
 	{
+		// Objet 2966 = Talkie Walkie (meme verification que /frequency et /ta).
+		if(inventory_GetItemQuantity(playerid, 2966) > 0)
+		{
+			MenuRapide_Fermer(playerid); // on ouvre un dialogue, pas un ecran a selection
+			ShowPlayerDialog(playerid, DIALOG_MR_TALKIE_CHOIX, DIALOG_STYLE_LIST, "{FFD700}Communication",
+				"Talkie-walkie (radio vocale)\nT\xe9l\xe9phone", "Choisir", "Annuler");
+			return 1;
+		}
+		// Sans talkie : comportement inchange, le telephone reprend la selection lui-meme.
 		MenuRapide_Fermer(playerid, false);
 		CallLocalFunction("OnPlayerCommandText", "is", playerid, "/tel");
 		return 1;
@@ -260,5 +286,68 @@ stock MenuRapide_OnClickPlayerText(playerid, PlayerText:playertextid)
 		SendClientMessage(playerid, 0xFFAA00FF, "{FFAA00}Menu {FFFFFF}\"Toys\" bientot disponible.");
 		return 1;
 	}
+	return 0;
+}
+
+// true = evenement consomme, le dispatcheur OnDialogResponse doit s'arreter la.
+// Gere le sous-menu talkie ouvert depuis "Phone" (voir MenuRapide_OnClickPlayerText).
+stock MenuRapide_OnDialog(playerid, dialogid, response, listitem, inputtext[])
+{
+	if(dialogid == DIALOG_MR_TALKIE_CHOIX)
+	{
+		if(!response) return 1; // "Annuler" ou Echap : on ne fait rien
+
+		if(listitem == 0) // Talkie-walkie -> sous-menu radio vocale
+		{
+			new mrRadioBody[160];
+			// [SOURCE DE VERITE UNIQUE] radioVoiceAttachedTo/isUsingRadioVoip
+			// (afrp_radiovoice.inc) refletent deja l'etat reel : on l'affiche au
+			// lieu d'un menu toujours identique, pour eviter un "Rejoindre" qui
+			// semble ne rien faire quand on est deja connecte.
+			if(isUsingRadioVoip[playerid])
+				format(mrRadioBody, sizeof(mrRadioBody), "Rejoindre la radio de faction\nRejoindre une fr\xe9quence...\nQuitter le canal actuel ({FF8C00}connect\xe9{FFFFFF})");
+			else
+				format(mrRadioBody, sizeof(mrRadioBody), "Rejoindre la radio de faction\nRejoindre une fr\xe9quence...\nQuitter le canal actuel");
+			ShowPlayerDialog(playerid, DIALOG_MR_TALKIE_RADIO, DIALOG_STYLE_LIST, "{FFD700}Radio vocale", mrRadioBody, "Choisir", "Retour");
+			return 1;
+		}
+		// listitem == 1 : Telephone -> vraie commande /tel (comme sans talkie)
+		CallLocalFunction("OnPlayerCommandText", "is", playerid, "/tel");
+		return 1;
+	}
+
+	if(dialogid == DIALOG_MR_TALKIE_RADIO)
+	{
+		if(!response) return 1; // "Retour" ou Echap
+
+		switch(listitem)
+		{
+			case 0: // Radio de faction -> vraie commande /radio (verifs deja dedans)
+				CallLocalFunction("OnPlayerCommandText", "is", playerid, "/radio");
+			case 1: // Frequence manuelle -> demande le numero, relaie vers /frequency <id>
+				ShowPlayerDialog(playerid, DIALOG_MR_TALKIE_FREQ, DIALOG_STYLE_INPUT, "{FFD700}Fr\xe9quence radio",
+					"Entrez le num\xe9ro de fr\xe9quence \xe0 rejoindre (1 \xe0 999999) :", "Rejoindre", "Annuler");
+			case 2: // Quitter -> vraie commande /frequency 0 (quitte radio ET frequence manuelle)
+				CallLocalFunction("OnPlayerCommandText", "is", playerid, "/frequency 0");
+		}
+		return 1;
+	}
+
+	if(dialogid == DIALOG_MR_TALKIE_FREQ)
+	{
+		if(!response) return 1; // "Annuler"
+
+		new mrFreq = strval(inputtext);
+		if(mrFreq < 1 || mrFreq > 999999)
+		{
+			msg_Client(playerid, COLOR_INFO, "{CF9756}\xbb Info \xab{FFFFFF} Fr\xe9quence invalide (1 \xe0 999999).");
+			return 1;
+		}
+		new mrCmd[24];
+		format(mrCmd, sizeof(mrCmd), "/frequency %d", mrFreq);
+		CallLocalFunction("OnPlayerCommandText", "is", playerid, mrCmd);
+		return 1;
+	}
+
 	return 0;
 }

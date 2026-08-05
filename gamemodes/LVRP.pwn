@@ -30804,6 +30804,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     if(Portes_OnDialog(playerid, dialogid, response, listitem)) return 1;
     if(Residence_OnDialog(playerid, dialogid, response, listitem, inputtext)) return 1;
     if(Raccourcis_OnDialog(playerid, dialogid, response, listitem)) return 1;
+    if(MenuRapide_OnDialog(playerid, dialogid, response, listitem, inputtext)) return 1;
     if(TelApp_OnDialog(playerid, dialogid, response, listitem, inputtext)) return 1;
 
     // [MOBILE INLINE] Dispatch vers mobile_system pour ses dialogs (MARKET, SETTINGS)
@@ -70603,8 +70604,11 @@ public OnPlayerCommandText(playerid, cmdtext[])
 		if(!strlen(tmp)) {return msg_Client(playerid, COLOR_USAGE, "{A98500}\xbb Usage \xab{FFFFB2} /frequency <id> (0=couper)");}
 		new freq_id = strval(tmp);
 		if(freq_id == 0) {
-			CallRemoteFunction("LeaveGroupVoiceChannel", "i", playerid);
-			isUsingRadioVoip[playerid] = false;
+			// [FIX MELANGE] Passe par RadioVoice_LeaveAny (afrp_radiovoice.inc) au
+			// lieu de detacher a la main ici : sinon si le canal venait de /radio
+			// (faction), radioVoiceAttachedTo restait bloque et le prochain
+			// /radio le croyait encore actif.
+			RadioVoice_LeaveAny(playerid);
 			msg_Client(playerid, COLOR_WHITE, "{8B8B00}\xbb VOIP \xab{FFFFFF} Fr\xe9quence coup\xe9e.");
 		} else {
 			// [FIX VOIP] Verifier le plugin VOIP avant de rejoindre le canal
