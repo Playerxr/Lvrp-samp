@@ -42,6 +42,7 @@ Fix loading string from DataBase
 #include <a_http>                                                                // Client HTTP (annonces Discord via relais)
 // #include <nex-ac> // DECOMMENTER apres avoir telecharge nex-ac.inc                												// SA:MP
 #include <a_mysql>               												// Gestion du sql
+#include <Dini>                                                                // [APPROBATION] fichier on/off persistant
 #include <mSelection>                                                    		// Selection
 #include <Encrypt>                                                    			// Cryptage sha1
 //#include <mapandreas>                                                           // Map San Andreas
@@ -406,15 +407,18 @@ Fix loading string from DataBase
 //   HAUTE   : metier en vehicule, une action = un long trajet
 // Les valeurs ci-dessous sont EXACTEMENT celles d'avant : rien n'a change,
 // elles sont simplement rassemblees ici pour etre modifiables en un endroit.
-#define JOB_BONUS_BASSE_PARLVL     2                                            // x niveau du metier
-#define JOB_BONUS_BASSE_FIXE       3                                            // montant garanti
-#define JOB_BONUS_BASSE_ALEA      15                                            // part aleatoire (0 a 14)
-#define JOB_BONUS_MOYENNE_PARLVL   2
-#define JOB_BONUS_MOYENNE_FIXE     0
-#define JOB_BONUS_MOYENNE_ALEA    20
-#define JOB_BONUS_HAUTE_PARLVL     3
-#define JOB_BONUS_HAUTE_FIXE       0
-#define JOB_BONUS_HAUTE_ALEA      40
+// [BOOST PAYE v2] Cible demandee : chaque action de job doit rapporter dans
+// les 500-1000$ (avant prime de serie / bonus debutant, qui s'ajoutent
+// par-dessus). FIXE = plancher garanti, ALEA = etendue au-dessus.
+#define JOB_BONUS_BASSE_PARLVL    10                                            // x niveau du metier
+#define JOB_BONUS_BASSE_FIXE     500                                            // montant garanti
+#define JOB_BONUS_BASSE_ALEA     450                                            // part aleatoire (0 a 449)
+#define JOB_BONUS_MOYENNE_PARLVL  12
+#define JOB_BONUS_MOYENNE_FIXE   550
+#define JOB_BONUS_MOYENNE_ALEA   450
+#define JOB_BONUS_HAUTE_PARLVL    15
+#define JOB_BONUS_HAUTE_FIXE     600
+#define JOB_BONUS_HAUTE_ALEA     450
 
 // [EQUILIBRAGE JOBS] Experience necessaire pour monter d'un niveau de metier
 // (niveau max = 10). Formule : PARLVL x niveau actuel. Plus le chiffre est
@@ -455,6 +459,9 @@ Fix loading string from DataBase
 #define ELEVATOR_WAIT_TIME  (5000)
 #define DIALOG_ID           (874)
 #define DIALOG_RULES        (875)  // Dialog regles anti-DM
+#define DIALOG_MAISON_RACC  (9660) // [RACCOURCIS] Menu actions /maison sans argument
+#define DIALOG_VIP_RACC     (9661) // [RACCOURCIS] Menu actions /vip sans argument
+#define DIALOG_VIP_SKIN_IN  (9662) // [RACCOURCIS] Saisie du skin pour /vip skin
 #define X_DOOR_CLOSED       (1786.627685)
 #define X_DOOR_R_OPENED     (1785.027685)
 #define X_DOOR_L_OPENED     (1788.227685)
@@ -1601,6 +1608,8 @@ new AdminDuty[MAX_PLAYERS];                                                     
 
 // === SYSTEME APPROBATION NOUVEAUX JOUEURS ===
 new bool:PlayerEnAttente[MAX_PLAYERS]; // Joueur en attente d'approbation admin
+new bool:g_WhitelistActif = true; // [APPROBATION] Interrupteur global : true = whitelist active, false = auto-approve
+#define WHITELIST_CONFIG_FILE "LVRP/whitelist_config.txt"
 
 // === SYSTEME APPROBATION ADMIN (AFRP) ===
 #define MAX_ADMIN_DEMANDES 30
@@ -3908,6 +3917,54 @@ stock msg_Client(playerid, color, const msg[])
 	return SendClientMessage(playerid,color,msg);
 }
 
+// [AFFICHAGE JOBS] Les messages de jobs (COLOR_JOB) passent desormais a
+// l'ecran (GameText, meme principe que le countdown de /ev) au lieu du chat,
+// qui se fait vite noyer par les autres messages/tchat RP. On garde le meme
+// nom de parametre "color" (inutilise ici) pour que le simple remplacement
+// msg_Client -> msg_JobText suffise partout sans toucher aux arguments.
+stock msg_JobText(playerid, color, const msg[])
+{
+	// GameText ne comprend pas les tags couleur {RRGGBB} du chat : on les
+	// retire au lieu de les laisser s'afficher tels quels a l'ecran.
+	new clean[160];
+	new ci = 0;
+	new len = strlen(msg);
+	new i = 0;
+	while(i < len && ci < sizeof(clean) - 1)
+	{
+		if(msg[i] == '{')
+		{
+			while(i < len && msg[i] != '}') i++;
+			if(i < len) i++;
+			continue;
+		}
+		clean[ci++] = msg[i++];
+	}
+	clean[ci] = 0;
+
+	// Les tags retires laissent des espaces en trop (double espace, espace
+	// de debut) : on nettoie pour un rendu propre a l'ecran.
+	new trimmed[160];
+	new ti = 0, sawChar = 0, lastWasSpace = 0;
+	for(new k = 0; clean[k] != 0; k++)
+	{
+		if(clean[k] == ' ')
+		{
+			if(!sawChar || lastWasSpace) continue;
+			lastWasSpace = 1;
+		}
+		else { lastWasSpace = 0; sawChar = 1; }
+		trimmed[ti++] = clean[k];
+	}
+	while(ti > 0 && trimmed[ti - 1] == ' ') ti--;
+	trimmed[ti] = 0;
+
+	new final[176];
+	format(final, sizeof(final), "~y~%s", trimmed);
+	GameTextForPlayer(playerid, final, 3000, 5);
+	return 1;
+}
+
 stock ProxDetector(Float:radi, playerid, string[],col1,col2,col3,col4,col5,sendToPlayer)
 {
 	if(IsPlayerConnected(playerid))
@@ -4207,6 +4264,17 @@ public bank_ResetRob()
     MoveDynamicObject(bank_Blind,2144.1813964844, 1626.6809082031, 994.26220703125, 4.5000);
     MoveDynamicObject(BankDoors[0],2142.8220214844, 1606.6739501953, 993.89697265625, 2.5, 0, 0, 0);
     MoveDynamicObject(BankDoors[1],2145.7709960938, 1606.6850585938, 993.89697265625, 2.5, 0, 0, 180);
+    // [FIX DUPLICATION] bank_ResetRob() recreait les 18 lasers a CHAQUE fin de
+    // braquage sans jamais detruire les precedents : ils s'accumulaient au meme
+    // endroit indefiniment (fantomes invisibles en jeu mais bien presents cote
+    // streamer, cause probable de bug visuel/clignotement a la longue). On
+    // detruit l'ancien objet avant d'en recreer un nouveau, comme fait ailleurs
+    // dans le fichier (armee_Update, etc.).
+    for(new li = 0; li < 18; li++)
+    {
+        if(IsValidDynamicObject(bank_LaserObject[li]))
+            DestroyDynamicObject(bank_LaserObject[li]);
+    }
     bank_LaserObject[0] = CreateDynamicObject(19082, 2128.5280761719, 1617.7690429688, 994.44500732422, 0, 0, 0,-1,-1,-1, STREAM_DISTANCE);
 	bank_LaserObject[1] = CreateDynamicObject(19082, 2148.5891113281, 1617.7700195313, 994.44500732422, 0, 0, 0,-1,-1,-1, STREAM_DISTANCE);
 	bank_LaserObject[2] = CreateDynamicObject(19082, 2127.587890625, 1612.2580566406, 996.47497558594, 0, 0, 0,-1,-1,-1, STREAM_DISTANCE);
@@ -6970,11 +7038,12 @@ public job_Apply(playerid, jobid, stepid)
 					if(player_GetSlotObject(playerid) != -1)
                 		{job_HoldingObjectSlot[playerid]=player_GetSlotObject(playerid); SetPlayerAttachedObject( playerid, job_HoldingObjectSlot[playerid], 2936, 1, 0.184699, 0.426247, 0.000000, 259.531341, 80.949592, 0.000000, 0.476124, 0.468181, 0.470769 );}
 					SetPlayerCheckpoint(playerid,-1364.0155,2451.7180,89.8348,3.0);
-					msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Allez au CheckPoint pour dpos le minerai. (Point rouge minimap)");
+					msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Allez au CheckPoint pour dpos le minerai. (Point rouge minimap)");
 		        }
 		        else
 				{
-				    job_ObjectN[playerid]=random(4);
+				    // [FIX MOBILE] meme correction que checkpoint 22 : random(2) au lieu de random(4).
+				    job_ObjectN[playerid]=random(2);
 			        format(string,sizeof(string),"~y~Appuyez sur la touche : ~n~~w~%s",GetKeyJobName(job_ObjectN[playerid]));
 					GameTextForPlayer(playerid,string,5000,6);
 		        }
@@ -6996,7 +7065,7 @@ public job_Apply(playerid, jobid, stepid)
 			    	{job_TakePay(playerid,PlayerInfo[playerid][pJob]); job_TempVar[playerid]=0;}
                 job_ObjectN[playerid] = job_GetRandomVar(2,job_City[playerid]);
 				SetPlayerCheckpoint(playerid,trash[job_ObjectN[playerid]][pos][0],trash[job_ObjectN[playerid]][pos][1],trash[job_ObjectN[playerid]][pos][2],5.0);
-		        msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Allez vider les poubelles. (Point rouge minimap)");
+		        msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Allez vider les poubelles. (Point rouge minimap)");
 		        job_CheckPoints[playerid]=1;
 			}
 	    }
@@ -7010,7 +7079,7 @@ public job_Apply(playerid, jobid, stepid)
 				{
 				    job_TempVar[playerid]=1;
 				    rand = random(3);
-					msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Un vhicule va arriver prparer vous.");
+					msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Un vhicule va arriver prparer vous.");
 					if(job_City[playerid] == 0)
 				    {
 				        if(rand == 0)		ConnectNPC(string,"jobValetBot1_Ls");
@@ -7039,7 +7108,7 @@ public job_Apply(playerid, jobid, stepid)
 					    ConnectNPC(string,"jobValetPed_Sf");
 						SetPlayerCheckpoint(playerid, gValetPointsSf[rand][0],gValetPointsSf[rand][1],gValetPointsSf[rand][2], 5.0);
 					}
-			        msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Quelqu'un veut recuperer son vhicule rammener le ici.");
+			        msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Quelqu'un veut recuperer son vhicule rammener le ici.");
                     for(new car = 1; car <= totalVehicles; car++)
 					{
 					 	for(new i=0; i<MAX_PLAYERS_CURRENT+1; i++)
@@ -7077,7 +7146,7 @@ public job_Apply(playerid, jobid, stepid)
 	        if(stepid==1)
 	        {
 		        TogglePlayerControllable(playerid,true);
-		        msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Allez dcharger la cargaison.");
+		        msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Allez dcharger la cargaison.");
 		        if(job_City[playerid] == 0) SetPlayerCheckpoint(playerid,2493.6907,-2090.1719,13.5469,8.0);
 		        else if(job_City[playerid] == 1) SetPlayerCheckpoint(playerid,-1833.9839,147.3690,15.1172,8.0);
 		        else if(job_City[playerid] == 2) SetPlayerCheckpoint(playerid,2825.8853,912.2676,10.7500,8.0);
@@ -7087,7 +7156,7 @@ public job_Apply(playerid, jobid, stepid)
 	            TogglePlayerControllable(playerid,true);
 	            SetVehicleToRespawn(job_TempVar[playerid]);
 	            job_CheckPoints[playerid]=0; job_TempVar[playerid] = 0;
-	            msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Utiliser une des remorques pour commencer votre travail.");
+	            msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Utiliser une des remorques pour commencer votre travail.");
 	        }
 	    }
 	}
@@ -8007,6 +8076,17 @@ stock SafeResetPlayerMoney(playerid,amount)
 	    return 1;
 	}
 	return 1;
+}
+
+stock NotifyAdminsApprobationToggle(msg[])
+{
+    for(new i = 0; i < MAX_PLAYERS; i++)
+    {
+        if(!IsPlayerConnected(i) || IsPlayerNPC(i)) continue;
+        if(gPlayerLogged[i] != 1) continue;
+        if(PlayerInfo[i][pAdmin] >= 1)
+            SendClientMessage(i, 0xFFAA00FF, msg);
+    }
 }
 
 stock NotifyAdminsNouveauJoueur(name[])
@@ -10917,15 +10997,30 @@ public OnPlayerLogin(playerid,pass[])
 	// === [APPROBATION] Joueur qui se reconnect� avec compte non approuve ===
 	if(PlayerInfo[playerid][pActive] == 0 && gPlayerLogged[playerid] == 0)
 	{
-		PlayerEnAttente[playerid] = true;
-		gPlayerLogged[playerid] = 1;
-		LoginSound_Stop(playerid); // [LOGIN SOUND] mot de passe valide, on arrete l'ambiance
-		// [WHITELIST] Le module decide seul quoi afficher : formulaire a
-		// remplir, reprise d'une saisie interrompue, ou ecran d'attente si le
-		// dossier est deja parti sur Discord.
-		Whitelist_Demarrer(playerid);
-		NotifyAdminsNouveauJoueur(PlayerInfo[playerid][pName]);
-		return 1;
+		// [APPROBATION] Systeme desactive entre-temps : on debloque directement
+		// les comptes restes en attente au lieu de les renvoyer sur le formulaire.
+		if(!g_WhitelistActif)
+		{
+			PlayerInfo[playerid][pActive] = 1;
+			{
+				new wlReg[128];
+				format(wlReg, sizeof(wlReg), "UPDATE lvrp_users SET active=1 WHERE id=%d LIMIT 1", PlayerInfo[playerid][pSQLID]);
+				mysql_tquery(MYSQL, wlReg, "", "");
+			}
+			// On laisse la suite de OnPlayerLogin se derouler normalement (pas de return).
+		}
+		else
+		{
+			PlayerEnAttente[playerid] = true;
+			gPlayerLogged[playerid] = 1;
+			LoginSound_Stop(playerid); // [LOGIN SOUND] mot de passe valide, on arrete l'ambiance
+			// [WHITELIST] Le module decide seul quoi afficher : formulaire a
+			// remplir, reprise d'une saisie interrompue, ou ecran d'attente si le
+			// dossier est deja parti sur Discord.
+			Whitelist_Demarrer(playerid);
+			NotifyAdminsNouveauJoueur(PlayerInfo[playerid][pName]);
+			return 1;
+		}
 	}
 	// Actualisation des donnes de connexion DB
 	MySQLAddLoginRecord(PlayerInfo[playerid][pSQLID],PlayerInfo[playerid][pIP]);
@@ -13116,7 +13211,7 @@ stock job_UpdateTexts(playerid)
 			    {
 					PlayerInfo[playerid][pJobLvl]++;
 					PlayerInfo[playerid][pJobExp]=1;
-					msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous montez de niveau, vous gagnez dsormais plus d'argent lors de votre job.");
+					msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous montez de niveau, vous gagnez dsormais plus d'argent lors de votre job.");
 					// [JOB RANK] Titre de rang + celebration des paliers (3/5/7/10)
 					JobRank_OnLevelUp(playerid, PlayerInfo[playerid][pJobLvl]);
 				}
@@ -14154,7 +14249,7 @@ stock job_TakePay(playerid,job)
     PlayerInfo[playerid][pJobBonus]+=cashes;
     job_UpdateTexts(playerid);
     format(string,sizeof(string),"{78769D} Job {FFFFFF} Bonus de $%d sur votre prochaine paye (Total: %d$).",cashes,PlayerInfo[playerid][pJobBonus]);
-    msg_Client(playerid,COLOR_JOB,string);
+    msg_JobText(playerid,COLOR_JOB,string);
 	return 1;
 }
 
@@ -18876,10 +18971,12 @@ stock GetKeyJobName(id)
     new name[32];
 	switch (id)
 	{
-	    case 0: {name="Espace";}
-	    case 1: {name="Sauter";}
-	    case 2: {name="Entrer";}
-	    case 3: {name="N";}
+	    // [FIX MOBILE] "Espace"/"Sauter"/"Entrer" retires : injouables au
+	    // toucher sur mobile (pas de clavier physique, bouton saut peu
+	    // fiable). Seules Y et N restent, deja utilisees partout ailleurs
+	    // dans les jobs sans probleme signale.
+	    case 0: {name="Y";}
+	    case 1: {name="N";}
 	}
 	return name;
 }
@@ -20473,7 +20570,7 @@ stock player_CheckInteraction(playerid)
 		{
 			if(mecano_Duty[playerid] == 1)
 			{
-		        msg_Client(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Vous n'tes plus en service, vous ne recevrez plus d'appel.");
+		        msg_JobText(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Vous n'tes plus en service, vous ne recevrez plus d'appel.");
 		        mecano_Duty[playerid] = 0;
 		        Mechanics -= 1;
 		        SetPlayerSkin(playerid,PlayerInfo[playerid][pChar]);
@@ -20483,9 +20580,9 @@ stock player_CheckInteraction(playerid)
 		        if(PlayerInfo[playerid][pDutyTime] < DUTY_TIME)
 			    {
 					format(string,sizeof(string),"{FF8282} Mdecin {FFFFFF} Vous devez encore travailler %d minute(s) pour obtenir la paye.",DUTY_TIME-PlayerInfo[playerid][pDutyTime]);
-				    msg_Client(playerid,COLOR_JOB,string);
+				    msg_JobText(playerid,COLOR_JOB,string);
 			    }
-		        msg_Client(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Vous tes en service, vous recevrez les appels des personnes qui ont besoin de vous.");
+		        msg_JobText(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Vous tes en service, vous recevrez les appels des personnes qui ont besoin de vous.");
 		        mecano_Duty[playerid] = 1;
 		        Mechanics += 1;
 		        SetPlayerSkin(playerid, MecanoInfo[skin][PlayerInfo[playerid][pRank]-1]);
@@ -22811,7 +22908,7 @@ public timer_5s()
 									job_ObjectPos[i][o][0]=X; job_ObjectPos[i][o][1]=Y; job_ObjectPos[i][o][2]=Z;
 									job_ObjectN[i]++;
 									if(job_ObjectN[i]==5)
-								    	{msg_Client(i,COLOR_JOB,"{78769D} Job {FFFFFF} Ramasser les bottes de paile  l'aide de la camionette.");}
+								    	{msg_JobText(i,COLOR_JOB,"{78769D} Job {FFFFFF} Ramasser les bottes de paile  l'aide de la camionette.");}
 		 							break;
 								}
 							}
@@ -22835,8 +22932,8 @@ public timer_5s()
 								    	{job_Object[i][4] = CreateDynamicObject(1606,0,0,0,0,0,0,0,0,-1,200.0);AttachDynamicObjectToVehicle( job_Object[i][4], GetPlayerVehicleID(i), 0.000000, -9.600000, -0.599999, 0.000000, 0.000000, 340.000000 );}
                                     else if(job_TempVar[i]==5)
 								    {
-								        msg_Client(i,COLOR_JOB,"{78769D} Job {FFFFFF} Remonter votre fillet 'Y', et allez dposer le poisson. (Point rouge minimap).");
-								        msg_Client(i,COLOR_JOB,"{78769D} Job {FFFFFF} Un fois au port descendez de votre bteau et prenez le poisson. Touche 'Y'.");
+								        msg_JobText(i,COLOR_JOB,"{78769D} Job {FFFFFF} Remonter votre fillet 'Y', et allez dposer le poisson. (Point rouge minimap).");
+								        msg_JobText(i,COLOR_JOB,"{78769D} Job {FFFFFF} Un fois au port descendez de votre bteau et prenez le poisson. Touche 'Y'.");
 										if(job_City[i] == 0)
 										    {SetPlayerCheckpoint(i,894.2875,-1911.7617,1.1277,2.5);}
 										else
@@ -22844,7 +22941,7 @@ public timer_5s()
 									}
 								}
 								else
-								    {msg_Client(i,COLOR_JOB,"{78769D} Job {FFFFFF} Vous devez tre dans la zone bleue pour pcher.");}
+								    {msg_JobText(i,COLOR_JOB,"{78769D} Job {FFFFFF} Vous devez tre dans la zone bleue pour pcher.");}
 	    					}
 				        }
 				    }
@@ -23054,12 +23151,12 @@ public job_ResetFreeze(playerid,other)
 		atm_Save(other);
 		job_TempVar[playerid]=0;
 		DestroyDynamicMapIcon(atm_Icon[playerid][other]);
-		msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} ATM remplie.");
+		msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} ATM remplie.");
 	}
 	if(PlayerInfo[playerid][pJob]==10)
-		{msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous pouvez y aller.");}
+		{msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous pouvez y aller.");}
 	if(PlayerInfo[playerid][pJob]==11)
-		{msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous pouvez y aller.");}
+		{msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous pouvez y aller.");}
 		
 	TogglePlayerControllable(playerid,true);
 	return 1;
@@ -26002,11 +26099,11 @@ public OnPlayerEnterCheckpoint(playerid)
 		    {return DisablePlayerCheckpoint(playerid);}
 		    
 		if(job_TempVar[playerid] == 1)
-			{msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous avez gar cette voiture, retourner en haut.");}
+			{msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous avez gar cette voiture, retourner en haut.");}
         else if(job_TempVar[playerid] == 2)
 		{
 		    SetTimerEx("job_Apply",1000,0,"iii",playerid,9,2);
-			msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous avez ramen cette voiture  son propritaire.");
+			msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous avez ramen cette voiture  son propritaire.");
 		}
 		RemovePlayerFromVehicle(playerid);
 		SetTimerEx("job_Apply",25000,0,"iii",playerid,9,1);
@@ -26043,7 +26140,7 @@ public OnPlayerEnterCheckpoint(playerid)
 	    if(PlayerInfo[playerid][pJob] != 10 && job_Start[playerid]!=1)
 	    	{return DisablePlayerCheckpoint(playerid);}
 		if((job_CheckPoints[playerid] >= 0 && job_CheckPoints[playerid] <= 4) && IsPlayerInAnyVehicle(playerid))
-		    {return msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Dscendez de votre vhicule.");}
+		    {return msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Dscendez de votre vhicule.");}
 		else if((job_CheckPoints[playerid] >= 0 && job_CheckPoints[playerid] <= 4) && !IsPlayerInAnyVehicle(playerid))
 		{
 		    if(player_GetSlotObject(playerid) != -1)
@@ -26057,11 +26154,11 @@ public OnPlayerEnterCheckpoint(playerid)
 				case 4: SetPlayerAttachedObject( playerid, job_HoldingObjectSlot[playerid], 935, 1, 0.184976, 0.586401, 0.000000, 0.000000, 0.000000, 0.000000, 1.000000, 1.000000, 1.000000 );
 			}
 		    SetPlayerSpecialAction(playerid,SPECIAL_ACTION_CARRY); job_ObjectN[playerid] = 1 ;
-		    msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Dposer ce materiau sur le vhicule. (Touche 'Y')");
+		    msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Dposer ce materiau sur le vhicule. (Touche 'Y')");
 		}
 		else if(job_CheckPoints[playerid] >= 5 && !IsPlayerInAnyVehicle(playerid) && job_ObjectN[playerid] == 1)
 		{
-		    msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous installer ce materiau.");
+		    msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous installer ce materiau.");
 		    RemovePlayerAttachedObject(playerid,job_HoldingObjectSlot[playerid]);
 			SetPlayerSpecialAction(playerid,SPECIAL_ACTION_NONE);
 			LoopingAnim(playerid, "BOMBER","BOM_Plant",4.0,0,0,0,0,0);
@@ -26074,12 +26171,12 @@ public OnPlayerEnterCheckpoint(playerid)
 			   job_TakePay(playerid,PlayerInfo[playerid][pJob]);
 			   job_CheckPoints[playerid]=0;
 			   SetPlayerCheckpoint(playerid, gWorkerPoints[5][0],gWorkerPoints[5][1],gWorkerPoints[5][2], 3.0);
-			   msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Allez chercher les materiaux au lieu indiqu. (Touche 'Y')");
+			   msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Allez chercher les materiaux au lieu indiqu. (Touche 'Y')");
   			}
   			return 1;
 		}
 		else if(job_CheckPoints[playerid] >= 5 && !IsPlayerInAnyVehicle(playerid) && job_ObjectN[playerid] == 0)
-			{return msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous devez avoir un materiau.");}
+			{return msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous devez avoir un materiau.");}
 	}
 		
     if(gPlayerCheckpoint[playerid] == 20)
@@ -26087,14 +26184,14 @@ public OnPlayerEnterCheckpoint(playerid)
 	    if(PlayerInfo[playerid][pJob] == 1 && job_Start[playerid]==1)
 	    {
 		    if(IsPlayerInAnyVehicle(playerid) && IsAPizzaCar(carid))
-		    	{return msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Dscendez de votre scooter.");}
+		    	{return msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Dscendez de votre scooter.");}
 			else
 			{
 			    if(job_ObjectN[playerid]==0)
-			        {return msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Aucune pizza en main.");}
+			        {return msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Aucune pizza en main.");}
     
 				SetPlayerSpecialAction(playerid,SPECIAL_ACTION_NONE);
-				msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Pizza livr, retourn sur votre scooter.");
+				msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Pizza livr, retourn sur votre scooter.");
 				PlayerInfo[playerid][pJobExp]++;job_UpdateTexts(playerid);
 				RemovePlayerAttachedObject(playerid,job_HoldingObjectSlot[playerid]);
 				job_ObjectN[playerid]=0; job_CheckPoints[playerid]++;
@@ -26112,7 +26209,7 @@ public OnPlayerEnterCheckpoint(playerid)
 	    {
 	        if(IsPlayerInAnyVehicle(playerid) && IsAFarmerCar(carid) && GetVehicleModel(carid) == 478)
 			{
-			    msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Chargez une autre botte ou rcolter en d'autres.");
+			    msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Chargez une autre botte ou rcolter en d'autres.");
 			    PlayerInfo[playerid][pJobExp]++;job_UpdateTexts(playerid);
 			    job_ObjectN[playerid]--;
 			    if(IsValidDynamicObject(job_Object[playerid][job_HoldingObjectSlot[playerid]]))
@@ -26130,12 +26227,14 @@ public OnPlayerEnterCheckpoint(playerid)
 	        if(!IsPlayerInAnyVehicle(playerid))
 	        {
 	            if(job_City[playerid]==4)
-	            	{msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Appuyez sur la touche 'Y' pour dposer le minerai.");}
+	            	{msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Appuyez sur la touche 'Y' pour dposer le minerai.");}
 	            else
 	            {
 		            if(player_GetSlotObject(playerid) != -1)
 	                	{job_HoldingObjectSlot[playerid]=player_GetSlotObject(playerid); SetPlayerAttachedObject( playerid, job_HoldingObjectSlot[playerid], 18634, 5, 0.104315, 0.024154, -0.002412, 351.485473, 284.184387, 85.579017, 1.000000, 1.000000, 1.000000 );}
-					job_ObjectN[playerid]=random(4);
+					// [FIX MOBILE] random(2) au lieu de random(4) : seules Y et N
+					// sont fiables au toucher sur mobile (voir GetKeyJobName).
+					job_ObjectN[playerid]=random(2);
 					job_City[playerid]=0;
 					format(string,sizeof(string),"~y~Appuyez sur la touche : ~n~~w~%s",GetKeyJobName(job_ObjectN[playerid]));
 					GameTextForPlayer(playerid,string,5000,6);
@@ -26151,7 +26250,7 @@ public OnPlayerEnterCheckpoint(playerid)
 	    if(PlayerInfo[playerid][pJob] == 4 && job_Start[playerid]==1)
 	    {
 		    if(IsPlayerInAnyVehicle(playerid) && IsATrashCar(carid))
-		    	{msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Appuyez sur la touche 'Y'.");}
+		    	{msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Appuyez sur la touche 'Y'.");}
 	    }
 	}
 	if(gPlayerCheckpoint[playerid] == 24)
@@ -26162,7 +26261,7 @@ public OnPlayerEnterCheckpoint(playerid)
 			{
 			    if(job_CheckPoints[playerid]==0)
 			    {
-			        msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Dchargez la marchandise au lieu indiqu.");
+			        msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Dchargez la marchandise au lieu indiqu.");
 			        job_HoldingObjectSlot[playerid] = CreateDynamicObject(749,0,0,-1000,0,0,0,-1,-1,-1,200);
 			        SetPlayerCheckpoint(playerid, 555.8182,909.6615,-42.9609, 8.0);
                     AttachDynamicObjectToVehicle(job_HoldingObjectSlot[playerid], job_CarId[playerid], 0.000000,1.049999,1.350000,-272.699890,0.000000,0.000000);
@@ -26170,7 +26269,7 @@ public OnPlayerEnterCheckpoint(playerid)
 			    }
 			    else if(job_CheckPoints[playerid]==1)
 			    {
-			        msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Chargez la marchandise du lieu indiqu.");
+			        msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Chargez la marchandise du lieu indiqu.");
 			        job_CheckPoints[playerid]=0;
 			        PlayerInfo[playerid][pJobExp]++;job_UpdateTexts(playerid);
 			        job_TempVar[playerid]++;
@@ -26191,7 +26290,7 @@ public OnPlayerEnterCheckpoint(playerid)
 	    {
 	        if(GetPlayerState(playerid) != PLAYER_STATE_ONFOOT || job_ObjectN[playerid] != 3)
 	            {return 1;}
-			msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Touche 'Y' pour dcharger le poisson.");
+			msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Touche 'Y' pour dcharger le poisson.");
 	    }
 	}
 	if(gPlayerCheckpoint[playerid] == 28)
@@ -26257,7 +26356,7 @@ public OnPlayerEnterCheckpoint(playerid)
 	    if(!IsAPiloteCar(carid))
 	        {return 1;}
 		if(!IsPlayerInAnyVehicle(playerid))
-		    {return msg_Client(playerid, COLOR_JOB, "{78769D} Job {FFFFFF} Vous devez tre dans votre avion.");}
+		    {return msg_JobText(playerid, COLOR_JOB, "{78769D} Job {FFFFFF} Vous devez tre dans votre avion.");}
 	    PlayerInfo[playerid][pJobExp]++;job_UpdateTexts(playerid);
 	    job_CheckPoints[playerid]++;
 	    PlayerPlaySound(playerid, 1083, 0.0, 0.0, 0.0);
@@ -26281,13 +26380,13 @@ public OnPlayerEnterCheckpoint(playerid)
 	    if(PlayerInfo[playerid][pJob] == 7 && job_Start[playerid]==1)
 	    {
 		    if(IsPlayerInAnyVehicle(playerid) && IsAPostCar(carid))
-		    	{return msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Dscendez de votre scooter.");}
+		    	{return msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Dscendez de votre scooter.");}
 			else
 			{
 			    if(job_ObjectN[playerid]==0)
-			        {return msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Aucune lettre en main.");}
+			        {return msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Aucune lettre en main.");}
 
-				msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Lettre poste, retourner sur votre scooter.");
+				msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Lettre poste, retourner sur votre scooter.");
 				PlayerInfo[playerid][pJobExp]++;job_UpdateTexts(playerid);
 				RemovePlayerAttachedObject(playerid,job_HoldingObjectSlot[playerid]);
 				job_ObjectN[playerid]=0; job_CheckPoints[playerid]++;
@@ -26853,9 +26952,9 @@ public OnPlayerStateChange(playerid, newstate, oldstate)
       		{
 			  	job_CarId[playerid] = carid;
 			  	if(GetVehicleModel(carid) == 478)
-			  	    {msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Utiliser la touche 'Y' pour charger une botte.");}
+			  	    {msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Utiliser la touche 'Y' pour charger une botte.");}
                 else if(GetVehicleModel(carid) == 532)
-			  	    {msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Recolter des bottes de paille dans l'un des champs.");}
+			  	    {msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Recolter des bottes de paille dans l'un des champs.");}
 	 		}
 	 		if(PlayerInfo[playerid][pJob] == 9 && job_CarId[playerid] == carid)
       		{
@@ -26873,7 +26972,7 @@ public OnPlayerStateChange(playerid, newstate, oldstate)
       		    	else
 						{SetPlayerCheckpoint(playerid,-1753.4178,954.5569,24.6172,5.0);}
 				}
-      		    msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Allez dposer la voiture.");
+      		    msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Allez dposer la voiture.");
       		    gPlayerCheckpoint[playerid]=9;
       		}
 		}
@@ -27130,7 +27229,7 @@ public OnTrailerUpdate(playerid, vehicleid)
 		    case 435: {name="Conserves"; SetPlayerCheckpoint(playerid,-525.0138,-489.7664,25.5234,7.0);}
 		}
 		format(string,sizeof(string),"{78769D} Job {FFFFFF} Allez chercher la cargaison : %s",name);
-		msg_Client(playerid,COLOR_JOB,string);
+		msg_JobText(playerid,COLOR_JOB,string);
 		job_TempVar[playerid] = vehicleid;
 	}
 	return 1;
@@ -29846,6 +29945,18 @@ public OnGameModeInit()
 {
     // === [ANTI-CHEAT] D�marrage du timer anti-cheat & god mode ===
     SetTimer("GodModeTimer", 2000, true); // Maintient vie infinie en Hacker Mode
+
+	// === [APPROBATION] Chargement de l'etat on/off depuis le fichier ===
+	// Si le fichier n'existe pas encore (premier lancement), on le cree avec
+	// la whitelist activee par defaut, comportement identique a avant ce switch.
+	if(!dini_Exists(WHITELIST_CONFIG_FILE))
+	{
+		dini_Create(WHITELIST_CONFIG_FILE);
+		dini_BoolSet(WHITELIST_CONFIG_FILE, "Actif", true);
+	}
+	g_WhitelistActif = bool:dini_Bool(WHITELIST_CONFIG_FILE, "Actif");
+	printf("[APPROBATION] Systeme d'approbation actuellement : %s", (g_WhitelistActif) ? ("ACTIF") : ("DESACTIVE"));
+
 	printf("GameMode %s",NICK_NAME);
 	print("---------------");
 
@@ -30791,6 +30902,59 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     // atteindre un autre handler de dialog. Ses ID (9810-9816 + 9903) sont
     // exclusifs, donc aucun risque d'avaler le dialog d'un autre module.
     if(Whitelist_OnDialog(playerid, dialogid, response, listitem, inputtext)) return 1;
+    // [RACCOURCIS] /maison sans argument : traduit le clic en vraie sous-commande.
+    if(dialogid == DIALOG_MAISON_RACC)
+    {
+        if(!response) return 1;
+        new maisonSub[16];
+        switch(listitem)
+        {
+            case 0: maisonSub = "acheter";
+            case 1: maisonSub = "localiser";
+            case 2: maisonSub = "vendre";
+            case 3: maisonSub = "louer";
+            case 4: maisonSub = "delouer";
+            case 5: maisonSub = "toquer";
+            case 6: maisonSub = "porte";
+            case 7: maisonSub = "gestion";
+            case 8: maisonSub = "mobilier";
+            case 9: maisonSub = "coffre";
+        }
+        new maisonCmd[24];
+        format(maisonCmd, sizeof(maisonCmd), "/maison %s", maisonSub);
+        CallLocalFunction("OnPlayerCommandText", "is", playerid, maisonCmd);
+        return 1;
+    }
+    // [RACCOURCIS] /vip sans argument : traduit le clic en vraie sous-commande.
+    if(dialogid == DIALOG_VIP_RACC)
+    {
+        if(!response) return 1;
+        if(listitem == 2) // Skin -> a besoin d'un id, on demande avant d'appeler /vip skin
+        {
+            ShowPlayerDialog(playerid, DIALOG_VIP_SKIN_IN, DIALOG_STYLE_INPUT, "{800080}V.I.P - Skin", "{FFFFFF}ID du skin :", "Valider", "Retour");
+            return 1;
+        }
+        new vipSub[16];
+        switch(listitem)
+        {
+            case 0: vipSub = "online";
+            case 1: vipSub = "armure";
+            case 3: vipSub = "maison";
+            case 4: vipSub = "garage";
+        }
+        new vipCmd[24];
+        format(vipCmd, sizeof(vipCmd), "/vip %s", vipSub);
+        CallLocalFunction("OnPlayerCommandText", "is", playerid, vipCmd);
+        return 1;
+    }
+    if(dialogid == DIALOG_VIP_SKIN_IN)
+    {
+        if(!response) return Vip_ShowMenu(playerid), 1;
+        new vipCmd[32];
+        format(vipCmd, sizeof(vipCmd), "/vip skin %s", inputtext);
+        CallLocalFunction("OnPlayerCommandText", "is", playerid, vipCmd);
+        return 1;
+    }
     if(Ev_OnDialog(playerid, dialogid, response, listitem, inputtext)) return 1;
     if(TopJour_OnDialog(playerid, dialogid, response, listitem)) return 1;
     if(ArmBase_OnDialog(playerid, dialogid, response, listitem)) return 1;
@@ -35257,14 +35421,14 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 	     		GetPlayerPos(playerid,x,y,z);
 	     		GetPlayerFacingAngle(playerid,a);
 				if(GetPlayerInterior(playerid)!=0)
-				    {msg_Client(playerid,COLOR_JOB,"{78769D} Mcanicien {FFFFFF} Vous devez tre  l'extrieur."); mecano_Gestion(playerid); return 1;}
+				    {msg_JobText(playerid,COLOR_JOB,"{78769D} Mcanicien {FFFFFF} Vous devez tre  l'extrieur."); mecano_Gestion(playerid); return 1;}
 
 	     		MecanoInfo[Entrance][0]=x;
 				MecanoInfo[Entrance][1]=y;
 				MecanoInfo[Entrance][2]=z;
 				MecanoInfo[Entrance][3]=a;
 
-		        msg_Client(playerid,COLOR_JOB,"{78769D} Mcanicien {FFFFFF} Entr sauvegarde.");
+		        msg_JobText(playerid,COLOR_JOB,"{78769D} Mcanicien {FFFFFF} Entr sauvegarde.");
 		        mecano_Update();
                 mecano_Save();
                 mecano_Gestion(playerid);
@@ -35276,14 +35440,14 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 	     		GetPlayerPos(playerid,x,y,z);
 	     		GetPlayerFacingAngle(playerid,a);
 				if(GetPlayerInterior(playerid)!=MecanoInfo[Interior])
-				    {msg_Client(playerid,COLOR_JOB,"{78769D} Mcanicien {FFFFFF} Vous devez tre  l'intrieur de votre QG."); mecano_Gestion(playerid); return 1;}
+				    {msg_JobText(playerid,COLOR_JOB,"{78769D} Mcanicien {FFFFFF} Vous devez tre  l'intrieur de votre QG."); mecano_Gestion(playerid); return 1;}
 
 	     		MecanoInfo[Exit][0]=x;
 				MecanoInfo[Exit][1]=y;
 				MecanoInfo[Exit][2]=z;
 				MecanoInfo[Exit][3]=a;
 
-		        msg_Client(playerid,COLOR_JOB,"{78769D} Mcanicien {FFFFFF} Sortie sauvegarde.");
+		        msg_JobText(playerid,COLOR_JOB,"{78769D} Mcanicien {FFFFFF} Sortie sauvegarde.");
 		        mecano_Update();
                 mecano_Save();
                 mecano_Gestion(playerid);
@@ -35299,7 +35463,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			        MecanoInfo[Spawn][2]=z;
 			        MecanoInfo[Spawn][3]=a;
 			        MecanoInfo[Interior]=GetPlayerInterior(playerid);
-			        msg_Client(playerid,COLOR_JOB,"{78769D} Mcanicien {FFFFFF} Potitions du Spawn sauvegardes.");
+			        msg_JobText(playerid,COLOR_JOB,"{78769D} Mcanicien {FFFFFF} Potitions du Spawn sauvegardes.");
 			        mecano_Save();
 		        	mecano_Gestion(playerid);
 		    		return 1;
@@ -35309,7 +35473,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 		        new Float:x,Float:y,Float:z;
 	     		GetPlayerPos(playerid,x,y,z);
 				if(GetPlayerInterior(playerid)!=MecanoInfo[Interior])
-				    {msg_Client(playerid,COLOR_JOB,"{78769D} Mcanicien {FFFFFF} Vous devez tre dans le QG de votre faction."); mecano_Gestion(playerid); return 1;}
+				    {msg_JobText(playerid,COLOR_JOB,"{78769D} Mcanicien {FFFFFF} Vous devez tre dans le QG de votre faction."); mecano_Gestion(playerid); return 1;}
 
                 if(listitem==15)
 				    {MecanoInfo[Duty][0]=x; MecanoInfo[Duty][1]=y; MecanoInfo[Duty][2]=z;}
@@ -35317,7 +35481,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 				    {MecanoInfo[Bell][0]=x; MecanoInfo[Bell][1]=y; MecanoInfo[Bell][2]=z;}
 
 
-                msg_Client(playerid,COLOR_JOB,"{78769D} Mcanicien {FFFFFF} Potitions de la commande sauvegardes.");
+                msg_JobText(playerid,COLOR_JOB,"{78769D} Mcanicien {FFFFFF} Potitions de la commande sauvegardes.");
 		        mecano_Update();
                 mecano_Save();
                 mecano_Gestion(playerid);
@@ -35347,7 +35511,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 		    	{strmid(MecanoInfo[rank6], inputtext, 0, 32, 32);}
 
 		    format(string,sizeof(string),"{78769D} Mcanicien {FFFFFF} Vous avez chang le nom du rang en %s.",inputtext);
-		    msg_Client(playerid,COLOR_JOB,string);
+		    msg_JobText(playerid,COLOR_JOB,string);
 		    mecano_Gestion(playerid);
 		    mecano_Save();
 		}
@@ -42550,33 +42714,33 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
             if(IsAPizzaCar(carid) && PlayerInfo[playerid][pJob] == 1)
             {
                 job_City[playerid] = vehicle[carid][cJobCity];
-			    msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous devez livrer des pizza  l'aide de votre scooter, charger des pizza dans son coffre.");
-			    msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Descendez du scooter pour aller chercher des pizza au dpot, touche 'Y' pour en prendre une.");
-                msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous pouvez prendre 3 pizza dans le coffre de votre scooter.");
+			    msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous devez livrer des pizza  l'aide de votre scooter, charger des pizza dans son coffre.");
+			    msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Descendez du scooter pour aller chercher des pizza au dpot, touche 'Y' pour en prendre une.");
+                msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous pouvez prendre 3 pizza dans le coffre de votre scooter.");
 				gPlayerCheckpoint[playerid]=20; job_TempVar[playerid]=0;
 				new houseid = job_GetRandomVar(1,job_City[playerid]);
 				SetPlayerCheckpoint(playerid,house[houseid][pos][0],house[houseid][pos][1],house[houseid][pos][2],2.5);
-		        msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Allez livrer les pizza. (Point rouge minimap)");
+		        msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Allez livrer les pizza. (Point rouge minimap)");
             }
             else if(IsAFarmerCar(carid) && PlayerInfo[playerid][pJob] == 2)
 			{
 			    job_City[playerid] = vehicle[carid][cJobCity];
-			    msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Utilisez la moissonneuse batteuse pour rcolter des bottes de paille dans l'un des 3 champs.");
-			    msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Le petit vhicule vous servira  transporter ces bottes  la ferme.");
+			    msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Utilisez la moissonneuse batteuse pour rcolter des bottes de paille dans l'un des 3 champs.");
+			    msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Le petit vhicule vous servira  transporter ces bottes  la ferme.");
 			}
             else if(IsATrashCar(carid) && PlayerInfo[playerid][pJob] == 4)
 			{
 			    job_City[playerid] = vehicle[carid][cJobCity];
-			    msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous devez vider les poubelles  l'aide de votre camion.");
-			    msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Une fois  ct d'une poubelle, utiliser la touche 'Y' pour une vider une.");
+			    msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous devez vider les poubelles  l'aide de votre camion.");
+			    msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Une fois  ct d'une poubelle, utiliser la touche 'Y' pour une vider une.");
 				gPlayerCheckpoint[playerid]=23; job_TempVar[playerid]=0; job_CheckPoints[playerid]=1;
 				job_ObjectN[playerid] = job_GetRandomVar(2,job_City[playerid]);
 				SetPlayerCheckpoint(playerid,trash[job_ObjectN[playerid]][pos][0],trash[job_ObjectN[playerid]][pos][1],trash[job_ObjectN[playerid]][pos][2],5.0);
-		        msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Allez vider les poubelles. (Point rouge minimap)");
+		        msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Allez vider les poubelles. (Point rouge minimap)");
 			}
 			else if(IsAWorkerCar(carid) && PlayerInfo[playerid][pJob] == 5)
 			{
-			    msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Allez chercher les matriaux au lieu indiqu. (Touche 'Y')");
+			    msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Allez chercher les matriaux au lieu indiqu. (Touche 'Y')");
 			    job_CheckPoints[playerid]=0;
 			    SetPlayerCheckpoint(playerid, gWorkerPoints[5][0],gWorkerPoints[5][1],gWorkerPoints[5][2], 3.0);
 				gPlayerCheckpoint[playerid] = 15;
@@ -42587,25 +42751,25 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 				job_CheckPoints[playerid] = 0;
 				gPlayerCheckpoint[playerid] = 25;
         		OnPlayerEnterCheckpoint(playerid);
-        		msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Votre planning a t tabli.");
+        		msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Votre planning a t tabli.");
 			}
 			else if(IsAPostCar(carid) && PlayerInfo[playerid][pJob] == 7)
 			{
 			    job_City[playerid] = vehicle[carid][cJobCity];
-			    msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous devez poster les lettres  l'aide de votre scooter, charger les lettres dans son coffre.");
-			    msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Descendez du scooter pour aller chercher des lettres au dpot, touche 'Y' pour en prendre une.");
-                msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous pouvez prendre 10 lettres dans le coffre de votre scooter.");
+			    msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous devez poster les lettres  l'aide de votre scooter, charger les lettres dans son coffre.");
+			    msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Descendez du scooter pour aller chercher des lettres au dpot, touche 'Y' pour en prendre une.");
+                msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous pouvez prendre 10 lettres dans le coffre de votre scooter.");
 				gPlayerCheckpoint[playerid]=26; job_TempVar[playerid]=0;
 				new houseid = job_GetRandomVar(1,job_City[playerid]);
 				SetPlayerCheckpoint(playerid,house[houseid][pos][0],house[houseid][pos][1],house[houseid][pos][2],2.5);
-		        msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Allez poster les lettres. (Point rouge minimap)");
+		        msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Allez poster les lettres. (Point rouge minimap)");
 			}
 			else if(IsAFisherCar(carid) && PlayerInfo[playerid][pJob] == 8)
 			{
 			    job_City[playerid] = vehicle[carid][cJobCity];
-			    msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous devez pcher du poisson  l'aide de votre filet de bteau. (Zone bleue minimap)");
-			    msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Pour descendre/monter votre filet appuyez sur la touche 'Y',.");
-                msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Un fois le poisson pch, dposez le au port.");
+			    msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous devez pcher du poisson  l'aide de votre filet de bteau. (Zone bleue minimap)");
+			    msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Pour descendre/monter votre filet appuyez sur la touche 'Y',.");
+                msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Un fois le poisson pch, dposez le au port.");
 				if(job_City[playerid]==0)
 					{GangZoneShowForPlayer(playerid,job_Zone[1],COLOR_LIGHTBLUE);}
 				else
@@ -42614,7 +42778,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 		    }
 			else if(IsATruckerCar(carid) && PlayerInfo[playerid][pJob] == 10)
 			{
-			    msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Utiliser une des remorques pour commencer votre travail.");
+			    msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Utiliser une des remorques pour commencer votre travail.");
 			    job_CheckPoints[playerid]=0; gPlayerCheckpoint[playerid]=10;
 			    job_City[playerid] = vehicle[carid][cJobCity]; job_TempVar[playerid] = 0;
 
@@ -42638,15 +42802,15 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 			else if(IsAFundCar(carid) && PlayerInfo[playerid][pJob] == 19)
 			{
 			    job_Start[playerid] = 1; job_CheckPoints[playerid]=0; job_TempVar[playerid]=0;
-			    msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous devez remplir les ATMs vides  l'aide de la touche 'Y'.");
-			    msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Les ATMs ont t marqu sur votre radar.");
+			    msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous devez remplir les ATMs vides  l'aide de la touche 'Y'.");
+			    msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Les ATMs ont t marqu sur votre radar.");
 			    for(new i = 0; i<totalATMs; i++)
 				{
 					if(atm[i][used]==1 && atm[i][cash] < 25000)
 						{atm_Icon[playerid][i]=CreateDynamicMapIcon(atm[i][pos][0], atm[i][pos][1], atm[i][pos][2], 0, COLOR_CHOCOLATE, -1, -1, playerid, 1000.0);}
 				}
 			}
-			//msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Votre planning a t tabli.");
+			//msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Votre planning a t tabli.");
 			TogglePlayerControllable(playerid,true);
             job_ShowTexts(playerid);
             job_Start[playerid] = 1;
@@ -42660,7 +42824,7 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
 	        if(PlayerInfo[playerid][pJobTime] < JOB_TIME)
 	        {
 	            format(string,sizeof(string),"{78769D} Job {FFFFFF} Il vous reste %d minutes de travaille pour obtenir le PayDay.",JOB_TIME-PlayerInfo[playerid][pJobTime]);
-	            msg_Client(playerid,COLOR_JOB,string);
+	            msg_JobText(playerid,COLOR_JOB,string);
 			}
 	        return 1;
         }
@@ -43980,9 +44144,25 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
             {
                 // === [APPROBATION] Enregistrer compte + candidature whitelist ===
                 OnPlayerRegister(playerid, PlayerInfo[playerid][pKey]);
+                TimerConnectOff(playerid);
+
+                // [APPROBATION] Systeme desactive : le compte est auto-approuve,
+                // on saute entierement le formulaire whitelist et l'attente admin.
+                if(!g_WhitelistActif)
+                {
+                    PlayerInfo[playerid][pActive] = 1;
+                    PlayerEnAttente[playerid] = false;
+                    {
+                        new wlReg[128];
+                        format(wlReg, sizeof(wlReg), "UPDATE lvrp_users SET active=1 WHERE id=%d LIMIT 1", PlayerInfo[playerid][pSQLID]);
+                        mysql_tquery(MYSQL, wlReg, "", "");
+                    }
+                    SpawnPlayer(playerid);
+                    return 1;
+                }
+
                 PlayerInfo[playerid][pActive] = 0;
                 PlayerEnAttente[playerid] = true;
-                TimerConnectOff(playerid);
                 // [WHITELIST] MySQLCreateAccount ne renseigne pas `active` : la
                 // colonne a ete ajoutee a la main sur la base de production et on
                 // ne peut pas parier sur sa valeur par defaut. On force 0 pour que
@@ -47700,9 +47880,9 @@ public OnPlayerKeyStateChange(playerid, newkeys, oldkeys)
 				if(job_ObjectN[playerid] == 0 && (IsPlayerInRangeOfPoint(playerid, 2.0, 2109.1106,-1788.5276,13.5608) || IsPlayerInRangeOfPoint(playerid, 2.0, -1809.9154,941.4058,24.8733) || IsPlayerInRangeOfPoint(playerid, 2.0, 2078.3313,2229.9302,11.0234)))
 				{
 				    if(job_TempVar[playerid] == 5)
-				        {return msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous avez dj 5 pizza dans le coffre de votre scooter.");}
+				        {return msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous avez dj 5 pizza dans le coffre de votre scooter.");}
                     job_ObjectN[playerid]=1;
-                    msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous avez pris une pizza, mettez l dans le coffre de votre scooter, touche 'Y'.");
+                    msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous avez pris une pizza, mettez l dans le coffre de votre scooter, touche 'Y'.");
 				    SetPlayerSpecialAction(playerid,SPECIAL_ACTION_CARRY);
 		            if(player_GetSlotObject(playerid) != -1)
                 		{job_HoldingObjectSlot[playerid]=player_GetSlotObject(playerid); SetPlayerAttachedObject( playerid, job_HoldingObjectSlot[playerid], 1582, 1, -0.002629, 0.600562, -0.046268, 262.555908, 95.853302, 0.000000, 1.000000, 1.000000, 1.000000 );}
@@ -47716,23 +47896,23 @@ public OnPlayerKeyStateChange(playerid, newkeys, oldkeys)
 	                    SetPlayerSpecialAction(playerid,SPECIAL_ACTION_NONE);
 			            job_TempVar[playerid]++;
 			            job_ObjectN[playerid]=0;
-			            msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous avez mis cette pizza dans le coffre.");
+			            msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous avez mis cette pizza dans le coffre.");
 			            RemovePlayerAttachedObject(playerid,job_HoldingObjectSlot[playerid]);
 			            job_HoldingObjectSlot[playerid]=-1;
 			            if(job_TempVar[playerid]==5)
-			                {msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Le coffre est plein, allez livrer ces pizza.");}
+			                {msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Le coffre est plein, allez livrer ces pizza.");}
 					}
 					else if(job_ObjectN[playerid]==0)
 					{
 					    if(job_TempVar[playerid] <= 0)
-					        {return msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Il n'y a plus de pizza dans le coffre !");}
+					        {return msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Il n'y a plus de pizza dans le coffre !");}
 					    job_TempVar[playerid]--;
 			            job_ObjectN[playerid]=1;
 			            SetPlayerSpecialAction(playerid,SPECIAL_ACTION_CARRY);
 	            		if(player_GetSlotObject(playerid) != -1)
                 			{job_HoldingObjectSlot[playerid]=player_GetSlotObject(playerid); SetPlayerAttachedObject( playerid, job_HoldingObjectSlot[playerid], 1582, 1, -0.002629, 0.600562, -0.046268, 262.555908, 95.853302, 0.000000, 1.000000, 1.000000, 1.000000 );}
                         if(job_TempVar[playerid]==0)
-			                {msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Il n'y a plus de pizza dans le coffre, pensez  en reprendre.");}
+			                {msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Il n'y a plus de pizza dans le coffre, pensez  en reprendre.");}
 					}
 				}
 		    }
@@ -47747,7 +47927,7 @@ public OnPlayerKeyStateChange(playerid, newkeys, oldkeys)
 							{tmpid=i; break;}
 					}
 					if(tmpid == -1)
-					    {return msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Aucune botte de paille  ct de vous.");}
+					    {return msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Aucune botte de paille  ct de vous.");}
 					job_HoldingObjectSlot[playerid] = tmpid;
 					AttachDynamicObjectToVehicle(job_Object[playerid][tmpid],carid, -0.099999, -1.500000, 0.700000, 0.000000, 0.000000, 0.000000);
 					if(job_City[playerid]==0)
@@ -47756,19 +47936,62 @@ public OnPlayerKeyStateChange(playerid, newkeys, oldkeys)
 					    {SetPlayerCheckpoint(playerid,-53.2267,17.6259,3.1172,5.0);}
 					gPlayerCheckpoint[playerid]=21;
 		        }
+		        // [FIX FERMIER TRACTEUR] Le tracteur (532) faisait pousser les bottes de
+		        // paille dans le champ (timer_5s) et affichait "Ramassez a l'aide de la
+		        // camionette", mais rien ne ramassait jamais rien : job_TakePay n'etait
+		        // JAMAIS appele pour ce vehicule, contrairement a la moissonneuse (478)
+		        // juste au-dessus. Le joueur au tracteur ne touchait donc aucune paye.
+		        // On ramasse directement depuis le tracteur (pas de trajet de livraison
+		        // separe, aucune destination n'etait definie pour cette branche) : 4
+		        // bottes ramassees = 1 paye, comme la bande MOYENNE des autres jobs a pied.
+		        else if(GetVehicleModel(carid) == 532)
+		        {
+		            new tmpid=-1;
+		            for(new i=0; i<5; i++)
+		            {
+		                if(IsValidDynamicObject(job_Object[playerid][i]) && IsPlayerInRangeOfPoint(playerid,5.0,job_ObjectPos[playerid][i][0],job_ObjectPos[playerid][i][1],job_ObjectPos[playerid][i][2]))
+							{tmpid=i; break;}
+					}
+					if(tmpid == -1)
+					    {return msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Aucune botte de paille  proximit du tracteur.");}
+
+					DestroyDynamicObject(job_Object[playerid][tmpid]);
+					job_ObjectN[playerid]--; // libere le slot : timer_5s pourra en refaire pousser une autre
+					job_TempVar[playerid]++;
+					msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Botte de paille charge dans le tracteur.");
+
+					if(job_TempVar[playerid] >= 4)
+					{
+					    job_TakePay(playerid,PlayerInfo[playerid][pJob]);
+					    job_TempVar[playerid] = 0;
+					}
+		        }
 		    }
 		    else if(PlayerInfo[playerid][pJob] == 3 && GetPlayerState(playerid) == PLAYER_STATE_ONFOOT)
 		    {
+		        // [FIX MOBILE] Mini-jeu de minage : demandait 4 touches differentes
+		        // (Sprint/Jump/Entrer/N), or sur mobile seules Y et N sont
+		        // reellement accessibles (pas de clavier physique). 3 des 4
+		        // touches demandees etaient injouables -> le job freezait le
+		        // joueur (TogglePlayerControllable false) sans issue 3 fois sur 4.
+		        // On mappe desormais job_ObjectN==0 sur Y ici (au lieu de Sprint).
+		        if(job_ObjectN[playerid] == 0)
+		        {
+		            job_ObjectN[playerid]=-1;
+		            LoopingAnim(playerid,"SWORD","SWORD_3",4.1, 0, 1, 1, 0, 0);
+		            job_City[playerid]++;
+		            SetTimerEx("job_Apply",1000,0,"iii",playerid,3,1);
+		        }
 		        if(job_City[playerid] == 4)
 		        {
 		            if(!IsPlayerInRangeOfPoint(playerid, 2.0,-1364.0155,2451.7180,89.8348))
-		                {return msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous n'tes pas au dpot de minerai !");}
+		                {return msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous n'tes pas au dpot de minerai !");}
 		            SetPlayerSpecialAction(playerid,SPECIAL_ACTION_NONE);
 		            RemovePlayerAttachedObject(playerid,job_HoldingObjectSlot[playerid]);
 		            LoopingAnim(playerid, "CARRY", "PUTDWN", 4.1, 0, 1, 1, 0, 0);
 	                job_CheckPoints[playerid]=random(9);
 	                SetPlayerCheckpoint(playerid,gMinerPoints[job_CheckPoints[playerid]][0], gMinerPoints[job_CheckPoints[playerid]][1], gMinerPoints[job_CheckPoints[playerid]][2], 2.0);
-                    msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Minerai dpos, recommencer. (Point Rouge Minimap)");
+                    msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Minerai dpos, recommencer. (Point Rouge Minimap)");
 					job_City[playerid]=0;
 					PlayerInfo[playerid][pJobExp]++;job_UpdateTexts(playerid);
 	                job_TempVar[playerid]++;
@@ -47794,9 +48017,9 @@ public OnPlayerKeyStateChange(playerid, newkeys, oldkeys)
 				if(job_ObjectN[playerid] == 0 && (IsPlayerInRangeOfPoint(playerid, 2.0, 1743.4943,-1587.6168,13.5524) || IsPlayerInRangeOfPoint(playerid, 2.0, -2351.2158,496.2127,30.7586) || IsPlayerInRangeOfPoint(playerid, 2.0, 2267.0444,2291.2073,10.8203)))
 				{
 				    if(job_TempVar[playerid] == 10)
-				        {return msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous avez dj 10 lettres dans le coffre de votre scooter.");}
+				        {return msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous avez dj 10 lettres dans le coffre de votre scooter.");}
                     job_ObjectN[playerid]=1;
-                    msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous avez pris une lettre, mettez l dans le coffre de votre scooter, touche 'Y'.");
+                    msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous avez pris une lettre, mettez l dans le coffre de votre scooter, touche 'Y'.");
 		            if(player_GetSlotObject(playerid) != -1)
                 		{job_HoldingObjectSlot[playerid]=player_GetSlotObject(playerid); SetPlayerAttachedObject( playerid, job_HoldingObjectSlot[playerid], 2953, 6, 0.071939, 0.041660, -0.046764, 8.187542, 275.437194, 352.954010, 1.000000, 1.000000, 1.000000 );}
 				}
@@ -47808,22 +48031,22 @@ public OnPlayerKeyStateChange(playerid, newkeys, oldkeys)
 				    {
 			            job_TempVar[playerid]++;
 			            job_ObjectN[playerid]=0;
-			            msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous avez mis cette lettre dans le coffre.");
+			            msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous avez mis cette lettre dans le coffre.");
 			            RemovePlayerAttachedObject(playerid,job_HoldingObjectSlot[playerid]);
 			            job_HoldingObjectSlot[playerid]=-1;
 			            if(job_TempVar[playerid]==10)
-			                {msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Le coffre est plein, allez poster ces lettres.");}
+			                {msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Le coffre est plein, allez poster ces lettres.");}
 					}
 					else if(job_ObjectN[playerid]==0)
 					{
 					    if(job_TempVar[playerid] <= 0)
-					        {return msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Il n'y a plus de lettre dans le coffre !");}
+					        {return msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Il n'y a plus de lettre dans le coffre !");}
 					    job_TempVar[playerid]--;
 			            job_ObjectN[playerid]=1;
 	            		if(player_GetSlotObject(playerid) != -1)
                 			{job_HoldingObjectSlot[playerid]=player_GetSlotObject(playerid); SetPlayerAttachedObject( playerid, job_HoldingObjectSlot[playerid], 2953, 6, 0.071939, 0.041660, -0.046764, 8.187542, 275.437194, 352.954010, 1.000000, 1.000000, 1.000000 );}
                         if(job_TempVar[playerid]==0)
-			                {msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Il n'y a plus de lettre dans le coffre, pensez  en reprendre.");}
+			                {msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Il n'y a plus de lettre dans le coffre, pensez  en reprendre.");}
 					}
 				}
 		    }
@@ -47834,7 +48057,7 @@ public OnPlayerKeyStateChange(playerid, newkeys, oldkeys)
 		            if(job_ObjectN[playerid] == 0)
 		            {
 		                job_ObjectN[playerid] = 1;
-		                msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous avez descendu le filet.");
+		                msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous avez descendu le filet.");
 		                job_Object[playerid][0] = CreateDynamicObject( 2945,0,0,0,0,0,0,0,0,-1,200.0 ); // <fillet 1>
 						AttachDynamicObjectToVehicle(job_Object[playerid][0], GetPlayerVehicleID(playerid), 0.200000, -5.599997, 0.299999, 117.000000, 0.000000, 0.000000 ); // <fillet 1>
 						job_Object[playerid][1] = CreateDynamicObject( 2945,0,0,0,0,0,0,0,0,-1,200.0 ); // <filet 2>
@@ -47845,13 +48068,13 @@ public OnPlayerKeyStateChange(playerid, newkeys, oldkeys)
 		            else if(job_ObjectN[playerid] == 1)
 		            {
 		                if(job_TempVar[playerid] <= 4)
-		                    {return msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous devez d'abord pcher avant de remonter le filet.");}
+		                    {return msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous devez d'abord pcher avant de remonter le filet.");}
 						for(new i=0;i <5; i++)
 						{
 						    if(IsValidDynamicObject(job_Object[playerid][i]))
 								{DestroyDynamicObject(job_Object[playerid][i]);}
 						}
-                        msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous avez remonter le filet.");
+                        msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous avez remonter le filet.");
                         job_ObjectN[playerid] = 2;
 		            }
 		        }
@@ -47862,11 +48085,11 @@ public OnPlayerKeyStateChange(playerid, newkeys, oldkeys)
 					    new Float:x, Float:y, Float:z;
 						GetVehiclePos(job_CarId[playerid],x,y,z);
 					    if(IsPlayerInRangeOfPoint(playerid,3.0,x,y,z))
-							{return msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous devez tre en dehors du bteau.");}
+							{return msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous devez tre en dehors du bteau.");}
                         if(player_GetSlotObject(playerid) != -1)
                 			{job_HoldingObjectSlot[playerid]=player_GetSlotObject(playerid); SetPlayerAttachedObject( playerid, job_HoldingObjectSlot[playerid], 2969, 1, 0.078208, 0.408122, -0.022683, 358.315582, 90.338638, 0.000000, 1.000000, 1.000000, 1.000000 );}
                         job_ObjectN[playerid]=3;
-                        msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Dposer le poisson au lien indiqu. (Touche 'Y')");
+                        msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Dposer le poisson au lien indiqu. (Touche 'Y')");
                         SetPlayerSpecialAction(playerid,SPECIAL_ACTION_CARRY);
 					}
 					else if(job_ObjectN[playerid] == 3)
@@ -47882,7 +48105,7 @@ public OnPlayerKeyStateChange(playerid, newkeys, oldkeys)
                         PlayerInfo[playerid][pJobExp]++;job_UpdateTexts(playerid);
 	                	if(job_TempVar[playerid]==3)
 			    			{job_TakePay(playerid,PlayerInfo[playerid][pJob]); job_TempVar[playerid]=0;}
-                        msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous avez dpos le poisson, recommencer.");
+                        msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous avez dpos le poisson, recommencer.");
 					}
 		        }
 		    }
@@ -47891,10 +48114,10 @@ public OnPlayerKeyStateChange(playerid, newkeys, oldkeys)
 		        new Float:x, Float:y, Float:z;
 				GetVehiclePos(job_CarId[playerid],x,y,z);
 				if(!IsPlayerInRangeOfPoint(playerid,3.5,x,y,z))
-					{return msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous devez tre  ct de votre camion.");}
+					{return msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous devez tre  ct de votre camion.");}
 		        if(job_CheckPoints[playerid] >=0 && job_CheckPoints[playerid] <= 4 && job_ObjectN[playerid] == 1)
 		        {
-					msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous avez dpos le materiau.");
+					msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous avez dpos le materiau.");
 					RemovePlayerAttachedObject(playerid,job_HoldingObjectSlot[playerid]);
 					SetPlayerSpecialAction(playerid,SPECIAL_ACTION_NONE);
 				 	job_ObjectN[playerid]=0;
@@ -47909,8 +48132,8 @@ public OnPlayerKeyStateChange(playerid, newkeys, oldkeys)
 						{
 						    new rand = random(5);
 						    SetPlayerCheckpoint(playerid,gWorkerPoints[rand][0],gWorkerPoints[rand][1],gWorkerPoints[rand][2],3.0);
-						    msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous avez dpos le materiau, prenez votre camion et retournez au chantier.");
-						    msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Allez installer les materiaux. (Touche 'Y' pour en prendre un)");
+						    msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous avez dpos le materiau, prenez votre camion et retournez au chantier.");
+						    msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Allez installer les materiaux. (Touche 'Y' pour en prendre un)");
 							job_Object[playerid][4] = CreateDynamicObject(935,0,0,0,0,0,0,0,0,-1);
 							AttachDynamicObjectToVehicle(job_Object[playerid][4], job_CarId[playerid], 0.000000, -4.799997, 0.300000, 0.000000, 0.000000, 0.000000 );
 						}
@@ -47931,7 +48154,7 @@ public OnPlayerKeyStateChange(playerid, newkeys, oldkeys)
 					}
 				    SetPlayerSpecialAction(playerid,SPECIAL_ACTION_CARRY);
 				    job_ObjectN[playerid] = 1;
-				    msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous avez pris ce materiau.");
+				    msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous avez pris ce materiau.");
 				}
 		    }
 		    else if(PlayerInfo[playerid][pJob] == 19 && job_Start[playerid] == 1 && job_TempVar[playerid] == 0)
@@ -47943,11 +48166,11 @@ public OnPlayerKeyStateChange(playerid, newkeys, oldkeys)
 						{atmid = i; break;}
 				}
 				if(atmid == -1)
-					{msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Aucun ATM  ct de vous."); return 1;}
+					{msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Aucun ATM  ct de vous."); return 1;}
 				if(atm[atmid][cash] >=25000)
-    				{msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Atm dj remplie.");return 1;}
+    				{msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Atm dj remplie.");return 1;}
 
-				msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} L'atm se remplie...");
+				msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} L'atm se remplie...");
 				SetTimerEx("job_ResetFreeze",4000,0,"id",playerid,atmid); // 4 secondes
 				TogglePlayerControllable(playerid,false);
 				job_TempVar[playerid]=1;
@@ -47964,11 +48187,11 @@ public OnPlayerKeyStateChange(playerid, newkeys, oldkeys)
 						{atmid = i; break;}
 				}
 				if(atmid == -1)
-					{msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Aucun ATM  ct de vous."); return 1;}
+					{msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Aucun ATM  ct de vous."); return 1;}
 				if(atm[atmid][cash] >=25000)
-    				{msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Atm dj remplie.");return 1;}
+    				{msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Atm dj remplie.");return 1;}
 
-				msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} L'atm se remplie...");
+				msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} L'atm se remplie...");
 				SetTimerEx("job_ResetFreeze",4000,0,"id",playerid,atmid); // 4 secondes
 				TogglePlayerControllable(playerid,false);
 				job_TempVar[playerid]=1;
@@ -47993,7 +48216,7 @@ public OnPlayerKeyStateChange(playerid, newkeys, oldkeys)
 	                    {job_TakePay(playerid,PlayerInfo[playerid][pJob]);job_CheckPoints[playerid]=0;}
 	                job_TempVar[playerid] = random(totalTrash);
 					SetPlayerCheckpoint(playerid,trash[job_TempVar[playerid]][pos][0],trash[job_TempVar[playerid]][pos][1],trash[job_TempVar[playerid]][pos][2],3.0);
-					msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Poubelle vide, retourn dans votre camion.");
+					msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Poubelle vide, retourn dans votre camion.");
 				}
 				return 1;
 			}
@@ -48031,29 +48254,14 @@ public OnPlayerKeyStateChange(playerid, newkeys, oldkeys)
 	}
 	else if(newkeys == KEY_SPRINT)
     {
-        if(GetPlayerState(playerid) == 1 && job_Start[playerid] == 1)// On foot = A pied
-		{
-		    if(PlayerInfo[playerid][pJob] == 3 && job_ObjectN[playerid]==0)
-		    {
-		        job_ObjectN[playerid]=-1;
-		        LoopingAnim(playerid,"SWORD","SWORD_3",4.1, 0, 1, 1, 0, 0);
-		        job_City[playerid]++;
-		        SetTimerEx("job_Apply",1000,0,"iii",playerid,3,1);
-		    }
-		}
+        // [FIX MOBILE] pJob==3/job_ObjectN==0 retire d'ici : deplace sur la
+        // touche Y (accessible sur mobile), voir le bloc KEY_YES plus haut.
     }
     else if(newkeys == KEY_JUMP)
     {
-        if(GetPlayerState(playerid) == 1 && job_Start[playerid] == 1)// On foot = A pied
-		{
-		    if(PlayerInfo[playerid][pJob] == 3 && job_ObjectN[playerid]==1)
-		    {
-		        job_ObjectN[playerid]=-1;
-		        LoopingAnim(playerid, "BASEBALL", "Bat_4", 4.1, 0, 1, 1, 1, 0);
-		        job_City[playerid]++;
-		        SetTimerEx("job_Apply",1000,0,"iii",playerid,3,1);
-		    }
-		}
+        // [FIX MOBILE] pJob==3/job_ObjectN==1 retire d'ici : le saut n'est
+        // pas fiable au toucher sur mobile. job_ObjectN==1 est desormais
+        // gere par la touche N ci-dessous, comme le reste du mini-jeu.
     }
 	else if((newkeys & KEY_JUMP) && (newkeys & KEY_SPRINT))
     {
@@ -48072,7 +48280,10 @@ public OnPlayerKeyStateChange(playerid, newkeys, oldkeys)
 	{
 	    if(GetPlayerState(playerid) == 1 && job_Start[playerid] == 1)// On foot = A pied
 		{
-		    if(PlayerInfo[playerid][pJob] == 3 && job_ObjectN[playerid]==3)
+		    // [FIX MOBILE] Mini-jeu de minage : job_ObjectN va desormais de 0
+		    // (Y) a 1 (N) seulement, au lieu de 0 a 3 (Sprint/Jump/Entrer/N).
+		    // Voir le bloc KEY_YES pour job_ObjectN==0.
+		    if(PlayerInfo[playerid][pJob] == 3 && job_ObjectN[playerid]==1)
 		    {
 		        job_ObjectN[playerid]=-1;
 		        LoopingAnim(playerid,"SWORD","SWORD_3",4.1, 0, 1, 1, 0, 0);
@@ -48265,16 +48476,9 @@ public OnPlayerKeyStateChange(playerid, newkeys, oldkeys)
         if(!IsPlayerInAnyVehicle(playerid))
             {player_CheckEnter(playerid);}
             
-        if(GetPlayerState(playerid) == 1 && job_Start[playerid] == 1)// On foot = A pied
-		{
-		    if(PlayerInfo[playerid][pJob] == 3 && job_ObjectN[playerid]==2)
-		    {
-		        job_ObjectN[playerid]=-1;
-		        LoopingAnim(playerid, "BASEBALL", "Bat_4", 4.1, 0, 1, 1, 1, 0);
-		        job_City[playerid]++;
-		        SetTimerEx("job_Apply",1000,0,"iii",playerid,3,1);
-		    }
-		}
+        // [FIX MOBILE] pJob==3/job_ObjectN==2 retire d'ici : la touche
+        // 'Entrer'/'F' n'existe pas sur mobile. job_ObjectN ne va plus que
+        // de 0 (Y) a 1 (N), voir les blocs KEY_YES / KEY_NO plus haut.
         new Float:poss[3];
 	    GetPlayerPos(playerid, poss[0], poss[1], poss[2]);
 	    if(poss[1] < -1301.4 && poss[1] > -1303.2417 && poss[0] < 1786.2131 && poss[0] > 1784.1555)    // He is using the elevator button
@@ -48875,7 +49079,7 @@ public OnPlayerModelSelectionEx(playerid, response, extraid, modelid)
 
 	    	MecanoInfo[skin][mecano_DialogGestion[playerid]-7] = modelid;
 	    	format(string,sizeof(string),"{78769D} Mcanicien {FFFFFF} Vous avez chang le skin du rang %d en skin id %d.",mecano_DialogGestion[playerid]-6,modelid);
-		    msg_Client(playerid,COLOR_JOB,string);
+		    msg_JobText(playerid,COLOR_JOB,string);
 		    mecano_Gestion(playerid);
 		    mecano_Save();
 		}
@@ -50546,6 +50750,26 @@ stock Phone_HandleClick(playerid,PlayerText:td)
 
 
 //---------------------------<[ OnPlayerCommandText ]>-----------g---------------------------------------------
+// [RACCOURCIS] Menu cliquable pour /maison sans argument, appele depuis le
+// panneau Raccourcis (touche Y) et /maison tout court. Reutilise les vraies
+// sous-commandes existantes via OnPlayerCommandText, donc toutes les
+// verifications deja en place (proximite, propriete...) restent valables.
+stock Maison_ShowMenu(playerid)
+{
+	new body[400];
+	format(body, sizeof(body),
+		"{FFFFFF}Acheter\nLocaliser\nVendre\nLouer\nDelouer\nToquer\n{A98500}Porte (proprio)\nGestion (proprio)\nMobilier (proprio)\nCoffre (proprio)");
+	return ShowPlayerDialog(playerid, DIALOG_MAISON_RACC, DIALOG_STYLE_LIST, "{FFD700}Maison", body, "Choisir", "Fermer");
+}
+
+// [RACCOURCIS] Meme principe pour /vip sans argument.
+stock Vip_ShowMenu(playerid)
+{
+	new body[300];
+	format(body, sizeof(body), "{FFFFFF}Online\nArmure\nSkin\nMaison\nGarage");
+	return ShowPlayerDialog(playerid, DIALOG_VIP_RACC, DIALOG_STYLE_LIST, "{800080}V.I.P", body, "Choisir", "Fermer");
+}
+
 public OnPlayerCommandText(playerid, cmdtext[])
 {
 	new string[1024],cmd[64],tmp[256];
@@ -51116,6 +51340,38 @@ public OnPlayerCommandText(playerid, cmdtext[])
     // ============================================================
     // COMMANDES ADMIN : /godmode /banserial /spec /specstop
     // ============================================================
+		else if(strcmp(cmd, "/approbation", true) == 0)
+		{
+			if(PlayerInfo[playerid][pAdmin] < 1)
+				return msg_Client(playerid, COLOR_NOACCES, "{FF0069}Acc�s refus�.");
+
+			tmp = strtok(cmdtext, idx);
+			if(!strlen(tmp))
+			{
+				new apStatus[64];
+				format(apStatus, sizeof(apStatus), "{A98500}[Approbation]{FFFFFF} Systeme actuellement : %s. Usage : /approbation [on/off]", (g_WhitelistActif) ? ("{00FF00}ACTIF") : ("{FF6347}DESACTIVE"));
+				return msg_Client(playerid, COLOR_WHITE, apStatus);
+			}
+
+			new apMsg[128];
+			if(strcmp(tmp, "on", true) == 0)
+			{
+				g_WhitelistActif = true;
+				dini_BoolSet(WHITELIST_CONFIG_FILE, "Actif", true);
+				format(apMsg, sizeof(apMsg), "{FFAA00}[Approbation]{FFFFFF} %s a REACTIVE le systeme d'approbation des nouveaux joueurs.", PlayerInfo[playerid][pName]);
+				NotifyAdminsApprobationToggle(apMsg);
+				return 1;
+			}
+			else if(strcmp(tmp, "off", true) == 0)
+			{
+				g_WhitelistActif = false;
+				dini_BoolSet(WHITELIST_CONFIG_FILE, "Actif", false);
+				format(apMsg, sizeof(apMsg), "{FFAA00}[Approbation]{FFFFFF} %s a DESACTIVE le systeme d'approbation : les nouveaux comptes seront auto-approuves.", PlayerInfo[playerid][pName]);
+				NotifyAdminsApprobationToggle(apMsg);
+				return 1;
+			}
+			return msg_Client(playerid, COLOR_WHITE, "{A98500}[Usage]{FFFFFF} /approbation [on/off]");
+		}
 		else if(strcmp(cmd, "/attente", true) == 0)
 		{
 			if(PlayerInfo[playerid][pAdmin] < 1)
@@ -51876,10 +52132,11 @@ public OnPlayerCommandText(playerid, cmdtext[])
 	        tmp = strtok(cmdtext, idx);
 	        if(!strlen(tmp))
 	        {
-	            msg_Client(playerid, COLOR_WHITE, "{A98500} Usage {FFFFB2} /ma(ison) <nom>");
-	            msg_Client(playerid, COLOR_WHITE, "{FFFFB2} acheter - localiser - vendre - louer - delouer - toquer");
-	            msg_Client(playerid, COLOR_WHITE, "{A98500}Proprio :{FFFFB2} porte - gestion - (mobi)lier - vendrea - coffre");
-	            return 1;
+	            // [RACCOURCIS] /maison sans argument affichait juste la liste des
+	            // sous-commandes dans le chat (donc "rien" visuellement quand
+	            // appele depuis le bouton Raccourcis). On ouvre desormais un vrai
+	            // menu cliquable, comme /sac, /emotes, /travail.
+	            return Maison_ShowMenu(playerid);
 	        }
 	        if(strcmp(tmp,"acheter",true) == 0)
 	        {
@@ -53300,6 +53557,15 @@ public OnPlayerCommandText(playerid, cmdtext[])
 	            break;
             }
         }
+		return 1;
+	}
+	else if(strcmp(cmd,"/pos",true)==0 || strcmp(cmd,"/mapos",true)==0) // [DEBUG] coords rapides pour signaler un bug precis
+	{
+		new Float:px,Float:py,Float:pz,Float:pa, posmsg[128];
+		GetPlayerPos(playerid,px,py,pz);
+		GetPlayerFacingAngle(playerid,pa);
+		format(posmsg,sizeof(posmsg),"{FFD700} Position {FFFFFF} X:%.1f Y:%.1f Z:%.1f A:%.1f Interieur:%d Monde:%d",px,py,pz,pa,GetPlayerInterior(playerid),GetPlayerVirtualWorld(playerid));
+		msg_Client(playerid,COLOR_WHITE,posmsg);
 		return 1;
 	}
 	else if(strcmp(cmd,"/aide",true)==0 || strcmp(cmd,"/guide",true)==0 || strcmp(cmd,"/faq",true)==0)// Guide rapide enrichi
@@ -56319,7 +56585,7 @@ public OnPlayerCommandText(playerid, cmdtext[])
 							var=(random(50-5)+10);
 							PlayerPlaySound(playerid, 1056, 0.0, 0.0, 0.0);
 							format(string, sizeof(string), "{78769D} Mcanicien {FFFFFF} Vous gagnez $%d pour avoir gar en fourrire ce vhicule.",var);
-							msg_Client(playerid, COLOR_JOB, string);
+							msg_JobText(playerid, COLOR_JOB, string);
 							SafeGivePlayerMoney(playerid, var,"Job, mcano");
 							vehicle[idcar][cStatut] = 1;
 						}
@@ -56496,7 +56762,7 @@ public OnPlayerCommandText(playerid, cmdtext[])
 									{
 										var=(random(50-5)+10);
 										PlayerPlaySound(playerid, 1056, 0.0, 0.0, 0.0);
-										msg_Client(playerid, COLOR_JOB, string);
+										msg_JobText(playerid, COLOR_JOB, string);
 										vehicle[idcar][cStatut] = 1;
 									}
 									else
@@ -67244,7 +67510,7 @@ public OnPlayerCommandText(playerid, cmdtext[])
 		if(strcmp(tmp,"fin", true) == 0)
 		{
 		    if(job_Start[playerid]==1)
-    			{job_End(playerid); msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous avez arrt de travailler.");}
+    			{job_End(playerid); msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous avez arrt de travailler.");}
 		}
 		else if(strcmp(tmp,"vendre", true) == 0)
 		{
@@ -67263,19 +67529,19 @@ public OnPlayerCommandText(playerid, cmdtext[])
 							{return msg_Client(playerid, COLOR_INFO, "{A98500} Usage {FFFFB2} /job vendre <id/joueur> <prix>");}
 						new prices=strval(tmp);
 						if(prices < 10 || prices > 200)
-							{return msg_Client(playerid, COLOR_JOB, "{78769D} Job {FFFFFF} Le prix doit tre compris entre $10 et $200.");}
+							{return msg_JobText(playerid, COLOR_JOB, "{78769D} Job {FFFFFF} Le prix doit tre compris entre $10 et $200.");}
 							
                         player_SellOffer[giveplayerid]=playerid;
                         player_SellOther[giveplayerid]=prices;
                         player_SellId[giveplayerid]=2543;
                         format(string,sizeof(string),"{78769D} Job {FFFFFF} Vous proposez  %s d'acheter une pizza pour $%d.",PlayerInfo[giveplayerid][pName],prices);
-                        msg_Client(playerid,COLOR_JOB,string);
+                        msg_JobText(playerid,COLOR_JOB,string);
                         format(string,sizeof(string),"{CF9756} Info {FFFFFF} %s vous propose une pizza pour $%d. (/accepter pizza)",PlayerInfo[playerid][pName],prices);
                         msg_Client(giveplayerid,COLOR_INFO,string);
                         return 1;
 					}
 					else
-						{msg_Client(playerid, COLOR_JOB, "{78769D} Job {FFFFFF} Ce joueur n'est pas prs de vous.");}
+						{msg_JobText(playerid, COLOR_JOB, "{78769D} Job {FFFFFF} Ce joueur n'est pas prs de vous.");}
    				}
    				else
 			   		{msg_Client(playerid,COLOR_INFO,"{CF9756} Info {FFFFFF} Ce joueur n'est pas connect."); return 1;}
@@ -67284,13 +67550,13 @@ public OnPlayerCommandText(playerid, cmdtext[])
 		else if(strcmp(tmp,"debut", true) == 0)
 		{
 		    if(job_Start[playerid]!=0)
-		        {return msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous tes dj en train de travailler.");}
+		        {return msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous tes dj en train de travailler.");}
 			if(PlayerInfo[playerid][pJob] == 3) // Mineur
 			{
 			    if(PlayerInfo[playerid][pJobTime] < JOB_TIME)
 			    {
 					format(string,sizeof(string),"{78769D} Job {FFFFFF} Vous devez encore travailler %d minute(s) pour obtenir la paye.",JOB_TIME-PlayerInfo[playerid][pJobTime]);
-				    msg_Client(playerid,COLOR_JOB,string);
+				    msg_JobText(playerid,COLOR_JOB,string);
 			    }
 			    job_SetSkin(playerid,PlayerInfo[playerid][pJob]);
    				job_CheckPoints[playerid]=random(9);
@@ -67298,8 +67564,8 @@ public OnPlayerCommandText(playerid, cmdtext[])
 			    gPlayerCheckpoint[playerid]=22; job_ObjectN[playerid]=-1;
 			    job_ShowTexts(playerid);
 			    SetPlayerCheckpoint(playerid,gMinerPoints[job_CheckPoints[playerid]][0], gMinerPoints[job_CheckPoints[playerid]][1], gMinerPoints[job_CheckPoints[playerid]][2], 2.0);
-			    msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Allez au CheckPoint afin de commencer  miner. (Point rouge minimap)");
-			    msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Puis suivez les instructions qui seront afficher en haut de l'ecran.");
+			    msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Allez au CheckPoint afin de commencer  miner. (Point rouge minimap)");
+			    msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Puis suivez les instructions qui seront afficher en haut de l'ecran.");
 			}
 			else if(PlayerInfo[playerid][pJob] == 9) // Voiturier
 			{
@@ -67307,12 +67573,12 @@ public OnPlayerCommandText(playerid, cmdtext[])
 			    job_Start[playerid]=1; job_TempVar[playerid]=0; job_CarId[playerid]=-1;
 			    job_City[playerid] = GetCityPlayer(playerid);
 			    job_ShowTexts(playerid);
-			    msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous devez garer les voitures des rsidents");
+			    msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous devez garer les voitures des rsidents");
 			    SetTimerEx("job_Apply",3000,0,"iii",playerid,9,1);
 				if(PlayerInfo[playerid][pJobTime] < JOB_TIME)
 			    {
 					format(string,sizeof(string),"{78769D} Job {FFFFFF} Vous devez encore travailler %d minute(s) pour obtenir la paye.",JOB_TIME-PlayerInfo[playerid][pJobTime]);
-				    msg_Client(playerid,COLOR_JOB,string);
+				    msg_JobText(playerid,COLOR_JOB,string);
 			    }
 			}
 			else if(PlayerInfo[playerid][pJob] == 11) // Medecin
@@ -67320,11 +67586,11 @@ public OnPlayerCommandText(playerid, cmdtext[])
 			    if(PlayerInfo[playerid][pJobTime] < JOB_TIME)
 			    {
 					format(string,sizeof(string),"{78769D} Job {FFFFFF} Vous devez encore travailler %d minute(s) pour obtenir la paye.",JOB_TIME-PlayerInfo[playerid][pJobTime]);
-				    msg_Client(playerid,COLOR_JOB,string);
+				    msg_JobText(playerid,COLOR_JOB,string);
 			    }
 		 		gServerMedics++;
 				job_Start[playerid]=1; job_SetSkin(playerid,PlayerInfo[playerid][pJob]);
-				msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous tes en service mdecin. (/medecin)");
+				msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Vous tes en service mdecin. (/medecin)");
 				SetPlayerColor(playerid,0xFF828200);
 			    for(new i = 0; i <MAX_PLAYERS_CURRENT+1; i++) // personnes blsses
 				{
@@ -67352,10 +67618,10 @@ public OnPlayerCommandText(playerid, cmdtext[])
 					// Ces metiers demarrent en montant dans leur vehicule dedie
 					// (message affiche automatiquement), pas via /job debut.
 					case 1, 2, 4, 5, 6, 7, 8, 10, 12, 19:
-						return msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Montez dans le vehicule de votre metier pour commencer, pas besoin de /job debut.");
+						return msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Montez dans le vehicule de votre metier pour commencer, pas besoin de /job debut.");
 					// Aucune mission codee pour ces metiers pour l'instant.
 					default:
-						return msg_Client(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Ce metier n'a pas encore de mission jouable, contactez l'administration.");
+						return msg_JobText(playerid,COLOR_JOB,"{78769D} Job {FFFFFF} Ce metier n'a pas encore de mission jouable, contactez l'administration.");
 				}
 			}
 		}
@@ -67440,7 +67706,7 @@ public OnPlayerCommandText(playerid, cmdtext[])
 				{msg_Client(playerid,COLOR_USAGE,"{A98500} Usage {FFFFB2} /mecano reparer <id/joueur> <prix>");return 1;}
 			new prices=strval(tmp);
 			if(prices < 20 || prices > 1000)
-				{msg_Client(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Le prix doit tre compris entre $20 et $1000."); return 1; }
+				{msg_JobText(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Le prix doit tre compris entre $20 et $1000."); return 1; }
 			if(IsPlayerConnected(giveplayerid) && giveplayerid != INVALID_PLAYER_ID)
 			{
 	   			if(ProxDetectorS(8.0, playerid, giveplayerid))
@@ -67448,9 +67714,9 @@ public OnPlayerCommandText(playerid, cmdtext[])
 					if(IsPlayerInAnyVehicle(giveplayerid))
 					{
 						if(giveplayerid == playerid)
-							{msg_Client(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Tu ne peux pas te rparer toi mme."); return 1; }
+							{msg_JobText(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Tu ne peux pas te rparer toi mme."); return 1; }
 						format(string, sizeof(string), "{78769D} Mcanicien {FFFFFF} Vous proposez  %s de rparer son vhicule pour $%d .",PlayerInfo[giveplayerid][pName],prices);
-						msg_Client(playerid, COLOR_JOB, string);
+						msg_JobText(playerid, COLOR_JOB, string);
 						format(string, sizeof(string), "Le mcanicien %s vous propose de rparer votre vhicule pour $%d.",PlayerInfo[playerid][pName],prices);
 						ShowPlayerDialog(giveplayerid,127,DIALOG_STYLE_MSGBOX,"|Mcanicen| Rparation",string,"Accepter","Refuser");
 						mecano_Offer[giveplayerid] = playerid;
@@ -67458,10 +67724,10 @@ public OnPlayerCommandText(playerid, cmdtext[])
 						return 1;
 					}
 					else
-						{msg_Client(playerid,COLOR_JOB,"{78769D} Mcanicien {FFFFFF} Ce joueur doit tre dans un vhicule."); return 1;}
+						{msg_JobText(playerid,COLOR_JOB,"{78769D} Mcanicien {FFFFFF} Ce joueur doit tre dans un vhicule."); return 1;}
 				}
 				else
-					{msg_Client(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Ce joueur n'est pas prs de vous.");}
+					{msg_JobText(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Ce joueur n'est pas prs de vous.");}
    			}
    			else
 			   	{msg_Client(playerid,COLOR_INFO,"{CF9756} Info {FFFFFF} Ce joueur n'est pas connect."); return 1;}
@@ -67470,7 +67736,7 @@ public OnPlayerCommandText(playerid, cmdtext[])
 		{
 		    if(mecano_Duty[playerid] == 1)
 			{
-		        msg_Client(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Vous n'tes plus en service, vous ne recevrez plus d'appel.");
+		        msg_JobText(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Vous n'tes plus en service, vous ne recevrez plus d'appel.");
 		        mecano_Duty[playerid] = 0;
 		        Mechanics -= 1;
 		        SetPlayerSkin(playerid,PlayerInfo[playerid][pChar]);
@@ -67480,9 +67746,9 @@ public OnPlayerCommandText(playerid, cmdtext[])
 		        if(PlayerInfo[playerid][pDutyTime] < DUTY_TIME)
 			    {
 					format(string,sizeof(string),"{FF8282} Mdecin {FFFFFF} Vous devez encore travailler %d minute(s) pour obtenir la paye.",DUTY_TIME-PlayerInfo[playerid][pJobTime]);
-				    msg_Client(playerid,COLOR_JOB,string);
+				    msg_JobText(playerid,COLOR_JOB,string);
 			    }
-		        msg_Client(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Vous tes en service, vous recevrez les appels des personnes qui ont besoin de vous.");
+		        msg_JobText(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Vous tes en service, vous recevrez les appels des personnes qui ont besoin de vous.");
 		        mecano_Duty[playerid] = 1;
 		        job_SetSkin(playerid,17);
 		        Mechanics += 1;
@@ -67493,7 +67759,7 @@ public OnPlayerCommandText(playerid, cmdtext[])
 		else if(strcmp(tmp,"brider",true) == 0)
 		{
 		    if(mecano_Duty[playerid] == 0)
-				{msg_Client(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Vous n'tes pas en service!");return 1;}
+				{msg_JobText(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Vous n'tes pas en service!");return 1;}
             tmp = strtok(cmdtext, idx);
 		    if(!strlen(tmp))
 				{msg_Client(playerid,COLOR_USAGE,"{A98500} Usage {FFFFB2} /mecano brider <id/joueur> <prix>");return 1;}
@@ -67503,7 +67769,7 @@ public OnPlayerCommandText(playerid, cmdtext[])
 				{msg_Client(playerid,COLOR_USAGE,"{A98500} Usage {FFFFB2} /mecano brider <id/joueur> <prix>");return 1;}
 			new prices=strval(tmp);
 			if(prices < 100 || prices > 1000)
-				{msg_Client(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Le prix doit tre compris entre $100 et $1000."); return 1; }
+				{msg_JobText(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Le prix doit tre compris entre $100 et $1000."); return 1; }
             if(IsPlayerConnected(giveplayerid) && giveplayerid != INVALID_PLAYER_ID)
 			{
 	   			if(ProxDetectorS(8.0, playerid, giveplayerid))
@@ -67511,9 +67777,9 @@ public OnPlayerCommandText(playerid, cmdtext[])
 					if(IsPlayerInAnyVehicle(giveplayerid))
 					{
 						if(giveplayerid == playerid)
-							{msg_Client(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Tu ne peux pas te brider toi mme."); return 1; }
+							{msg_JobText(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Tu ne peux pas te brider toi mme."); return 1; }
 						format(string, sizeof(string), "{78769D} Mcanicien {FFFFFF} Vous proposez  %s de brider son vhicule pour $%d .",PlayerInfo[giveplayerid][pName],prices);
-						msg_Client(playerid, COLOR_JOB, string);
+						msg_JobText(playerid, COLOR_JOB, string);
 						format(string, sizeof(string), "Le mcanicien %s vous propose de brider votre vhicule pour $%d.",PlayerInfo[playerid][pName],prices);
 						ShowPlayerDialog(giveplayerid,63,DIALOG_STYLE_MSGBOX,"|Mcanicen| Bridage",string,"Accepter","Refuser");
 						mecano_Offer[giveplayerid] = playerid;
@@ -67521,10 +67787,10 @@ public OnPlayerCommandText(playerid, cmdtext[])
 						return 1;
 					}
 					else
-						{msg_Client(playerid,COLOR_JOB,"{78769D} Mcanicien {FFFFFF} Ce joueur doit tre dans un vhicule."); return 1;}
+						{msg_JobText(playerid,COLOR_JOB,"{78769D} Mcanicien {FFFFFF} Ce joueur doit tre dans un vhicule."); return 1;}
 				}
 				else
-					{msg_Client(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Ce joueur n'est pas prs de vous.");}
+					{msg_JobText(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Ce joueur n'est pas prs de vous.");}
    			}
    			else
 			   	{msg_Client(playerid,COLOR_INFO,"{CF9756} Info {FFFFFF} Ce joueur n'est pas connect."); return 1;}
@@ -67532,7 +67798,7 @@ public OnPlayerCommandText(playerid, cmdtext[])
 		else if(strcmp(tmp,"debrider",true) == 0)
 		{
 		    if(mecano_Duty[playerid] == 0)
-				{msg_Client(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Vous n'tes pas en service!");return 1;}
+				{msg_JobText(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Vous n'tes pas en service!");return 1;}
             tmp = strtok(cmdtext, idx);
 		    if(!strlen(tmp))
 				{msg_Client(playerid,COLOR_USAGE,"{A98500} Usage {FFFFB2} /mecano debrider <id/joueur> <prix>");return 1;}
@@ -67542,7 +67808,7 @@ public OnPlayerCommandText(playerid, cmdtext[])
 				{msg_Client(playerid,COLOR_USAGE,"{A98500} Usage {FFFFB2} /mecano debrider <id/joueur> <prix>");return 1;}
 			new prices=strval(tmp);
 			if(prices < 100 || prices > 1000)
-				{msg_Client(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Le prix doit tre compris entre $100 et $1000."); return 1; }
+				{msg_JobText(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Le prix doit tre compris entre $100 et $1000."); return 1; }
             if(IsPlayerConnected(giveplayerid) && giveplayerid != INVALID_PLAYER_ID)
 			{
 	   			if(ProxDetectorS(8.0, playerid, giveplayerid))
@@ -67550,9 +67816,9 @@ public OnPlayerCommandText(playerid, cmdtext[])
 					if(IsPlayerInAnyVehicle(giveplayerid))
 					{
 						if(giveplayerid == playerid)
-							{msg_Client(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Tu ne peux pas te dbrider toi mme."); return 1; }
+							{msg_JobText(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Tu ne peux pas te dbrider toi mme."); return 1; }
 						format(string, sizeof(string), "{78769D} Mcanicien {FFFFFF} Vous proposez  %s de dbrider son vhicule pour $%d .",PlayerInfo[giveplayerid][pName],prices);
-						msg_Client(playerid, COLOR_JOB, string);
+						msg_JobText(playerid, COLOR_JOB, string);
 						format(string, sizeof(string), "Le mcanicien %s vous propose de dbrider votre vhicule pour $%d.",PlayerInfo[playerid][pName],prices);
 						ShowPlayerDialog(giveplayerid,64,DIALOG_STYLE_MSGBOX,"|Mcanicen| Dbridage",string,"Accepter","Refuser");
 						mecano_Offer[giveplayerid] = playerid;
@@ -67560,10 +67826,10 @@ public OnPlayerCommandText(playerid, cmdtext[])
 						return 1;
 					}
 					else
-						{msg_Client(playerid,COLOR_JOB,"{78769D} Mcanicien {FFFFFF} Ce joueur doit tre dans un vhicule."); return 1;}
+						{msg_JobText(playerid,COLOR_JOB,"{78769D} Mcanicien {FFFFFF} Ce joueur doit tre dans un vhicule."); return 1;}
 				}
 				else
-					{msg_Client(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Ce joueur n'est pas prs de vous.");}
+					{msg_JobText(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Ce joueur n'est pas prs de vous.");}
    			}
    			else
 			   	{msg_Client(playerid,COLOR_INFO,"{CF9756} Info {FFFFFF} Ce joueur n'est pas connect."); return 1;}
@@ -67571,7 +67837,7 @@ public OnPlayerCommandText(playerid, cmdtext[])
 		else if(strcmp(tmp,"sabot",true) == 0)
 		{
 				    if(mecano_Duty[playerid] == 0)
-						{msg_Client(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Vous n'tes pas en service!");return 1;}
+						{msg_JobText(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Vous n'tes pas en service!");return 1;}
 
 					tmp = strtok(cmdtext, idx);
 					if(!strlen(tmp))
@@ -67591,15 +67857,15 @@ public OnPlayerCommandText(playerid, cmdtext[])
 					        	{car = i;counter++;}
 					    }
 					    if(counter == 0)
-			  				{msg_Client(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Aucun vhicule pret de vous.");return 1;}
+			  				{msg_JobText(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Aucun vhicule pret de vous.");return 1;}
 			  			else if(counter > 1)
-							{msg_Client(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Trop de vhicule prt de vous.");return 1;}
+							{msg_JobText(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Trop de vhicule prt de vous.");return 1;}
 
                         if(IsPlayerInAnyVehicle(playerid))
-		      				{msg_Client(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Vous ne pouvez pas mettre de sabot depuis l'interieur.");return 1;}
+		      				{msg_JobText(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Vous ne pouvez pas mettre de sabot depuis l'interieur.");return 1;}
 
 		      			if(IsAPlane(car) || IsABike(car) || IsABoat(car) || vehicle[car][cType] != CAR_OWN)
-						  	{msg_Client(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Il est impossible de mettre un sabot sur ce vhicule.");return 1;}
+						  	{msg_JobText(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Il est impossible de mettre un sabot sur ce vhicule.");return 1;}
 
                         new length = strlen(cmdtext);
 						while ((idx < length) && (cmdtext[idx] <= ' '))
@@ -67628,15 +67894,15 @@ public OnPlayerCommandText(playerid, cmdtext[])
 					        	{car = i;counter++;}
 					    }
 					    if(counter == 0)
-			  				{msg_Client(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Aucun vhicule pret de vous.");return 1;}
+			  				{msg_JobText(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Aucun vhicule pret de vous.");return 1;}
 			  			else if(counter > 1)
-							{msg_Client(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Trop de vhicule prt de vous.");return 1;}
+							{msg_JobText(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Trop de vhicule prt de vous.");return 1;}
 
                         if(IsPlayerInAnyVehicle(playerid))
-		      				{msg_Client(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Vous ne pouvez pas enlever de sabot depuis l'interieur.");return 1;}
+		      				{msg_JobText(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Vous ne pouvez pas enlever de sabot depuis l'interieur.");return 1;}
 
 		      			if(IsAPlane(car) || IsABike(car) || IsABoat(car) || vehicle[car][cType] != CAR_OWN)
-						  	{msg_Client(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Il est impossible d'enlever un sabot de ce vhicule.");return 1;}
+						  	{msg_JobText(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Il est impossible d'enlever un sabot de ce vhicule.");return 1;}
 
 		                vehicle[car][sabot] = false;
 		                strmid(vehicle[car][sabotDesc],"Aucun",0,64,64);
@@ -67654,7 +67920,7 @@ public OnPlayerCommandText(playerid, cmdtext[])
 		else if(strcmp(tmp,"bar",true) == 0 || strcmp(tmp,"barrage",true) == 0)
 		{
 			if(mecano_Duty[playerid] == 0)
-				{msg_Client(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Vous n'tes pas en service!");return 1;}
+				{msg_JobText(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Vous n'tes pas en service!");return 1;}
 		    tmp = strtok(cmdtext, idx);
 		    if(!strlen(tmp))
 			{
@@ -67665,9 +67931,9 @@ public OnPlayerCommandText(playerid, cmdtext[])
 			if(strcmp(tmp,"creer",true) == 0)
 			{
 				if(IsPlayerInAnyVehicle(playerid))
-					{msg_Client(playerid,COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Vous ne pouvez pas mettre de herse dans un vhicule!");return 1;}
+					{msg_JobText(playerid,COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Vous ne pouvez pas mettre de herse dans un vhicule!");return 1;}
 				if(totalBars>=MAX_BAR)
-	    			{msg_Client(playerid,COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Le nombre Max de barrages a t atteint.");return 1;}
+	    			{msg_JobText(playerid,COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Le nombre Max de barrages a t atteint.");return 1;}
 	    		tmp = strtok(cmdtext, idx);
 	    		if(!strlen(tmp))
 				{
@@ -67727,7 +67993,7 @@ public OnPlayerCommandText(playerid, cmdtext[])
 		else if(strcmp(tmp,"remplir", true) == 0 || strcmp(tmp,"remp", true) == 0)
 		{
 		    if(mecano_Duty[playerid] == 0)
-				{msg_Client(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Vous n'tes pas en service!");return 1;}
+				{msg_JobText(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Vous n'tes pas en service!");return 1;}
 		    tmp = strtok(cmdtext, idx);
 		    if(!strlen(tmp))
 				{msg_Client(playerid,COLOR_USAGE,"{A98500} Usage {FFFFB2} /mecano remplir <id/joueur> <prix>");return 1;}
@@ -67737,7 +68003,7 @@ public OnPlayerCommandText(playerid, cmdtext[])
 				{msg_Client(playerid,COLOR_USAGE,"{A98500} Usage {FFFFB2} /mecano remplir <id/joueur> <prix>");return 1;}
 			new prices=strval(tmp);
 			if(prices < 20 || prices > 1000)
-				{msg_Client(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Le prix doit tre compris entre $20 et $1000."); return 1; }
+				{msg_JobText(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Le prix doit tre compris entre $20 et $1000."); return 1; }
 			if(IsPlayerConnected(giveplayerid) && giveplayerid != INVALID_PLAYER_ID)
 			{
 	   			if(ProxDetectorS(8.0, playerid, giveplayerid))
@@ -67745,9 +68011,9 @@ public OnPlayerCommandText(playerid, cmdtext[])
 					if(IsPlayerInAnyVehicle(giveplayerid))
 					{
 						if(giveplayerid == playerid)
-							{msg_Client(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Tu ne peux pas remplir ton vhicule toi mme."); return 1; }
+							{msg_JobText(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Tu ne peux pas remplir ton vhicule toi mme."); return 1; }
 						format(string, sizeof(string), "{78769D} Mcanicien {FFFFFF} Vous proposez  %s de remplir son vhicule pour $%d (20 Litres).",PlayerInfo[giveplayerid][pName],prices);
-						msg_Client(playerid, COLOR_JOB, string);
+						msg_JobText(playerid, COLOR_JOB, string);
 						format(string, sizeof(string), "Le mcanicien %s vous propose de remplir votre vhicule pour $%d. (20 Litres)",PlayerInfo[playerid][pName],prices);
 						ShowPlayerDialog(giveplayerid,128,DIALOG_STYLE_MSGBOX,"|Mcanicen| Remplir le vhicule (20 Litres)",string,"Accepter","Refuser");
 						mecano_Offer[giveplayerid] = playerid;
@@ -67755,10 +68021,10 @@ public OnPlayerCommandText(playerid, cmdtext[])
 						return 1;
 					}
 					else
-						{msg_Client(playerid,COLOR_JOB,"{78769D} Mcanicien {FFFFFF} Ce joueur doit tre dans un vhicule."); return 1;}
+						{msg_JobText(playerid,COLOR_JOB,"{78769D} Mcanicien {FFFFFF} Ce joueur doit tre dans un vhicule."); return 1;}
 				}
 				else
-					{msg_Client(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Ce joueur n'est pas prs de vous.");}
+					{msg_JobText(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Ce joueur n'est pas prs de vous.");}
    			}
    			else
 			   	{msg_Client(playerid,COLOR_INFO,"{CF9756} Info {FFFFFF} Ce joueur n'est pas connect."); return 1;}
@@ -67766,7 +68032,7 @@ public OnPlayerCommandText(playerid, cmdtext[])
 		else if(strcmp(tmp,"peinture", true) == 0 || strcmp(tmp,"pein", true) == 0)
 		{
 		    if(mecano_Duty[playerid] == 0)
-				{msg_Client(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Vous n'tes pas en service!");return 1;}
+				{msg_JobText(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Vous n'tes pas en service!");return 1;}
 		    tmp = strtok(cmdtext, idx);
 		    if(!strlen(tmp))
 				{msg_Client(playerid,COLOR_USAGE,"{A98500} Usage {FFFFB2} /mecano peinture <id/joueur> <prix> <couleur1> <couleur2>");return 1;}
@@ -67776,15 +68042,15 @@ public OnPlayerCommandText(playerid, cmdtext[])
 				{msg_Client(playerid,COLOR_USAGE,"{A98500} Usage {FFFFB2} /mecano peinture <id/joueur> <prix> <couleur1> <couleur2>");return 1;}
 			new prices=strval(tmp);
 			if(prices < 20 || prices > 1000)
-				{msg_Client(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Le prix doit tre compris entre $20 et $1000."); return 1; }
+				{msg_JobText(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Le prix doit tre compris entre $20 et $1000."); return 1; }
    			tmp = strtok(cmdtext, idx);
 			new color1=strval(tmp);
 			if(color1 < 0 || color1 > 255)
-				{msg_Client(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} La couleur1 doit tre comprise entre 0 et 255."); return 1; }
+				{msg_JobText(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} La couleur1 doit tre comprise entre 0 et 255."); return 1; }
 			tmp = strtok(cmdtext, idx);
 			new color2=strval(tmp);
 			if(color2 < 0 || color2 > 255)
-				{msg_Client(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} La couleur2 doit tre comprise entre 0 et 255."); return 1; }
+				{msg_JobText(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} La couleur2 doit tre comprise entre 0 et 255."); return 1; }
 			if(IsPlayerConnected(giveplayerid) && giveplayerid != INVALID_PLAYER_ID)
 			{
 	   			if(ProxDetectorS(8.0, playerid, giveplayerid))
@@ -67792,9 +68058,9 @@ public OnPlayerCommandText(playerid, cmdtext[])
 					if(IsPlayerInAnyVehicle(giveplayerid))
 					{
 					    if(giveplayerid == playerid)
-							{msg_Client(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Tu ne peux pas te refaire la peinture toi mme."); return 1; }
+							{msg_JobText(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Tu ne peux pas te refaire la peinture toi mme."); return 1; }
 						format(string, sizeof(string), "{78769D} Mcanicien {FFFFFF} Vous proposez  %s de changer la couleur son vhicule pour $%d.",PlayerInfo[giveplayerid][pName],prices);
-						msg_Client(playerid, COLOR_JOB, string);
+						msg_JobText(playerid, COLOR_JOB, string);
 						format(string, sizeof(string), "Le mcanicien %s vous propose de changer la couleur de votre vhicule pour $%d.",PlayerInfo[playerid][pName],prices);
 						ShowPlayerDialog(giveplayerid,18,DIALOG_STYLE_MSGBOX,"|Mcanicen| Changer les couleurs du vhicule",string,"Accepter","Refuser");
 						mecano_Offer[giveplayerid] = playerid;
@@ -67804,10 +68070,10 @@ public OnPlayerCommandText(playerid, cmdtext[])
 						return 1;
 					}
 					else
-						{msg_Client(playerid,COLOR_JOB,"{78769D} Mcanicien {FFFFFF} Ce joueur doit tre dans un vhicule."); return 1;}
+						{msg_JobText(playerid,COLOR_JOB,"{78769D} Mcanicien {FFFFFF} Ce joueur doit tre dans un vhicule."); return 1;}
 				}
 				else
-					{msg_Client(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Ce joueur n'est pas prs de vous.");}
+					{msg_JobText(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Ce joueur n'est pas prs de vous.");}
    			}
    			else
 			   	{msg_Client(playerid,COLOR_INFO,"{CF9756} Info {FFFFFF} Ce joueur n'est pas connect."); return 1;}
@@ -67815,7 +68081,7 @@ public OnPlayerCommandText(playerid, cmdtext[])
 		else if(strcmp(tmp,"carroserie", true) == 0 || strcmp(tmp,"car", true) == 0)
 		{
 		    if(mecano_Duty[playerid] == 0)
-				{msg_Client(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Vous n'tes pas en service!");return 1;}
+				{msg_JobText(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Vous n'tes pas en service!");return 1;}
 		    tmp = strtok(cmdtext, idx);
 		    if(!strlen(tmp))
 				{msg_Client(playerid,COLOR_USAGE,"{A98500} Usage {FFFFB2} /mecano carroserie <id/joueur> <prix>");return 1;}
@@ -67825,7 +68091,7 @@ public OnPlayerCommandText(playerid, cmdtext[])
 				{msg_Client(playerid,COLOR_USAGE,"{A98500} Usage {FFFFB2} /mecano carroserie <id/joueur> <prix>");return 1;}
 			new prices=strval(tmp);
 			if(prices < 20 || prices > 10000)
-				{msg_Client(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Le prix doit tre compris entre $20 et $10000."); return 1; }
+				{msg_JobText(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Le prix doit tre compris entre $20 et $10000."); return 1; }
 			if(IsPlayerConnected(giveplayerid) && giveplayerid != INVALID_PLAYER_ID)
 			{
 	   			if(ProxDetectorS(8.0, playerid, giveplayerid))
@@ -67833,9 +68099,9 @@ public OnPlayerCommandText(playerid, cmdtext[])
 					if(IsPlayerInAnyVehicle(giveplayerid))
 					{
 						if(giveplayerid == playerid)
-							{msg_Client(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Tu ne peux pas te changer la carroserie toi mme."); return 1; }
+							{msg_JobText(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Tu ne peux pas te changer la carroserie toi mme."); return 1; }
 						format(string, sizeof(string), "{78769D} Mcanicien {FFFFFF} Vous proposez  %s de rparer sa carroserie de son vhicule pour $%d.",PlayerInfo[giveplayerid][pName],prices);
-						msg_Client(playerid, COLOR_JOB, string);
+						msg_JobText(playerid, COLOR_JOB, string);
 						format(string, sizeof(string), "Le mcanicien %s vous propose de reparer votre carroserie de votre vhicule pour $%d.",PlayerInfo[playerid][pName],prices);
 						ShowPlayerDialog(giveplayerid,17,DIALOG_STYLE_MSGBOX,"|Mcanicen| Rparer la carroserie du vhicule",string,"Accepter","Refuser");
 						mecano_Offer[giveplayerid] = playerid;
@@ -67843,10 +68109,10 @@ public OnPlayerCommandText(playerid, cmdtext[])
 						return 1;
 					}
 					else
-						{msg_Client(playerid,COLOR_JOB,"{78769D} Mcanicien {FFFFFF} Ce joueur doit tre dans un vhicule."); return 1;}
+						{msg_JobText(playerid,COLOR_JOB,"{78769D} Mcanicien {FFFFFF} Ce joueur doit tre dans un vhicule."); return 1;}
 				}
 				else
-					{msg_Client(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Ce joueur n'est pas prs de vous.");}
+					{msg_JobText(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Ce joueur n'est pas prs de vous.");}
    			}
    			else
 			   	{msg_Client(playerid,COLOR_INFO,"{CF9756} Info {FFFFFF} Ce joueur n'est pas connect."); return 1;}
@@ -67881,7 +68147,7 @@ public OnPlayerCommandText(playerid, cmdtext[])
 				 			{msg_Client(playerid,0xFFFF00AA,"{78769D} Mcanicien {FFFFFF} Pas de voiture pres de vous (Bug syncro? Monter dans le vhicule a remorquer).");}
 					}
 					else
-						{msg_Client(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Vous devez tre le conducteur!");return 1;}
+						{msg_JobText(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Vous devez tre le conducteur!");return 1;}
 				}
 				else if(GetVehicleModel(GetPlayerVehicleID(playerid)) == 578)
 				{
@@ -67904,7 +68170,7 @@ public OnPlayerCommandText(playerid, cmdtext[])
                         trashcar_Object[trashcar] = CreateDynamicObject(3594, trashCar[trashcar][pos][0],trashCar[trashcar][pos][1], trashCar[trashcar][pos][2]+5, 0.0,0.0,0.0,-1,-1,-1,STREAM_DISTANCE);
                         AttachDynamicObjectToVehicle(trashcar_Object[trashcar], idcar, -0.044499, -1.554998, 0.226998, 0.000000, 0.000000, 0.000000);
                         mecano_CarHaceTC[idcar]=true; mecano_TCid[idcar]=trashcar;
-                        msg_Client(playerid,COLOR_JOB,"{78769D} Mcanicien {FFFFFF} Vous avez remorqu cette carcass. Allez la dposer au dpot avec '/mecano rem'.");
+                        msg_JobText(playerid,COLOR_JOB,"{78769D} Mcanicien {FFFFFF} Vous avez remorqu cette carcass. Allez la dposer au dpot avec '/mecano rem'.");
                         SetPlayerCheckpoint(playerid,1618.8650,-1793.9976,13.5027,8.0);
                         return 1;
 					}
@@ -67919,20 +68185,20 @@ public OnPlayerCommandText(playerid, cmdtext[])
 				            trashCar[mecano_TCid[idcar]][pos][1]=0.0;
 				            trashCar[mecano_TCid[idcar]][pos][2]=0.0;
 					        SafeGivePlayerMoney(playerid,50,"Carcass dpos au depot");
-					        msg_Client(playerid,COLOR_JOB,"{78769D} Mcanicien {FFFFFF} Vous gagnez $50 pour avoir dpos cette carcass.");
+					        msg_JobText(playerid,COLOR_JOB,"{78769D} Mcanicien {FFFFFF} Vous gagnez $50 pour avoir dpos cette carcass.");
 					        mecano_CarHaceTC[idcar]=false; mecano_TCid[idcar]=-1;
 					        totalTrashCars--;
 					    }
 					    else
-					        {msg_Client(playerid,COLOR_JOB,"{78769D} Mcanicien {FFFFFF} Vous ne pouvez pas dposer cette carcass ici."); return 1;}
+					        {msg_JobText(playerid,COLOR_JOB,"{78769D} Mcanicien {FFFFFF} Vous ne pouvez pas dposer cette carcass ici."); return 1;}
 					    return 1;
 					}
 				}
 				else
-					{msg_Client(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Mauvais vhicule.");return 1;}
+					{msg_JobText(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Mauvais vhicule.");return 1;}
 			}
 			else
-				{msg_Client(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Vous devez tre dans un vehicule.");return 1;}
+				{msg_JobText(playerid, COLOR_JOB, "{78769D} Mcanicien {FFFFFF} Vous devez tre dans un vehicule.");return 1;}
 		}
 		else if(strcmp(tmp,"acc", true) == 0 || strcmp(tmp,"accepter", true) == 0)
 		{
@@ -67944,14 +68210,14 @@ public OnPlayerCommandText(playerid, cmdtext[])
 				    GetPlayerPos(mecano_PhoneId,XX,YY,ZZ);
 				    SetPlayerCheckpoint(playerid,XX,YY,ZZ, 2.0);
 				    msg_Client(mecano_PhoneId,COLOR_LIGHTBLUE,"|Dpannage| Un mcanicien  accept votre appel.");
-					msg_Client(playerid,COLOR_JOB,"{78769D} Mcanicien {FFFFFF} Vous avez accept l'appel.");
+					msg_JobText(playerid,COLOR_JOB,"{78769D} Mcanicien {FFFFFF} Vous avez accept l'appel.");
 					mecano_PhoneId=-1;
 				}
 				else
-					{msg_Client(playerid,COLOR_JOB,"{78769D} Mcanicien {FFFFFF} Aucun joueur n'a demand de mcanicien.");}
+					{msg_JobText(playerid,COLOR_JOB,"{78769D} Mcanicien {FFFFFF} Aucun joueur n'a demand de mcanicien.");}
 		    }
 		    else
-				{msg_Client(playerid,COLOR_JOB,"{78769D} Mcanicien {FFFFFF} Vous devez tre en service.");}
+				{msg_JobText(playerid,COLOR_JOB,"{78769D} Mcanicien {FFFFFF} Vous devez tre en service.");}
 		}
 		else
 		{
@@ -68518,9 +68784,10 @@ public OnPlayerCommandText(playerid, cmdtext[])
 		    tmp = strtok(cmdtext, idx);
 		    if(!strlen(tmp))
 			{
-	            msg_Client(playerid, COLOR_WHITE, "{A98500} Usage {FFFFB2} /vip <nom>");
-	            msg_Client(playerid, COLOR_WHITE, "{FFFFB2} online - armure - skin - maison - garage");
-				return 1;
+	            // [RACCOURCIS] Meme correctif que /maison : un vrai menu au lieu
+	            // du texte d'usage, pour que le clic depuis Raccourcis fasse
+	            // quelque chose de visible.
+	            return Vip_ShowMenu(playerid);
 			}
 			if(strcmp(tmp,"maison",true) == 0)
 			{
