@@ -47182,81 +47182,67 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
     }
 	if(dialogid == 82)
     {
-  		if(!response)
+ 		if(!response)
 		  	{return 1;}
-        server_SetPlayerInterior(playerid, 0);
-  		if(listitem == 0)
-  		{
-	  		if (IsPlayerInAnyVehicle(playerid))
-				{SafeSetVehiclePos(GetPlayerVehicleID(playerid), 1543.6796,-1675.2576,13.5569);}
-	        else
-	        	{SafeSetPlayerPos(playerid, 1543.6796,-1675.2576,13.5569);}
-  		}
-  		if(listitem == 1)
-  		{
-	  		if (IsPlayerInAnyVehicle(playerid))
-				{SafeSetVehiclePos(GetPlayerVehicleID(playerid), 1652.3850,-1666.7813,21.4375);}
-	        else
-	        	{SafeSetPlayerPos(playerid, 1652.3850,-1666.7813,21.4375);}
-  		}
-  		if(listitem == 2)
-  		{
-	  		if (IsPlayerInAnyVehicle(playerid))
-				{SafeSetVehiclePos(GetPlayerVehicleID(playerid), 2755.0706,-2437.8530,13.6432);}
-	        else
-	        	{SafeSetPlayerPos(playerid, 2755.0706,-2437.8530,13.6432);}
-  		}
-  		if(listitem == 3)
-  		{
-	  		if (IsPlayerInAnyVehicle(playerid))
-				{SafeSetVehiclePos(GetPlayerVehicleID(playerid), 1186.7922,-1323.7046,13.5591);}
-	        else
-	        	{SafeSetPlayerPos(playerid, 1186.7922,-1323.7046,13.5591);}
-  		}
-  		if(listitem == 4)
-  		{
-	  		if (IsPlayerInAnyVehicle(playerid))
-				{SafeSetVehiclePos(GetPlayerVehicleID(playerid), 1481.3722,-1750.8760,15.4453);}
-	        else
-	        	{SafeSetPlayerPos(playerid, 1481.3722,-1750.8760,15.4453);}
-  		}
-  		if(listitem == 5)
-  		{
-	  		if (IsPlayerInAnyVehicle(playerid))
-				{SafeSetVehiclePos(GetPlayerVehicleID(playerid), 2039.4921,-1412.5177,17.1641);}
-	        else
-	        	{SafeSetPlayerPos(playerid, 2039.4921,-1412.5177,17.1641);}
-  		}
-  		if(listitem == 6)
-  		{
-	  		if (IsPlayerInAnyVehicle(playerid))
-				{SafeSetVehiclePos(GetPlayerVehicleID(playerid), 1792.9287,-1281.1332,13.6328);}
-	        else
-	        	{SafeSetPlayerPos(playerid, 1792.9287,-1281.1332,13.6328);}
-  		}
-  		if(listitem == 7)
-  		{
-	  		if (IsPlayerInAnyVehicle(playerid))
-				{SafeSetVehiclePos(GetPlayerVehicleID(playerid), 1792.9287,-1281.1332,13.6328);}
-	        else
-	        	{SafeSetPlayerPos(playerid, 1792.9287,-1281.1332,13.6328);}
-  		}
-  		if(listitem == 8)
-  		{
-	  		if (IsPlayerInAnyVehicle(playerid))
-				{SafeSetVehiclePos(GetPlayerVehicleID(playerid), 1543.6796,-1675.2576,13.5569);}
-	        else
-	        	{SafeSetPlayerPos(playerid, 1543.6796,-1675.2576,13.5569);}
-  		}
-		if(listitem >= 9)
-  		{
-  		    if(FactionInfo[listitem-9][fCreate] == 0)
+        // [FIX CRASH RENDU /a tp qg] Teleport securise vers le QG choisi.
+        // Avant: SafeSetPlayerPos brut sans reset VW, sans recharger le streamer
+        // et sans freeze -> en zone militaire lourde (QG Arme) le client plantait
+        // le moteur de rendu (ecran noir + blocage). On applique la methode
+        // SafeTeleportPlayer: interior=0 + VW=0 AVANT -> pose +0.3 -> freeze 1.5s.
+        // En vehicule: on deplace le vehicule avec le joueur + synchro int/VW.
+        new Float:TP_BasePos[9][3] = {
+            {1543.6796,-1675.2576,13.5569},  // 0: LSPD
+            {1652.3850,-1666.7813,21.4375},  // 1: FBI
+            {2755.0706,-2437.8530,13.6432},  // 2: Arme
+            {1186.7922,-1323.7046,13.5591},  // 3: LSMD
+            {1481.3722,-1750.8760,15.4453},  // 4: Gouvernement
+            {2039.4921,-1412.5177,17.1641},  // 5: LSFD
+            {1792.9287,-1281.1332,13.6328},  // 6: ABC Studio
+            {1792.9287,-1281.1332,13.6328},  // 7: So Fast Drive
+            {1543.6796,-1675.2576,13.5569}   // 8: BAC
+        };
+        if(listitem >= 0 && listitem < 9)
+        {
+            server_SetPlayerInterior(playerid, 0);
+            server_SetPlayerVirtualWorld(playerid, 0);
+            new Float:p_qgx = TP_BasePos[listitem][0];
+            new Float:p_qgy = TP_BasePos[listitem][1];
+            new Float:p_qgz = TP_BasePos[listitem][2];
+            if (IsPlayerInAnyVehicle(playerid))
+            {
+                new p_qgveh = GetPlayerVehicleID(playerid);
+                SafeSetVehiclePos(p_qgveh, p_qgx, p_qgy, p_qgz);
+                LinkVehicleToInterior(p_qgveh, 0);
+                SetVehicleVirtualWorld(p_qgveh, 0);
+            }
+            SafeSetPlayerPos(playerid, p_qgx, p_qgy, p_qgz + 0.3);
+            SetPlayerFacingAngle(playerid, 0.0);
+            SetCameraBehindPlayer(playerid);
+            TogglePlayerControllable(playerid, false);
+            SetTimerEx("chargement", 1500, 0, "i", playerid);
+            msg_Client(playerid, COLOR_INFO, "{CF9756} Info {FFFFFF} Vous avez ete teleporte (QG).");
+            return 1;
+        }
+        if(listitem >= 9)
+        {
+            if(FactionInfo[listitem-9][fCreate] == 0)
 			  	{return 1;}
-  		    if (IsPlayerInAnyVehicle(playerid))
-				{SafeSetVehiclePos(GetPlayerVehicleID(playerid), FactionInfo[listitem-9][fEntrance][0],FactionInfo[listitem-9][fEntrance][1],FactionInfo[listitem-9][fEntrance][2]);}
-	        else
-	        	{SafeSetPlayerPos(playerid, FactionInfo[listitem-9][fEntrance][0],FactionInfo[listitem-9][fEntrance][1],FactionInfo[listitem-9][fEntrance][2]);}
-  		}
+            server_SetPlayerInterior(playerid, 0);
+            server_SetPlayerVirtualWorld(playerid, 0);
+            if (IsPlayerInAnyVehicle(playerid))
+            {
+                new p_qgfveh = GetPlayerVehicleID(playerid);
+                SafeSetVehiclePos(p_qgfveh, FactionInfo[listitem-9][fEntrance][0],FactionInfo[listitem-9][fEntrance][1],FactionInfo[listitem-9][fEntrance][2]);
+                LinkVehicleToInterior(p_qgfveh, 0);
+                SetVehicleVirtualWorld(p_qgfveh, 0);
+            }
+            SafeSetPlayerPos(playerid, FactionInfo[listitem-9][fEntrance][0],FactionInfo[listitem-9][fEntrance][1],FactionInfo[listitem-9][fEntrance][2] + 0.3);
+            SetCameraBehindPlayer(playerid);
+            TogglePlayerControllable(playerid, false);
+            SetTimerEx("chargement", 1500, 0, "i", playerid);
+            msg_Client(playerid, COLOR_INFO, "{CF9756} Info {FFFFFF} Vous avez ete teleporte (QG).");
+            return 1;
+        }
 	}
     if(dialogid == 133)
     {
