@@ -386,12 +386,15 @@ stock MapPack_Init()
 {
 	for(new i = 0; i < MAX_PLAYERS; i++) mpCarteSel[i] = -1;
 	new n = MapPack_Load();
-	// Meme raison que dans MapPack_Activer : ces trois cartes sont maintenant
-	// posees en permanence ailleurs. Si un ancien mappack.cfg les avait laissees
-	// allumees, on les eteint au chargement plutot que de doubler le decor.
+	// Meme raison que dans MapPack_Activer : ces cartes sont maintenant posees
+	// en permanence ailleurs ou sont trop lourdes pour la zone (garage mecano
+	// dans les docks = 126 objets streames qui font crasher le client).
+	// Si un ancien mappack.cfg les avait laissees allumees, on les eteint au
+	// chargement plutot que de doubler le decor ou de saturer le rendu.
 	if(mpActif[MP_WISE] == 1)   { mpActif[MP_WISE] = 0;   n--; }
 	if(mpActif[MP_MARKET] == 1) { mpActif[MP_MARKET] = 0; n--; }
 	if(mpActif[MP_PRF] == 1)    { mpActif[MP_PRF] = 0;    n--; }
+	if(mpActif[MP_MECANO] == 1) { mpActif[MP_MECANO] = 0; n--; }
 	if(n < 0) n = 0;
 	for(new c = 0; c < MP_MAX_CARTES; c++) if(mpActif[c] == 1) MapPack_Creer(c);
 	printf("[MapPack] %d carte(s) allumee(s) sur %d disponibles.", n, MP_MAX_CARTES);
