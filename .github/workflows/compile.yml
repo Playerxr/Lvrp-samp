@@ -1,0 +1,64 @@
+# .github/workflows/compile.yml
+name: Compile SAMP Pawn GameMode
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  compile-gamemode:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        compiler: [pawn-3.10.10, pawn-3.10.10-win32]
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Wine for Windows Pawn Compiler
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wine unzip
+
+      - name: Download Windows Pawn Compiler
+        run: |
+          cd /tmp
+          wget -q https://github.com/pawn-lang/pawn/releases/download/v3.10.10/pawn-3.10.10-win32.zip
+          unzip -q pawn-3.10.10-win32.zip -d pawn-tools
+
+      - name: Prepare includes
+        run: |
+          mkdir -p /tmp/pawn-includes
+          cp -r pawno/include/* /tmp/pawn-includes/ 2>/dev/null || echo "No includes to copy"
+
+      - name: Compile LVRP.pwn
+        run: |
+          WINEDEBUG=-all wine "/tmp/pawn-tools/pawncc.exe" \
+            -v2 \
+            -d3 \
+            -i"pawno/include" \
+            "gamemodes/LVRP.pwn" \
+            -o"gamemodes/LVRP.amx" \
+            2>&1 | tee /tmp/pawn_compile.log || true
+
+      - name: Upload Compiled AMX
+        uses: actions/upload-artifact@v4
+        with:
+          name: compiled-amx-${{ github.sha }}
+          path: |
+            gamemodes/LVRP.amx
+            /tmp/pawn_compile.log
+
+      - name: Check Compilation Result
+        run: |
+          if [ ! -f gamemodes/LVRP.amx ]; then
+            echo "::error::Compilation failed - LVRP.amx not generated"
+            cat /tmp/pawn_compile.log
+            exit 1
+          fi
+          echo "✅ Compilation succeeded - LVRP.amx generated"
+          ls -la gamemodes/LVRP.amx
