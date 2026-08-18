@@ -9540,7 +9540,7 @@ public SetPlayerSpawn(playerid)
 			        SetTimerEx("chargement",3000,0,"i",playerid);
 		    		TogglePlayerControllable(playerid, 0);
 			    	server_SetPlayerVirtualWorld(playerid,0); server_SetPlayerInterior(playerid,0);
-			    	SafeSetPlayerPos(playerid, FactionInfo[facID][fEntrance][0],FactionInfo[facID][fEntrance][1],FactionInfo[facID][fEntrance][2]);
+												SafeSetPlayerPos(playerid, FactionInfo[facID][fEntrance][0],FactionInfo[facID][fEntrance][1],FactionInfo[facID][fEntrance][2]);
 			    	return 1;
 			    }
 			    else
@@ -19699,7 +19699,7 @@ stock player_CheckEnter(playerid)
 			 	GameTextForPlayer(playerid, string, 3000, 1);
 				server_SetPlayerInterior(playerid, FactionInfo[i][fInt]);
 				gPlayerInFaction[playerid] = i;
-				SafeSetPlayerPos(playerid,FactionInfo[i][fExit][0],FactionInfo[i][fExit][1],FactionInfo[i][fExit][2]);
+												SafeSetPlayerPos(playerid,FactionInfo[i][fExit][0],FactionInfo[i][fExit][1],FactionInfo[i][fExit][2]);
 			}
 			else if(FactionInfo[i][fLock] == 0)
 			{
@@ -19708,7 +19708,7 @@ stock player_CheckEnter(playerid)
 				GameTextForPlayer(playerid, string, 3000, 1);
 				server_SetPlayerInterior(playerid, FactionInfo[i][fInt]);
 				gPlayerInFaction[playerid] = i;
-				SafeSetPlayerPos(playerid,FactionInfo[i][fExit][0],FactionInfo[i][fExit][1],FactionInfo[i][fExit][2]);
+												SafeSetPlayerPos(playerid,FactionInfo[i][fExit][0],FactionInfo[i][fExit][1],FactionInfo[i][fExit][2]);
 			}
 			else
 			    {GameTextForPlayer(playerid, "~r~Fermer", 5000, 1);}
@@ -19881,7 +19881,7 @@ stock player_CheckEnter(playerid)
 		    GameTextForPlayer(playerid, MAP_NAME, 5000, 1);
 		    server_SetPlayerInterior(playerid, 0);
 		    gPlayerInFaction[playerid] = -1;
-		    SafeSetPlayerPos(playerid,FactionInfo[intid][fEntrance][0],FactionInfo[intid][fEntrance][1],FactionInfo[intid][fEntrance][2]);
+												SafeSetPlayerPos(playerid,FactionInfo[intid][fEntrance][0],FactionInfo[intid][fEntrance][1],FactionInfo[intid][fEntrance][2]);
 		    ResetPlayerIntVar(playerid);
 		}
 	}
@@ -47217,6 +47217,10 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
             }
             SafeSetPlayerPos(playerid, p_qgx, p_qgy, p_qgz + 0.3);
             SetPlayerFacingAngle(playerid, 0.0);
+            // [FIX RENDU] Forcer le streamer a rafraichir le decor autour du QG,
+            // ET bypasser l'AC (sinon kick en zone militaire lourde) -> crash 0xDC8153D4
+            Streamer_UpdateEx(playerid, p_qgx, p_qgy, p_qgz + 0.3, 0, 0);
+            gPlayerServerTP[playerid] = 8; // ignorer AC position pendant 8s
             SetCameraBehindPlayer(playerid);
             TogglePlayerControllable(playerid, false);
             SetTimerEx("chargement", 1500, 0, "i", playerid);
@@ -47236,7 +47240,10 @@ public OnDialogResponse(playerid, dialogid, response, listitem, inputtext[])
                 LinkVehicleToInterior(p_qgfveh, 0);
                 SetVehicleVirtualWorld(p_qgfveh, 0);
             }
-            SafeSetPlayerPos(playerid, FactionInfo[listitem-9][fEntrance][0],FactionInfo[listitem-9][fEntrance][1],FactionInfo[listitem-9][fEntrance][2] + 0.3);
+												SafeSetPlayerPos(playerid, FactionInfo[listitem-9][fEntrance][0],FactionInfo[listitem-9][fEntrance][1],FactionInfo[listitem-9][fEntrance][2] + 0.3);
+            // [FIX RENDU] Forcer le streamer + bypasser l'AC (meme logique que ci-dessus)
+												Streamer_UpdateEx(playerid, FactionInfo[listitem-9][fEntrance][0],FactionInfo[listitem-9][fEntrance][1],FactionInfo[listitem-9][fEntrance][2] + 0.3, 0, 0);
+            gPlayerServerTP[playerid] = 8; // ignorer AC position pendant 8s
             SetCameraBehindPlayer(playerid);
             TogglePlayerControllable(playerid, false);
             SetTimerEx("chargement", 1500, 0, "i", playerid);
